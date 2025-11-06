@@ -1,0 +1,6 @@
+{
+  "files.autoSave": "afterDelay",
+  "editor.fontSize": 25,
+  "editor.fontFamily": "Monofur Nerd Font Mono",
+  "deno.enable": true,
+}
