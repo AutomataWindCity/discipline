@@ -23,16 +23,38 @@ impl Time {
     Ok(Time { timestamp })
   }
 
-  pub fn timestamp(&self) -> u32 {
+  pub fn millisecond_timestamp(&self) -> u32 {
     self.timestamp
   }
 }
 
 mod serialization {
   use serde::{Serialize, Deserialize, de::Error};
-  use crate::x::Time;
+  use crate::x::{Time, time};
 
   impl Serialize for Time {
-    
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+      S: serde::Serializer 
+    {
+      self.millisecond_timestamp().serialize(serializer)
+    }
+  }
+
+  impl<'a> Deserialize<'a> for Time {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+      D: serde::Deserializer<'a> 
+    {
+      let timestamp = u32::deserialize(deserializer)?;
+      Time::from_millisecond_timestamp(timestamp).map_err(|error| match error {
+        time::CreateFromTimestampError::MaximumLengthViolation { timestamp } => {
+          Error::custom(format!("Deserializing Time: Creating Time from timestamp: Provided timestamp is larger than the maximum value. Timestamp is {timestamp}. Maximum value is {}.", time::MAXIMUM_TIMESTAMP))
+        }
+        time::CreateFromTimestampError::MinimumLengthViolation { timestamp } => {
+          Error::custom(format!("Deserializing Time: Creating Time from timestamp: Provided timestamp is less than the minimum value. Timestamp is {timestamp}. Minimum value is {}.", time::MINIMUM_TIMESTAMP))
+        }
+      })
+    }
   }
 }
