@@ -1,56 +1,65 @@
+
+// RuleActionConditional
+// RuleGuardConditional
+// action_conditional
+// is_activated
+// is_effective
+// is_protected
+// protection_conditional
+
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use crate::x::{AlwaysConditional, CountdownAfterPleaConditional, CountdownConditional, DateTime, Time, TimeConditional, UuidV4, Weekday};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RuleActivator {
+pub enum RuleActionConditional {
   Time(TimeConditional),
   Alwaus(AlwaysConditional),
 }
 
-impl RuleActivator {
-  pub fn is_effective(&self, time: Time, weekday: Weekday) -> bool {
+impl RuleActionConditional {
+  pub fn evaluate(&self, time: Time, weekday: Weekday) -> bool {
     match self {
-      RuleActivator::Time(inner) => inner.evaulate(time, weekday),
-      RuleActivator::Alwaus(inner) => inner.evaulate(),
+      RuleActionConditional::Time(inner) => inner.evaulate(time, weekday),
+      RuleActionConditional::Alwaus(inner) => inner.evaulate(),
     }
   }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RuleProtector {
+pub enum RuleProtectionConditional {
   Countdown(CountdownConditional),
   CountdownAfterPlea(CountdownAfterPleaConditional),
 }
 
-impl RuleProtector {
-  pub fn is_effective(&self) -> bool {
+impl RuleProtectionConditional {
+  pub fn evaluate(&self) -> bool {
     match self {
-      RuleProtector::Countdown(inner) => inner.evaluate(),
-      RuleProtector::CountdownAfterPlea(inner) => inner.evaluate(),
+      RuleProtectionConditional::Countdown(inner) => inner.evaluate(),
+      RuleProtectionConditional::CountdownAfterPlea(inner) => inner.evaluate(),
     }
   }
 
   pub fn synchronize(&mut self, now: DateTime) {
     match self {
-      RuleProtector::Countdown(inner) => inner.synchronize(now),
-      RuleProtector::CountdownAfterPlea(inner) => inner.synchronize(now),
+      RuleProtectionConditional::Countdown(inner) => inner.synchronize(now),
+      RuleProtectionConditional::CountdownAfterPlea(inner) => inner.synchronize(now),
     }
   }
 
   pub fn activate(&mut self, now: DateTime) {
     match self {
-      RuleProtector::Countdown(inner) => inner.activate(now),
-      RuleProtector::CountdownAfterPlea(inner) => inner.activate(),
+      RuleProtectionConditional::Countdown(inner) => inner.activate(now),
+      RuleProtectionConditional::CountdownAfterPlea(inner) => inner.activate(),
     }
   }
 
   pub fn deactivate(&mut self, now: DateTime) {
     match self {
-      RuleProtector::Countdown(_inner) => {
+      RuleProtectionConditional::Countdown(_inner) => {
         // noop
       }
-      RuleProtector::CountdownAfterPlea(inner) => {
+      RuleProtectionConditional::CountdownAfterPlea(inner) => {
         inner.deactivate(now);
       }
     }
@@ -59,27 +68,35 @@ impl RuleProtector {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Rule {
-  activator: RuleActivator,
-  protector: RuleProtector,
+  action_conditional: RuleActionConditional,
+  protection_conditional: RuleProtectionConditional,
+  is_activated: bool,
 }
 
 impl Rule {
   pub fn new(
-    activator: RuleActivator,
-    protector: RuleProtector,
+    action_conditional: RuleActionConditional,
+    protection_conditional: RuleProtectionConditional,
   ) -> Self {
     Self {
-      activator,
-      protector,
+      action_conditional,
+      protection_conditional,
+      is_activated: false,
     }
   }
 
+  pub fn is_activated(&self) -> bool {
+    self.is_activated
+  }
+
   pub fn is_effective(&self, time: Time, weekday: Weekday) -> bool {
-    self.protector.is_effective() && self.activator.is_effective(time, weekday)
+    self.is_activated
+    && 
+    self.action_conditional.evaluate(time, weekday)
   }
 
   pub fn is_protected(&self) -> bool {
-    self.protector.is_effective()
+    self.protection_conditional.evaluate()
   }
 }
 

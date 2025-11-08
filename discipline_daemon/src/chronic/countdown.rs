@@ -15,7 +15,7 @@ impl Countdown {
     }
   }
 
-  pub fn construct(
+  pub fn from_fields(
     remaining_duration: Duration,
     previous_synchronization_time: DateTime,
   ) -> Countdown {

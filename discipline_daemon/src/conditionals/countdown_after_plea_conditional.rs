@@ -40,6 +40,7 @@ impl CountdownAfterPleaConditional {
     &self.status
   }
 
+  
   pub fn evaluate(&self) -> bool {
     match self.status {
       Status::Activated => true,

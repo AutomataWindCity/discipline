@@ -26,10 +26,8 @@ impl WeekdaySet {
   const EMPTY: Self = Self(0b000_0000);
 
   pub fn from_bitmask(bitmask: u8) -> Self {
-    // TODO: Set last bit to zero
-    let bitmask = bitmask | 0b0000_0000;
-
-    Self(bitmask)
+    // Set last bit to zero
+    Self(bitmask & 0x7F)
   }
 
   pub fn bitmask(&self) -> u8 {

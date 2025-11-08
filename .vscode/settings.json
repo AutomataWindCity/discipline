@@ -1,6 +1,11 @@
 {
   "files.autoSave": "afterDelay",
-  "editor.fontSize": 25,
+  "editor.fontSize": 24,
   "editor.fontFamily": "Monofur Nerd Font Mono",
   "deno.enable": true,
+  "rust-analyzer.linkedProjects": [
+    "discipline_daemon/Cargo.toml"
+  ],
+  "rust-analyzer.inlayHints.typeHints.enable": false,
+  "rust-analyzer.inlayHints.parameterHints.enable": false,
 }

@@ -1,3 +1,5 @@
+use crate::x::{TextualErrorContext, ToTextualError};
+
 const MINIMUM_TIMESTAMP: u32 = 0;
 const MAXIMUM_TIMESTAMP: u32 = 1000 * 60 * 60 * 24 - 1;
 
@@ -5,6 +7,29 @@ const MAXIMUM_TIMESTAMP: u32 = 1000 * 60 * 60 * 24 - 1;
 pub enum CreateFromTimestampError {
   MaximumLengthViolation { timestamp: u32 },
   MinimumLengthViolation { timestamp: u32 },
+}
+
+impl ToTextualError for CreateFromTimestampError {
+  fn to_textual_error_context(&self) -> TextualErrorContext {
+    let mut context = TextualErrorContext::new("Creating Time from a millisecond-based timestamp since midnight");
+    
+    match self {
+      Self::MinimumLengthViolation { timestamp } => {
+        context.add_message("Timestamp is less than the minimum valid value");
+        context.add_attachement_display("Timestamp", timestamp);
+        context.add_attachement_display("Minimum valid value", MINIMUM_TIMESTAMP);
+        context.add_attachement_display("Maximum valid value", MAXIMUM_TIMESTAMP);
+      }
+      Self::MaximumLengthViolation { timestamp } => {
+        context.add_message("Timestamp is greater than the maximum valid value");
+        context.add_attachement_display("Timestamp", timestamp);
+        context.add_attachement_display("Minimum valid value", MINIMUM_TIMESTAMP);
+        context.add_attachement_display("Maximum valid value", MAXIMUM_TIMESTAMP);
+      }
+    }
+
+    context
+  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -30,7 +55,7 @@ impl Time {
 
 mod serialization {
   use serde::{Serialize, Deserialize, de::Error};
-  use crate::x::{Time, time};
+  use crate::x::{Time, ToTextualError};
 
   impl Serialize for Time {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -47,14 +72,11 @@ mod serialization {
       D: serde::Deserializer<'a> 
     {
       let timestamp = u32::deserialize(deserializer)?;
-      Time::from_millisecond_timestamp(timestamp).map_err(|error| match error {
-        time::CreateFromTimestampError::MaximumLengthViolation { timestamp } => {
-          Error::custom(format!("Deserializing Time: Creating Time from timestamp: Provided timestamp is larger than the maximum value. Timestamp is {timestamp}. Maximum value is {}.", time::MAXIMUM_TIMESTAMP))
-        }
-        time::CreateFromTimestampError::MinimumLengthViolation { timestamp } => {
-          Error::custom(format!("Deserializing Time: Creating Time from timestamp: Provided timestamp is less than the minimum value. Timestamp is {timestamp}. Minimum value is {}.", time::MINIMUM_TIMESTAMP))
-        }
-      })
+        
+      Time::from_millisecond_timestamp(timestamp)
+        .map_err(|error| {
+          Error::custom(error.to_textual_error())
+        })
     }
   }
 }

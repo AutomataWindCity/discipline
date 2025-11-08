@@ -1,4 +1,4 @@
-pub use crate::other::textual_error::{TextualError, TextualErrorAttachement, TextualErrorContext};
+pub use crate::other::textual_error::{TextualError, TextualErrorAttachement, TextualErrorContext, ToTextualError};
 pub use crate::other::uuid_v4::UuidV4;
 
 pub use crate::chronic::countdown::Countdown;
@@ -34,3 +34,9 @@ pub use crate::users::user_name;
 pub use crate::users::user_name::UserName;
 pub use crate::users::user;
 pub use crate::users::user::User;
+pub use crate::users::user_group;
+pub use crate::users::user_group::UserGroup;
+
+pub use crate::database;
+
+pub use crate::rules::{Rule, RuleActionConditional, RuleProtectionConditional, RuleGroup, self};

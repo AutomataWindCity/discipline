@@ -1,5 +1,7 @@
 use core::fmt;
 
+use crate::x::{TextualErrorContext, ToTextualError};
+
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
 pub enum Weekday {
   /// Monday.
@@ -18,7 +20,24 @@ pub enum Weekday {
   Sun = 6,
 }
 
-// pub enum CreateFRomNu
+pub enum CreateFromNumberFromMondayError {
+  InvalidNumber { number: u8 }
+}
+
+impl ToTextualError for CreateFromNumberFromMondayError {
+  fn to_textual_error_context(&self) -> TextualErrorContext {
+    let mut context = TextualErrorContext::new("Creating Weekday from a number from 0 (for Monday) to 6 (for Sunday)");
+
+    match self {
+      Self::InvalidNumber { number } =>{
+        context.add_message("Number is outside the valid range");
+        context.add_attachement_display("Number", number);
+      }
+    }
+
+    context
+  }
+}
 
 impl Weekday {
   pub fn from_number_from_monday(number: u8) -> Option<Weekday> {
@@ -31,6 +50,19 @@ impl Weekday {
       5 => Some(Weekday::Sat),
       6 => Some(Weekday::Sun),
       _ => None,
+    }
+  }
+
+  pub fn from_number_from_monday_or_err(number: u8) -> Result<Weekday, CreateFromNumberFromMondayError> {
+    match number {
+      0 => Ok(Weekday::Mon),
+      1 => Ok(Weekday::Tue),
+      2 => Ok(Weekday::Wed),
+      3 => Ok(Weekday::Thu),
+      4 => Ok(Weekday::Fri),
+      5 => Ok(Weekday::Sat),
+      6 => Ok(Weekday::Sun),
+      _ => Err(CreateFromNumberFromMondayError::InvalidNumber { number }),
     }
   }
 

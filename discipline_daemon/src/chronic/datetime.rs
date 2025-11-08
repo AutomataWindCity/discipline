@@ -1,8 +1,23 @@
-use crate::x::Duration;
+use crate::x::{Duration, TextualErrorContext, ToTextualError};
 
 #[derive(Debug, Clone)]
 pub enum CreateFromMillisecondTimestampError {
   RangeViolation { timestamp: i64 }
+}
+
+impl ToTextualError for CreateFromMillisecondTimestampError {
+  fn to_textual_error_context(&self) -> TextualErrorContext {
+    let mut context = TextualErrorContext::new("Creating DateTime from the number of non-leap milliseconds since January 1, 1970 0:00:00.000 UTC (aka \"UNIX timestamp\")");
+
+    match self {
+      Self::RangeViolation { timestamp } => {
+        context.add_message("Timestamp is outside the valid range");
+        context.add_attachement_display("Timestamp", timestamp);
+      }
+    }
+
+    context
+  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

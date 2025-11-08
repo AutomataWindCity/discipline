@@ -20,4 +20,12 @@ impl TimeConditional {
     &&
     self.weekday_set.contains(weekday)
   }
+
+  pub fn time_range(&self) -> TimeRange {
+    self.time_range
+  }
+
+  pub fn weekday_set(&self) -> WeekdaySet {
+    self.weekday_set
+  }
 }

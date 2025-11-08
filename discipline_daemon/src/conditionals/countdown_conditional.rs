@@ -33,8 +33,8 @@ impl CountdownConditional {
     self.duration
   }
 
-  pub fn countdown(&self) -> Option<&Countdown> {
-    self.countdown.as_ref()
+  pub fn countdown(&self) -> &Option<Countdown> {
+    &self.countdown
   }
 
   pub fn activate(&mut self, now: DateTime) {

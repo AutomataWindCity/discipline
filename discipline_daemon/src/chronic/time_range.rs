@@ -19,7 +19,7 @@ pub enum CreateFromTimestampsError {
   RangeIsLongerThanOneDay { from: u32, till: u32 },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TimeRange {
   from: u32,
   till: u32,
@@ -40,6 +40,14 @@ impl TimeRange {
         till: MILLISECONDS_PER_DAY + till,
       }
     }
+  }
+
+  pub fn from(&self) -> Time {
+    todo!()
+  }
+
+  pub fn till(&self) -> Time {
+    todo!()
   }
 
   pub fn from_timestamps(from: u32, till: u32) -> Result<TimeRange, CreateFromTimestampsError> {
