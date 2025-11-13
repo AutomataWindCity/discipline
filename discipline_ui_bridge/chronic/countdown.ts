@@ -7,7 +7,7 @@ export type Countdown = Branded<typeof BRAND, {
   previousSynchronizationTime: DateTime.DateTime,
 }>;
 
-const construct = (
+export const construct = (
   remainingDuration: Duration.Duration,
   previousSynchronizationTime: DateTime.DateTime,
 ): Countdown => {

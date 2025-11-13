@@ -1,7 +1,7 @@
-import { DateTime, Duration, TDateTime, Time, TimeRange } from "../discipline_ts/mod.ts"
-
+import { DateTime, Duration, Time, TimeRange } from "../discipline_ui_bridge/mod.ts"
 import * as DeviceUptimeTracker from "./device_uptime_tracker.ts"
-import { type TDeviceUptimeTracker } from "./device_uptime_tracker.ts"
+import * as Async from "./async.ts"
+import * as Storage from "./file.ts";
 
 // Sleep time condition
 const sleepTimeRange = TimeRange.fromTimes(
@@ -9,9 +9,20 @@ const sleepTimeRange = TimeRange.fromTimes(
   Time.fromHourAndMinuteAmOrThrow(4, 0),
 );
 
-const condition1 = (now: TDateTime): boolean => {
+const condition1 = (now: DateTime.DateTime): boolean => {
   return TimeRange.contains(sleepTimeRange, DateTime.time(now));
 };
+
+// Device usage alloawnce
+const allowanceStorage = Storage.create({
+  path: "",
+  fallback: () => DeviceUptimeTracker.create(
+    Duration.fromHoursOrThrow(2),
+    DateTime.now(),
+  ),
+  serialize: DeviceUptimeTracker.toJson,
+  deserialize: DeviceUptimeTracker.fromJson,
+});
 
 const allowance = DeviceUptimeTracker.create(
   Duration.fromHoursOrThrow(2),
@@ -20,4 +31,9 @@ const allowance = DeviceUptimeTracker.create(
 
 const condition2 = (): boolean => {
   return DeviceUptimeTracker.isAllowanceUp(allowance);
-};
+};git 
+
+Async.registerIntervalTimer(Duration.fromMillisecondsOrThrow(1000 * 60), async () => {
+  DeviceUptimeTracker.synchronize(allowance, DateTime.now());
+  const maybeError = 
+});

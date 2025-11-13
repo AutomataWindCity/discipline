@@ -1,4 +1,4 @@
-import { withVirtualKey } from "../mod.ts";
+import { Tried, withVirtualKey } from "../mod.ts";
 
 const BRAND = Symbol();
 
@@ -19,6 +19,19 @@ export const MILLISECONDS_PER_WEEK = MILLISECONDS_PER_DAY * 7;
 
 const construct = (inner: number): Duration => {
   return withVirtualKey(BRAND, inner);
+};
+
+export const fromMilliseconds = (milliseconds: number): Tried.Tried<Duration, Error> => {
+  if (Number.isInteger(milliseconds)) {
+    return Tried.Failure(new Error("Creating Duration from milliseconds: Argument 'milliseconds' is integer"));
+  }
+  if (milliseconds < 0) {
+    return Tried.Failure(new Error("Creating Duration from milliseconds: Argument 'milliseconds' is less than minium value which is zero"));
+  }
+  if (milliseconds > MAXIMUM_MILLISECONDS) {
+    return Tried.Failure(new Error(`Creating Duration from milliseconds: Argument 'milliseconds' is greater than maximum value which is ${MAXIMUM_MILLISECONDS}`));
+  }
+  return Tried.Success(construct(milliseconds));
 };
 
 export const fromMillisecondsOrThrow = (milliseconds: number): Duration => {

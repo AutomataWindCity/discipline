@@ -45,3 +45,11 @@ export const mapError = <Value, Error>(
 ): Tried<Value, Error> => {
   return isFailure(me) ? Failure(fn(me.error)) : me;
 };
+
+export const value = <Value>(me: Success<Value>): Value => {
+  return me.value;
+};
+
+export const error = <Error>(me: Failure<Error>): Error => {
+  return me.error;
+};

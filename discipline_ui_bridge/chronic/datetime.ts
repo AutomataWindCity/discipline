@@ -1,4 +1,4 @@
-import { Time, Duration, withVirtualKey, Branded } from "../mod.ts";
+import { Time, Duration, Branded, Tried } from "../mod.ts";
 
 const BRAND = Symbol();
 
@@ -45,3 +45,33 @@ export const sinceOrZero = (lhs: DateTime, rhs: DateTime): Duration.Duration => 
 //     return lhs.inner.getTime() === rhs.inner.getTime();
 //   },
 // });
+
+export const timestamp = (me: DateTime): number => {
+  return me.getTime();
+};
+
+// JS Date supports roughly ±8.64e15 ms
+const MIN_TIMESTAMP = -8.64e15;
+const MAX_TIMESTAMP = 8.64e15;
+
+export const fromTimestamp = (timestamp: number): Tried.Tried<DateTime, Error> => {
+  if (!Number.isInteger(timestamp)) {
+    return Tried.Failure(new Error(`Creating DateTime from timestamp: Timestamp is not integer. Timestamp: ${timestamp}`));
+  }
+
+  if (timestamp < MIN_TIMESTAMP) {
+    return Tried.Failure(new Error(`Creating DateTime from timestamp: Timestamp is less than the minimum value. Timestamp: ${timestamp}. Minimum value: ${MIN_TIMESTAMP}`))
+  }
+  
+  if (timestamp > MAX_TIMESTAMP) {
+    return Tried.Failure(new Error(`Creating DateTime from timestamp: Timestamp is greater than the maximum value. Timestamp: ${timestamp}. Maximum value: ${MAX_TIMESTAMP}`))
+  }
+
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return Tried.Failure(new Error(`Creating DateTime from timestamp: Timestamp didn't produce a valid DateTime for some reason 😭. Timestamp: ${timestamp}`));
+  }
+
+  return Tried.Success(Branded(BRAND, date));
+};
