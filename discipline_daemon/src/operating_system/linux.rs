@@ -1,3 +1,5 @@
+mod x;
+mod n;
 use std::ffi::CString;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -13,10 +15,21 @@ impl UserId {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UserName {
   inner: CString
 }
 
-pub struct UserInfo {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PerUserInfo {
   user_name: UserName,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CrossUserInfo {
+
+}
+
+pub fn get_user_name_given_user_() {
+
 }

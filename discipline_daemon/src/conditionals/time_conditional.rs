@@ -29,3 +29,20 @@ impl TimeConditional {
     self.weekday_set
   }
 }
+
+// TODO: Implement Serialize manually and validate that time_range is ...
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Creator {
+  time_range: TimeRange,
+  weekday_set: WeekdaySet,
+}
+
+impl Creator {
+  pub fn create(self) -> TimeConditional {
+    TimeConditional { 
+      time_range: self.time_range, 
+      weekday_set: self.weekday_set,
+    }
+  }
+}

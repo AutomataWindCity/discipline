@@ -30,10 +30,10 @@
 // impl DeserializableCompoundValue for TimeRange {
 //   type Schema = TimeRangeSchema;
 
-//   fn deserialize(reader: &mut impl CompoundValueReader, schema: &Self::Schema) -> Result<Self, TextualError> {
+//   fn deserialize(source: &mut impl CompoundValueSource, schema: &Self::Schema) -> Result<Self, TextualError> {
 //     Ok(TimeRange::from_times(
-//       reader.read_scalar_value(schema.from)?, 
-//       reader.read_scalar_value(schema.till)?,
+//       source.read_scalar_value(schema.from)?, 
+//       source.read_scalar_value(schema.till)?,
 //     ))
 //   }
 // }

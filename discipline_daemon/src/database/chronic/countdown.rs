@@ -1,4 +1,4 @@
-use crate::x::{Countdown, TextualError};
+use crate::x::{Countdown, DateTime, Duration, TextualError};
 use crate::x::database::*;
 
 pub struct CountdownSchema {
@@ -72,5 +72,20 @@ impl DeserializableCompoundValue for Option<Countdown> {
         None
       }
     })
+  }
+}
+
+pub trait CountdownUpdateWriter {
+  fn write_remaining_duration(&self, updates: &mut CollectionItemUpdates, new_value: Duration);
+  fn write_previous_synchronization_time(&self, updates: &mut CollectionItemUpdates, new_value: DateTime);
+}
+
+impl CountdownUpdateWriter for CountdownSchema {
+  fn write_remaining_duration(&self, updates: &mut CollectionItemUpdates, new_value: Duration) {
+    updates.write_scalar_value(self.remaining_duration, &new_value);
+  }
+
+  fn write_previous_synchronization_time(&self, updates: &mut CollectionItemUpdates, new_value: DateTime) {
+    updates.write_scalar_value(self.previous_synchronization_time, &new_value);
   }
 }

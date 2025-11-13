@@ -1,4 +1,5 @@
-use std::any::type_name;
+use std::{any::type_name, marker::PhantomData, sync::Arc};
+use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
 use crate::x::TextualError;
 
@@ -7,11 +8,19 @@ pub struct SqlCode {
 }
 
 impl SqlCode {
+  pub fn new() -> Self {
+    Self {
+      value: String::new(),
+    }
+  }
   pub fn write(&mut self, str: &str) {
     self.value.push_str(str);
   }
   pub fn write_char(&mut self, character: char) {
     self.value.push(character);
+  }
+  pub fn as_str(&self) -> &str {
+    &self.value
   }
 }
 
@@ -486,7 +495,7 @@ pub struct Key {
 }
 
 impl Key {
-  pub fn new(value: &'static str) -> Self {
+  pub const fn new(value: &'static str) -> Self {
     Self {
       value
     }
@@ -503,6 +512,12 @@ pub trait SerializableCompoundValue {
   fn serialize(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter);
 }
 
+pub trait CompoundValueSerializer {
+  type Schema;
+
+  fn serialize(&self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter);
+}
+
 pub trait CompoundValueWriter {
   fn write_null(&mut self, key: Key);
 
@@ -513,15 +528,30 @@ pub trait CompoundValueWriter {
   fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
   where 
     T: SerializableCompoundValue;
+
+    
+  fn write_compound_value_with_serializer<T>(&mut self, schema: &T::Schema, serializer: &T)
+  where 
+    T: CompoundValueSerializer;
 }
 
-pub struct CompoundValueInsertWriter {
+pub struct CompoundValueAddWriter {
   keys: SqlCode,
   values: SqlCode,
   did_write_some_values: bool,
 }
 
-impl CompoundValueWriter for CompoundValueInsertWriter {
+impl CompoundValueAddWriter {
+  pub fn new() -> Self {
+    Self {
+      keys: SqlCode::new(),
+      values: SqlCode::new(),
+      did_write_some_values: false,
+    }
+  }
+}
+
+impl CompoundValueWriter for CompoundValueAddWriter {
   fn write_null(&mut self, key: Key) {
     if self.did_write_some_values {
       self.keys.write(", ");
@@ -555,6 +585,32 @@ impl CompoundValueWriter for CompoundValueInsertWriter {
   {
     T::serialize(value, schema, self);
   }
+
+  fn write_compound_value_with_serializer<T>(&mut self, schema: &T::Schema, serializer: &T)
+  where 
+    T: CompoundValueSerializer 
+  {
+    serializer.serialize(schema, self);
+  }
+}
+
+pub fn serialize_compound_value_with_serializer<T>(
+  code: &mut SqlCode,
+  schema: &T::Schema,
+  serializer: &T,
+) 
+where 
+  T: CompoundValueSerializer
+{
+  let mut writer = CompoundValueAddWriter::new();
+  writer.write_compound_value_with_serializer(schema, serializer);
+
+  // TODO: Panic if no fields were written
+  code.write("(");
+  code.write(&writer.keys.value);
+  code.write(") VALUES (");
+  code.write(&writer.values.value);
+  code.write(")");
 }
 
 pub trait CompoundValueReader {
@@ -609,5 +665,107 @@ impl<'a> CompoundValueReader for SomeCompoundValueReader<'a> {
         .with_context(format!("Reading a compound value of type {} from CompoundValueReader", type_name::<T>()))
         .with_message(format!("The DeserializableCompoundValue implementation for {} returned an error", type_name::<T>()))
     })
+  }
+}
+
+pub struct Connection {
+  inner: Arc<Mutex<rusqlite::Connection>>
+}
+
+pub enum ExecuteError {
+  Fatal(rusqlite::Error),
+  DuplicatePrimaryKeyViolation
+}
+
+impl Connection {
+  pub async fn execute(&self, code: &SqlCode) -> Result<(), ExecuteError> {
+    let Err(error) = self.inner.lock().await.execute_batch(code.as_str()) else {
+      return Ok(());
+    };
+    
+    let sqlite_extended_error_code = match error {
+      rusqlite::Error::SqliteFailure(error, _) => {
+        error.extended_code
+      }
+      other => {
+        return Err(ExecuteError::Fatal(other));
+      }
+    };
+
+    match sqlite_extended_error_code {
+      libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
+        Err(ExecuteError::DuplicatePrimaryKeyViolation)
+      }
+      _ => {
+        Err(ExecuteError::Fatal(error))
+      }
+    }
+  }
+}
+
+pub struct CollectionItemUpdates {
+  code: SqlCode,
+  did_write_some_updates: bool,
+}
+
+impl CollectionItemUpdates {
+  pub fn new() -> Self {
+    Self {
+      code: SqlCode::new(),
+      did_write_some_updates: false,
+    }
+  }
+}
+
+impl CollectionItemUpdates {
+  pub fn inner(&self) -> Option<&str> {
+    if self.did_write_some_updates {
+      Some(self.code.as_str())
+    } else {
+      None
+    }
+  }
+}
+
+impl CompoundValueWriter for CollectionItemUpdates {
+  fn write_null(&mut self, key: Key) {
+    if self.did_write_some_updates {
+      self.code.write(", ");
+    } else {
+      self.did_write_some_updates = true;
+    }
+
+    self.code.write(key.as_str());
+    self.code.write(" = ");
+    self.code.write("NULL");
+  }
+
+  fn write_scalar_value<T>(&mut self, key: Key, value: &T)
+  where 
+    T: SerializableScalarValue 
+  {
+    if self.did_write_some_updates {
+      self.code.write(", ");
+    } else {
+      self.did_write_some_updates = true;
+    }
+
+    self.code.write(key.as_str());
+    self.code.write(" = ");
+    serialize_scalar_value(&mut self.code, value);
+  }
+
+  fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
+  where 
+    T: SerializableCompoundValue 
+  {
+    T::serialize(value, schema, self);
+  }
+
+  fn write_compound_value_with_serializer<T>(&mut self, schema: &T::Schema, serializer: &T)
+  where 
+    T: CompoundValueSerializer 
+  {
+    serializer.serialize(schema, self);
   }
 }

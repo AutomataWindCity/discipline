@@ -1,16 +1,53 @@
-pub use uuid::Bytes;
+use std::str::FromStr;
+pub use uuid::{Bytes, Uuid, Error};
+use crate::x::{ToTextualError, TextualErrorContext};
+
+pub enum CreateFromStringError {
+  X(Error)
+}
+
+impl ToTextualError for CreateFromStringError {
+  fn to_textual_error_context(&self) -> TextualErrorContext {
+    let mut context = TextualErrorContext::new("Creating UuidV4 from string");
+
+    match self {
+      Self::X(error) => {
+        context.add_message("String is malformed");
+        context.add_attachement_display("Parsing error", error);
+      }
+    }
+
+    context
+  }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UuidV4 {
-  uuid: uuid::Uuid,
+  inner: Uuid,
 }
 
 impl UuidV4 {
   pub fn generate() -> Self {
     Self {
-      uuid: uuid::Uuid::new_v4(),
+      inner: Uuid::new_v4(),
     }
   }
+
+  pub fn from_string(string: &str) -> Result<Self, CreateFromStringError> {
+    match Uuid::from_str(string) {
+      Ok(inner) => {
+        Ok(UuidV4 { inner })
+      }
+      Err(error) => {
+        Err(CreateFromStringError::X(error))
+      }
+    }
+  }
+
+  pub fn to_string(&self) -> String {
+    self.inner.to_string()
+  }
+
 }
 
 mod serialization {
@@ -23,7 +60,7 @@ mod serialization {
     where
       S: Serializer,
     {
-      self.uuid.as_bytes().serialize(serializer)
+      self.inner.as_bytes().serialize(serializer)
     }
   }
 
@@ -58,7 +95,7 @@ mod serialization {
         ));
       }
 
-      Ok(UuidV4 { uuid })
+      Ok(UuidV4 { inner: uuid })
     }
   }
 }

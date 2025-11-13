@@ -8,6 +8,7 @@ pub mod users;
 pub mod daemon;
 pub mod database;
 pub mod x;
+pub mod procedures;
 
 fn main() {
   println!("Hello, world!");

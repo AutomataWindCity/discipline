@@ -83,3 +83,15 @@ impl TimeRange {
     self.from <= time && self.till >= time
   }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Creator {
+  from: Time,
+  till: Time,
+}
+
+impl Creator {
+  pub fn create(self) -> TimeRange {
+    TimeRange::from_times(self.from, self.till)
+  }
+}

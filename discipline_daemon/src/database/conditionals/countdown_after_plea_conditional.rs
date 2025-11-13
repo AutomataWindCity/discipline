@@ -120,7 +120,7 @@ impl DeserializableCompoundValue for CountdownAfterPleaConditional {
       }
     };
     
-    Ok(CountdownAfterPleaConditional::from_fields(
+    Ok(CountdownAfterPleaConditional::construct(
       duration, 
       status,
     ))

@@ -7,10 +7,17 @@ pub struct CountdownConditionalSchema {
 }
 
 impl CountdownConditionalSchema {
-  pub fn new(duration: Key, countdown: CountdownSchema) -> Self {
+  pub fn new(
+    duration: Key, 
+    countdown_remaining_duration: Key,
+    countdown_previous_synchronization_time: Key,
+  ) -> Self {
     Self {
       duration,
-      countdown,
+      countdown: CountdownSchema::new(
+        countdown_remaining_duration, 
+        countdown_previous_synchronization_time,
+      ),
     }
   }
 }

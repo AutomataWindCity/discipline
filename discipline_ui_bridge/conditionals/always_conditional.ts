@@ -1,4 +1,4 @@
-import { Branded, EmptyObject } from "../mod.ts";
+import { Branded, type EmptyObject } from "../mod.ts";
 
 const BRAND = Symbol();
 

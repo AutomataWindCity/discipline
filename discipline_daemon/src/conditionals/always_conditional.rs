@@ -15,3 +15,14 @@ impl AlwaysConditional {
     true
   }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Creator {
+  __private: PhantomData<()>
+}
+
+impl Creator {
+  pub fn create(self) -> AlwaysConditional {
+    AlwaysConditional::new()
+  }
+}

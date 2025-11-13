@@ -1,11 +1,5 @@
+pub mod rules_x;
 
-// RuleActionConditional
-// RuleGuardConditional
-// action_conditional
-// is_activated
-// is_effective
-// is_protected
-// protection_conditional
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
@@ -35,8 +29,8 @@ pub enum RuleProtectionConditional {
 impl RuleProtectionConditional {
   pub fn evaluate(&self) -> bool {
     match self {
-      RuleProtectionConditional::Countdown(inner) => inner.evaluate(),
-      RuleProtectionConditional::CountdownAfterPlea(inner) => inner.evaluate(),
+      RuleProtectionConditional::Countdown(inner) => inner.is_activated(),
+      RuleProtectionConditional::CountdownAfterPlea(inner) => inner.is_activated_or_deactivating(),
     }
   }
 
@@ -85,6 +79,26 @@ impl Rule {
     }
   }
 
+  pub fn construct(
+    is_activated: bool,
+    action_conditional: RuleActionConditional,
+    protection_conditional: RuleProtectionConditional,
+  ) -> Self {
+    Self {
+      is_activated,
+      action_conditional,
+      protection_conditional,
+    }
+  }
+  
+  pub fn action_conditional(&self) -> &RuleActionConditional {
+    &self.action_conditional
+  }
+
+  pub fn protection_conditional(&self) -> &RuleProtectionConditional {
+    &self.protection_conditional
+  }
+
   pub fn is_activated(&self) -> bool {
     self.is_activated
   }
@@ -111,5 +125,61 @@ impl RuleGroup {
       rules: HashMap::new(),
       maximum_rule_number,
     }
+  }
+}
+
+pub mod operations {
+  use crate::x::{RuleProtectionConditional, UuidV4, countdown_after_plea_conditional, countdown_conditional};
+
+  // DaemonUsersRegulationBlockInternetAddRule
+  // DaemonUsersRegulationBlockInternetDeleteRule
+  // DaemonUsersRegulationBlockInternetActivateRule
+  // DaemonUsersRegulationBlockInternetDeactivateRule
+
+  // ProtectionConditionalTypeMismatch
+  // AlreadyActivated
+
+  pub enum RuleProtectionConditionalActivate {
+    Countdown(countdown_conditional::operations::Activate),
+    CountdownAfterPlea(countdown_after_plea_conditional::operations::Activate),
+  }
+
+  pub enum RuleProtectionConditionalActivateReturn {
+    TypeMismatch,
+    Countdown(countdown_conditional::operations::ActivateReturn),
+    CountdownAfterPlea(countdown_after_plea_conditional::operations::ActivateReturn),
+  }
+  
+  impl RuleProtectionConditionalActivate {
+    pub fn execute(
+      self,
+      conditional: &mut RuleProtectionConditional,
+    ) -> RuleProtectionConditionalActivateReturn {
+      match (self, conditional) {
+        (
+          RuleProtectionConditionalActivate::Countdown(operation), 
+          RuleProtectionConditional::Countdown(conditional)
+        ) => {
+          RuleProtectionConditionalActivateReturn::Countdown(
+            operation.execute(conditional)
+          )
+        }
+        (
+          RuleProtectionConditionalActivate::CountdownAfterPlea(operation), 
+          RuleProtectionConditional::CountdownAfterPlea(conditional)
+        ) => {
+          RuleProtectionConditionalActivateReturn::CountdownAfterPlea(
+            operation.execute(conditional)
+          )
+        }
+        _ => {
+          RuleProtectionConditionalActivateReturn::TypeMismatch
+        }
+      }
+    }
+  }
+
+  pub struct Activate {
+
   }
 }
