@@ -9,5 +9,5 @@ pub struct DaemonLaunchConfiguration {
 
 pub struct Daemon {
   launch_configuration: DaemonLaunchConfiguration,
-  users: UserGroup,
+  pub users: UserGroup,
 }

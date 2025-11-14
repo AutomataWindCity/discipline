@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerUserInfo {
-
+  pub block_device_access: block_device_access::BlockDeviceAccess,
 }
 
 

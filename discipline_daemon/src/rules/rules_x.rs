@@ -98,7 +98,7 @@ impl RuleProtectionConditional {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuleX {
   is_activated: bool,
   action_conditional: RuleActionConditionalX,
@@ -157,9 +157,10 @@ impl RuleX {
   }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuleGroupX {
-  rules: HashMap<UuidV4, RuleX>,
-  maximum_rule_number: usize,
+  pub rules: HashMap<UuidV4, RuleX>,
+  pub maximum_rule_number: usize,
 }
 
 impl RuleGroupX {
@@ -211,21 +212,24 @@ impl RuleProtectionConditionalCreator {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuleCreator {
-  id: Option<UuidV4>,
-  action_conditional: RuleActionConditionalCreator,
-  protection_conditional: RuleProtectionConditionalCreator,
+  pub id: Option<UuidV4>,
+  pub action_conditional: RuleActionConditionalCreator,
+  pub protection_conditional: RuleProtectionConditionalCreator,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AddRuleError {
   BadUuidV4TryAgain,
   ReachedMaximumRulesAllowedDeleteSomeAndTryAgain,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DeleteRuleSuccess {
   NoSuchRule,
   Success,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DeleteRuleError {
   RuleIsProtected,
 }
@@ -234,7 +238,7 @@ impl RuleGroupX {
   pub fn add_rule_given_rule_creator(
     &mut self, 
     rule_creator: RuleCreator,
-  ) -> Result<(), AddRuleError> {
+  ) -> Result<(UuidV4, RuleX), AddRuleError> {
     if self.rules.len() >= self.maximum_rule_number {
       return Err(AddRuleError::ReachedMaximumRulesAllowedDeleteSomeAndTryAgain);
     }
@@ -249,8 +253,8 @@ impl RuleGroupX {
       rule_creator.protection_conditional.create(),
     );
 
-    self.rules.insert(id, rule);
-    Ok(())
+    self.rules.insert(id.clone(), rule.clone());
+    Ok((id, rule))
   }
 
   pub fn delete_rule_given_rule_id(
@@ -269,54 +273,51 @@ impl RuleGroupX {
     self.rules.remove(rule_id);
     Ok(DeleteRuleSuccess::Success)
   }
+
+  pub fn force_delete_rule_if_exists(&mut self, rule_id: &UuidV4) {
+    self.rules.remove(rule_id);
+  }
 }
 
-pub mod operations {
-  use crate::x::{RuleProtectionConditional, UuidV4, countdown_after_plea_conditional, countdown_conditional};
+pub mod procedures {
+  use crate::{rules::rules_x::{RuleProtectionConditionalX, RuleX}, x::{InstantX, RuleProtectionConditional, countdown_after_plea_conditional_x, countdown_conditional, countdown_conditional_x}};
 
-  // DaemonUsersRegulationBlockInternetAddRule
-  // DaemonUsersRegulationBlockInternetDeleteRule
-  // DaemonUsersRegulationBlockInternetActivateRule
-  // DaemonUsersRegulationBlockInternetDeactivateRule
-
-  // ProtectionConditionalTypeMismatch
-  // AlreadyActivated
-
-  pub enum RuleProtectionConditionalActivate {
-    Countdown(countdown_conditional::operations::Activate),
-    CountdownAfterPlea(countdown_after_plea_conditional::operations::Activate),
+  pub enum ProtectionConditionalProcedure {
+    Countdown(countdown_conditional_x::procedures::Procedure),
+    CountdownAfterPlea(countdown_after_plea_conditional_x::procedures::Procedure),
   }
 
-  pub enum RuleProtectionConditionalActivateReturn {
-    TypeMismatch,
-    Countdown(countdown_conditional::operations::ActivateReturn),
-    CountdownAfterPlea(countdown_after_plea_conditional::operations::ActivateReturn),
+  pub enum ProtectionConditionalProcedureReturn {
+    VariantMismatch,
+    Countdown(countdown_conditional_x::procedures::Return),
+    CountdownAfterPlea(countdown_after_plea_conditional_x::procedures::Return),
   }
   
-  impl RuleProtectionConditionalActivate {
+  impl ProtectionConditionalProcedure {
     pub fn execute(
       self,
-      conditional: &mut RuleProtectionConditional,
-    ) -> RuleProtectionConditionalActivateReturn {
+      instant: InstantX,
+      conditional: &mut RuleProtectionConditionalX,
+    ) -> ProtectionConditionalProcedureReturn {
       match (self, conditional) {
         (
-          RuleProtectionConditionalActivate::Countdown(operation), 
-          RuleProtectionConditional::Countdown(conditional)
+          ProtectionConditionalProcedure::Countdown(operation), 
+          RuleProtectionConditionalX::Countdown(conditional)
         ) => {
-          RuleProtectionConditionalActivateReturn::Countdown(
-            operation.execute(conditional)
+          ProtectionConditionalProcedureReturn::Countdown(
+            operation.execute(instant, conditional)
           )
         }
         (
-          RuleProtectionConditionalActivate::CountdownAfterPlea(operation), 
-          RuleProtectionConditional::CountdownAfterPlea(conditional)
+          ProtectionConditionalProcedure::CountdownAfterPlea(operation), 
+          RuleProtectionConditionalX::CountdownAfterPlea(conditional)
         ) => {
-          RuleProtectionConditionalActivateReturn::CountdownAfterPlea(
-            operation.execute(conditional)
+          ProtectionConditionalProcedureReturn::CountdownAfterPlea(
+            operation.execute(instant, conditional)
           )
         }
         _ => {
-          RuleProtectionConditionalActivateReturn::TypeMismatch
+          ProtectionConditionalProcedureReturn::VariantMismatch
         }
       }
     }
@@ -324,5 +325,13 @@ pub mod operations {
 
   pub struct Activate {
 
+  }
+
+  pub trait DatabaseProcedures {
+    fn add_rule(&self, rule: &RuleX) -> Result<(), ()>;
+  }
+  
+  pub struct CreateRule {
+    // rule_creator
   }
 }

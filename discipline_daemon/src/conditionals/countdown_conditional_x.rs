@@ -55,7 +55,7 @@ pub mod snapshoot {
   }
 }
 
-pub mod operations {
+pub mod procedures {
   use serde::{Serialize, Deserialize};
   use crate::x::{InstantX, CountdownConditionalX};
 
@@ -79,29 +79,25 @@ pub mod operations {
     }
   }
 
-  pub enum Operation {
+  pub enum Procedure {
     Activate(Activate),
   }
 
-  pub enum OperationReturn {
+  pub enum Return {
     Activate(ActivateReturn),
   }
 
-  impl Operation {
+  impl Procedure {
     pub fn execute(
       self, 
       instant: InstantX, 
       conditional: &mut CountdownConditionalX,
-    ) -> OperationReturn {
+    ) -> Return {
       match self {
-        Operation::Activate(operation) => {
-          OperationReturn::Activate(operation.execute(instant, conditional))
+        Procedure::Activate(operation) => {
+          Return::Activate(operation.execute(instant, conditional))
         }
       }
     }
   }
-}
-
-pub mod database {
-  
 }

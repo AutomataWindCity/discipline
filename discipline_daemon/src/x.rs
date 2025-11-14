@@ -44,3 +44,6 @@ pub use crate::users::user_group::UserGroup;
 pub use crate::database;
 
 pub use crate::rules::{Rule, RuleActionConditional, RuleProtectionConditional, RuleGroup, self};
+pub use crate::rules::rules_x;
+
+pub use crate::daemon::Daemon;

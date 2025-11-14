@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
 use crate::{rules::rules_x, x::RuleGroup};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockDeviceAccess {
   pub rules: rules_x::RuleGroupX,
 }

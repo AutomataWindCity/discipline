@@ -1,5 +1,3 @@
-use crate::database::{Connection, SqlCode};
-
 pub mod rule;
 pub mod rule_action_conditional;
 pub mod rule_protection_conditional;
