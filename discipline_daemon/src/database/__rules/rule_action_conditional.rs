@@ -2,12 +2,12 @@ use crate::x::TextualError;
 use crate::x::rules::*;
 use crate::x::database::*;
 
-enum RuleActionConditionalType {
+enum RuleActivatorType {
   Time,
   Always,
 }
 
-impl RuleActionConditionalType {
+impl RuleActivatorType {
   const TIME: u8 = 0;
   const ALWAYS: u8 = 1;
 
@@ -21,7 +21,7 @@ impl RuleActionConditionalType {
       }
       other => {
         Err(
-          TextualError::new(format!("Creating RuleActionConditionalType from number where valid values are {} (for Time) and {} (for Always)", Self::TIME, Self::ALWAYS))
+          TextualError::new(format!("Creating RuleActivatorType from number where valid values are {} (for Time) and {} (for Always)", Self::TIME, Self::ALWAYS))
             .with_message("Number is invalid")
             .with_attachement_display("Number", other)
         )
@@ -37,27 +37,27 @@ impl RuleActionConditionalType {
   }
 }
 
-impl SerializableScalarValue for RuleActionConditionalType {
+impl SerializableScalarValue for RuleActivatorType {
   fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
     writer.write_scalar_value(&value.to_number());
   }
 }
 
-impl DeserializableScalarValue for RuleActionConditionalType {
+impl DeserializableScalarValue for RuleActivatorType {
   fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
     reader
       .read_scalar_value()
-      .and_then(RuleActionConditionalType::from_number)
+      .and_then(RuleActivatorType::from_number)
   }
 }
 
-pub struct RuleActionConditionalSchema {
+pub struct RuleActivatorSchema {
   enum_type: Key,
   enum_time: TimeConditionalSchema,
   enum_always: AlwaysConditionalSchema,
 }
 
-impl RuleActionConditionalSchema {
+impl RuleActivatorSchema {
   pub fn new(
     enum_type: Key,
     enum_data_1: Key,
@@ -76,37 +76,37 @@ impl RuleActionConditionalSchema {
   }
 }
 
-impl SerializableCompoundValue for RuleActionConditional {
-  type Schema = RuleActionConditionalSchema;
+impl SerializableCompoundValue for RuleActivator {
+  type Schema = RuleActivatorSchema;
 
   fn serialize(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter) {
     match value {
-      RuleActionConditional::Time(inner) => {
-        writer.write_scalar_value(schema.enum_type, &RuleActionConditionalType::Time);;
+      RuleActivator::Time(inner) => {
+        writer.write_scalar_value(schema.enum_type, &RuleActivatorType::Time);;
         writer.write_compound_value(&schema.enum_time, inner);
       }
-      RuleActionConditional::Alwaus(inner) => {
-        writer.write_scalar_value(schema.enum_type, &RuleActionConditionalType::Always);
+      RuleActivator::Alwaus(inner) => {
+        writer.write_scalar_value(schema.enum_type, &RuleActivatorType::Always);
         writer.write_compound_value(&schema.enum_always, inner);
       }
     }
   }
 }
 
-impl DeserializableCompoundValue for RuleActionConditional {
-  type Schema = RuleActionConditionalSchema;
+impl DeserializableCompoundValue for RuleActivator {
+  type Schema = RuleActivatorSchema;
 
   fn deserialize(reader: &mut impl CompoundValueReader, schema: &Self::Schema) -> Result<Self, TextualError> {
     let enum_type = reader.read_scalar_value(schema.enum_type)?;
     
     Ok(match enum_type {
-      RuleActionConditionalType::Time => {
-        RuleActionConditional::Time(
+      RuleActivatorType::Time => {
+        RuleActivator::Time(
           reader.read_compound_value(&schema.enum_time)?
         )
       }
-      RuleActionConditionalType::Always => {
-        RuleActionConditional::Alwaus(
+      RuleActivatorType::Always => {
+        RuleActivator::Alwaus(
           reader.read_compound_value(&schema.enum_always)?
         )
       }

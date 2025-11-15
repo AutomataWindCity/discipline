@@ -1,4 +1,4 @@
-use std::{any::type_name, marker::PhantomData, sync::Arc};
+use std::{any::type_name, sync::Arc};
 use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
 use crate::x::TextualError;
@@ -13,152 +13,32 @@ impl SqlCode {
       value: String::new(),
     }
   }
+  
   pub fn write(&mut self, str: &str) {
     self.value.push_str(str);
+  }
+  
+  pub fn write_key(&mut self, key: Key) {
+    
   }
   pub fn write_char(&mut self, character: char) {
     self.value.push(character);
   }
+
+  pub fn write_scalar_value(&mut self, value: &impl WriteScalarValue) {
+    WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
+  }
+
   pub fn as_str(&self) -> &str {
     &self.value
   }
 }
 
-pub struct ScalarValueWrtier<'a> {
-  code: &'a mut SqlCode,
-}
-
-impl<'a> ScalarValueWrtier<'a> {
-  pub fn new(code: &'a mut SqlCode) -> Self {
-    Self {
-      code
-    }
-  }
-
-  pub fn write_scalar_value<T>(&mut self, value: &T)
-  where 
-    T: SerializableScalarValue 
-  {
-    T::serialize(value, self);
-  }
-}
-
-pub fn serialize_scalar_value<T>(code: &mut SqlCode, value: &T)
-where
-  T: SerializableScalarValue
-{
-  T::serialize(value, &mut ScalarValueWrtier::new(code));
-}
-
-pub trait SerializableScalarValue {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier);
-}
-
-impl SerializableScalarValue for u8 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for u16 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for u32 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for u64 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for usize {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for i8 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for i16 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for i32 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for i64 {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for isize {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(value.to_string().as_str());
-  }
-}
-
-impl SerializableScalarValue for bool {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write(if *value {
-      "TRUE"
-    } else {
-      "FALSE"
-    });
-  }
-}
-
-impl SerializableScalarValue for String {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    writer.code.write_char('\'');
-    for char in value.chars() {
-      if char == '\'' {
-        writer.code.write("''");
-      } else {
-        writer.code.write_char(char);
-      }
-    }
-    writer.code.write_char('\'');
-  }
-}
-
-impl<T> SerializableScalarValue for Option<T>
-where 
-  T: SerializableScalarValue
-{
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
-    match value {
-      None => {
-        writer.code.write("NULL");
-      }
-      Some(value) => {
-        T::serialize(value, writer);
-      }
-    }
-  }
-}
-
-pub struct ScalarValueReader<'a> {
+pub struct ScalarValueReadSource<'a> {
   value_ref: ValueRef<'a>
 }
 
-impl<'a> ScalarValueReader<'a> {
+impl<'a> ScalarValueReadSource<'a> {
   pub fn new(value_ref: ValueRef<'a>) -> Self {
     Self {
       value_ref
@@ -167,27 +47,25 @@ impl<'a> ScalarValueReader<'a> {
 
   pub fn read_scalar_value<T>(&mut self) -> Result<T, TextualError>
   where 
-    T: DeserializableScalarValue
+    T: ReadScalarValue
   {
-    T::deserialize(self)
+    T::read(self)
   }
 }
 
-pub fn deserialize_scalar_value<T>(
-  value_ref: ValueRef,
-) -> Result<T, TextualError> 
+fn read_scalar_value<T>(value_ref: ValueRef) -> Result<T, TextualError> 
 where 
-  T: DeserializableScalarValue
+  T: ReadScalarValue
 {
-  T::deserialize(&mut ScalarValueReader { value_ref })
+  T::read(&mut ScalarValueReadSource { value_ref })
 }
 
-pub trait DeserializableScalarValue: Sized {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError>;
+pub trait ReadScalarValue: Sized {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError>;
 }
 
-impl DeserializableScalarValue for u8 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for u8 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -210,8 +88,8 @@ impl DeserializableScalarValue for u8 {
   }
 }
 
-impl DeserializableScalarValue for u16 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for u16 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -234,8 +112,8 @@ impl DeserializableScalarValue for u16 {
   }
 }
 
-impl DeserializableScalarValue for u32 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for u32 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -258,8 +136,8 @@ impl DeserializableScalarValue for u32 {
   }
 }
 
-impl DeserializableScalarValue for u64 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for u64 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -282,8 +160,8 @@ impl DeserializableScalarValue for u64 {
   }
 }
 
-impl DeserializableScalarValue for usize {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for usize {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -306,8 +184,8 @@ impl DeserializableScalarValue for usize {
   }
 }
 
-impl DeserializableScalarValue for i8 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for i8 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -330,8 +208,8 @@ impl DeserializableScalarValue for i8 {
   }
 }
 
-impl DeserializableScalarValue for i16 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for i16 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -354,8 +232,8 @@ impl DeserializableScalarValue for i16 {
   }
 }
 
-impl DeserializableScalarValue for i32 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for i32 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -378,8 +256,8 @@ impl DeserializableScalarValue for i32 {
   }
 }
 
-impl DeserializableScalarValue for i64 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for i64 {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -402,8 +280,8 @@ impl DeserializableScalarValue for i64 {
   }
 }
 
-impl DeserializableScalarValue for isize {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for isize {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
         number
@@ -426,8 +304,8 @@ impl DeserializableScalarValue for isize {
   }
 }
 
-impl DeserializableScalarValue for bool {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for bool {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     match reader.value_ref {
       ValueRef::Integer(0) => {
         Ok(false)
@@ -446,8 +324,8 @@ impl DeserializableScalarValue for bool {
   }
 }
 
-impl DeserializableScalarValue for String {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for String {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let bytes = match reader.value_ref {
       ValueRef::Text(bytes) => {
         bytes
@@ -470,22 +348,152 @@ impl DeserializableScalarValue for String {
   }
 }
 
-impl<T> DeserializableScalarValue for Option<T>
+impl<T> ReadScalarValue for Option<T>
 where 
-  T: DeserializableScalarValue
+  T: ReadScalarValue
 {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     if reader.value_ref == ValueRef::Null {
       return Ok(None);
     }
     
-    T::deserialize(reader)
+    T::read(reader)
       .map(Some)
       .map_err(|error| {
         error
           .with_context(format!("Reading {} from ScalarValueReader", type_name::<Self>()))
           .with_message(format!("Value is not Null and the DeserializableScalarValue implementatio for {} returned an error", type_name::<T>()))
       })
+  }
+}
+
+pub struct ScalarValueWriteDestination<'a> {
+  code: &'a mut SqlCode,
+}
+
+impl<'a> ScalarValueWriteDestination<'a> {
+  pub fn new(code: &'a mut SqlCode) -> Self {
+    Self {
+      code
+    }
+  }
+
+  pub fn write_scalar_value<T>(&mut self, value: &T)
+  where 
+    T: WriteScalarValue 
+  {
+    T::write(value, self);
+  }
+}
+
+fn write_scalar_value<T>(code: &mut SqlCode, value: &T)
+where
+  T: WriteScalarValue
+{
+  T::write(value, &mut ScalarValueWriteDestination::new(code));
+}
+
+pub trait WriteScalarValue {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination);
+}
+
+impl WriteScalarValue for u8 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for u16 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for u32 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for u64 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for usize {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for i8 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for i16 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for i32 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for i64 {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for isize {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(value.to_string().as_str());
+  }
+}
+
+impl WriteScalarValue for bool {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write(if *value {
+      "TRUE"
+    } else {
+      "FALSE"
+    });
+  }
+}
+
+impl WriteScalarValue for String {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write_char('\'');
+    for char in value.chars() {
+      if char == '\'' {
+        writer.code.write("''");
+      } else {
+        writer.code.write_char(char);
+      }
+    }
+    writer.code.write_char('\'');
+  }
+}
+
+impl<T> WriteScalarValue for Option<T>
+where 
+  T: WriteScalarValue
+{
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    match value {
+      None => {
+        writer.code.write("NULL");
+      }
+      Some(value) => {
+        T::write(value, writer);
+      }
+    }
   }
 }
 
@@ -506,42 +514,97 @@ impl Key {
   }
 }
 
-pub trait SerializableCompoundValue {
-  type Schema;
+pub trait CompoundValueReadSource {
+  fn read_scalar_value<T>(&mut self, key: Key) -> Result<T, TextualError>
+  where 
+    T: ReadScalarValue;
 
-  fn serialize(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter);
+  fn read_compound_value<T>(&mut self, schema: &T::Schema) -> Result<T, TextualError>
+  where 
+    T: ReadCompoundValue;
 }
 
-pub trait CompoundValueSerializer {
+pub trait ReadCompoundValue: Sized {
   type Schema;
 
-  fn serialize(&self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter);
+  fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError>;
 }
 
-pub trait CompoundValueWriter {
+pub struct CompoundValueReadSourceForSelect<'a> {
+  inner: rusqlite::Row<'a>
+}
+
+impl<'a> CompoundValueReadSource for CompoundValueReadSourceForSelect<'a> {
+  fn read_scalar_value<T>(&mut self, key: Key) -> Result<T, TextualError>
+  where 
+    T: ReadScalarValue 
+  {
+    self
+      .inner
+      .get_ref(key.as_str())
+      .map_err(|error| {
+        TextualError::new(format!("Reading a scalar value of type {} from CompoundValueReader", type_name::<T>()))
+          .with_message("SQLite returned an error when reading the corresponding column")
+          .with_attachement_display("Field name", key.as_str())
+          .with_attachement_display("SQLite error", error)
+      })
+      .and_then(read_scalar_value)
+      .map_err(|error| {
+        error
+          .with_context(format!("Reading a scalar value of type {} from CompoundValueReader", type_name::<T>()))
+          .with_message(format!("The DeserializableScalarValue implementation for {} returned an error", type_name::<T>()))
+          .with_attachement_display("Field name", key.as_str())
+      })
+  }
+
+  fn read_compound_value<T>(&mut self, schema: &T::Schema) -> Result<T, TextualError>
+  where 
+    T: ReadCompoundValue 
+  {
+    T::deserialize(self, schema).map_err(|error| {
+      error
+        .with_context(format!("Reading a compound value of type {} from CompoundValueReader", type_name::<T>()))
+        .with_message(format!("The DeserializableCompoundValue implementation for {} returned an error", type_name::<T>()))
+    })
+  }
+}
+
+pub trait CountdownValueWriteDestination {
   fn write_null(&mut self, key: Key);
 
   fn write_scalar_value<T>(&mut self, key: Key, value: &T)
   where 
-    T: SerializableScalarValue;
+    T: WriteScalarValue;
 
   fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
   where 
-    T: SerializableCompoundValue;
+    T: WriteCompoundValue;
 
     
-  fn write_compound_value_with_serializer<T>(&mut self, schema: &T::Schema, serializer: &T)
+  fn write_compound_value_with_writer<T>(&mut self, schema: &T::Schema, serializer: &T)
   where 
-    T: CompoundValueSerializer;
+    T: CompoundValueWriter;
 }
 
-pub struct CompoundValueAddWriter {
+pub trait WriteCompoundValue {
+  type Schema;
+
+  fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CountdownValueWriteDestination);
+}
+
+pub trait CompoundValueWriter {
+  type Schema;
+
+  fn write(&self, schema: &Self::Schema, writer: &mut impl CountdownValueWriteDestination);
+}
+
+pub struct CompoundValueWriteDestinationForInsert {
   keys: SqlCode,
   values: SqlCode,
   did_write_some_values: bool,
 }
 
-impl CompoundValueAddWriter {
+impl CompoundValueWriteDestinationForInsert {
   pub fn new() -> Self {
     Self {
       keys: SqlCode::new(),
@@ -551,7 +614,7 @@ impl CompoundValueAddWriter {
   }
 }
 
-impl CompoundValueWriter for CompoundValueAddWriter {
+impl CountdownValueWriteDestination for CompoundValueWriteDestinationForInsert {
   fn write_null(&mut self, key: Key) {
     if self.did_write_some_values {
       self.keys.write(", ");
@@ -566,7 +629,7 @@ impl CompoundValueWriter for CompoundValueAddWriter {
 
   fn write_scalar_value<T>(&mut self, key: Key, value: &T)
   where 
-    T: SerializableScalarValue 
+    T: WriteScalarValue 
   {
     if self.did_write_some_values {
       self.keys.write(", ");
@@ -576,95 +639,107 @@ impl CompoundValueWriter for CompoundValueAddWriter {
     }
 
     self.keys.write(key.as_str());
-    serialize_scalar_value(&mut self.values, value);
+    write_scalar_value(&mut self.values, value);
   }
 
   fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
   where 
-    T: SerializableCompoundValue 
+    T: WriteCompoundValue 
   {
-    T::serialize(value, schema, self);
+    T::write(value, schema, self);
   }
 
-  fn write_compound_value_with_serializer<T>(&mut self, schema: &T::Schema, serializer: &T)
+  fn write_compound_value_with_writer<T>(&mut self, schema: &T::Schema, writer: &T)
   where 
-    T: CompoundValueSerializer 
+    T: CompoundValueWriter 
   {
-    serializer.serialize(schema, self);
+    writer.write(schema, self);
   }
 }
 
-pub fn serialize_compound_value_with_serializer<T>(
+pub fn write_compound_value_with_writer<T>(
   code: &mut SqlCode,
   schema: &T::Schema,
-  serializer: &T,
+  writer: &T,
 ) 
 where 
-  T: CompoundValueSerializer
+  T: CompoundValueWriter
 {
-  let mut writer = CompoundValueAddWriter::new();
-  writer.write_compound_value_with_serializer(schema, serializer);
+  let mut write_destination = CompoundValueWriteDestinationForInsert::new();
+  write_destination.write_compound_value_with_writer(schema, writer);
 
   // TODO: Panic if no fields were written
   code.write("(");
-  code.write(&writer.keys.value);
+  code.write(&write_destination.keys.value);
   code.write(") VALUES (");
-  code.write(&writer.values.value);
+  code.write(&write_destination.values.value);
   code.write(")");
 }
 
-pub trait CompoundValueReader {
-  fn read_scalar_value<T>(&mut self, key: Key) -> Result<T, TextualError>
-  where 
-    T: DeserializableScalarValue;
-
-  fn read_compound_value<T>(&mut self, schema: &T::Schema) -> Result<T, TextualError>
-  where 
-    T: DeserializableCompoundValue;
+pub struct CompoundValueWriteDestinationForUpdate {
+  code: SqlCode,
+  did_write_some_updates: bool,
 }
 
-pub trait DeserializableCompoundValue: Sized {
-  type Schema;
-
-  fn deserialize(reader: &mut impl CompoundValueReader, schema: &Self::Schema) -> Result<Self, TextualError>;
+impl CompoundValueWriteDestinationForUpdate {
+  pub fn new() -> Self {
+    Self {
+      code: SqlCode::new(),
+      did_write_some_updates: false,
+    }
+  }
 }
 
-pub struct SomeCompoundValueReader<'a> {
-  inner: rusqlite::Row<'a>
+impl CompoundValueWriteDestinationForUpdate {
+  pub fn inner(&self) -> Option<&str> {
+    if self.did_write_some_updates {
+      Some(self.code.as_str())
+    } else {
+      None
+    }
+  }
 }
 
-impl<'a> CompoundValueReader for SomeCompoundValueReader<'a> {
-  fn read_scalar_value<T>(&mut self, key: Key) -> Result<T, TextualError>
-  where 
-    T: DeserializableScalarValue 
-  {
-    self
-      .inner
-      .get_ref(key.as_str())
-      .map_err(|error| {
-        TextualError::new(format!("Reading a scalar value of type {} from CompoundValueReader", type_name::<T>()))
-          .with_message("SQLite returned an error when reading the corresponding column")
-          .with_attachement_display("Field name", key.as_str())
-          .with_attachement_display("SQLite error", error)
-      })
-      .and_then(deserialize_scalar_value)
-      .map_err(|error| {
-        error
-          .with_context(format!("Reading a scalar value of type {} from CompoundValueReader", type_name::<T>()))
-          .with_message(format!("The DeserializableScalarValue implementation for {} returned an error", type_name::<T>()))
-          .with_attachement_display("Field name", key.as_str())
-      })
+impl CountdownValueWriteDestination for CompoundValueWriteDestinationForUpdate {
+  fn write_null(&mut self, key: Key) {
+    if self.did_write_some_updates {
+      self.code.write(", ");
+    } else {
+      self.did_write_some_updates = true;
+    }
+
+    self.code.write(key.as_str());
+    self.code.write(" = ");
+    self.code.write("NULL");
   }
 
-  fn read_compound_value<T>(&mut self, schema: &T::Schema) -> Result<T, TextualError>
+  fn write_scalar_value<T>(&mut self, key: Key, value: &T)
   where 
-    T: DeserializableCompoundValue 
+    T: WriteScalarValue 
   {
-    T::deserialize(self, schema).map_err(|error| {
-      error
-        .with_context(format!("Reading a compound value of type {} from CompoundValueReader", type_name::<T>()))
-        .with_message(format!("The DeserializableCompoundValue implementation for {} returned an error", type_name::<T>()))
-    })
+    if self.did_write_some_updates {
+      self.code.write(", ");
+    } else {
+      self.did_write_some_updates = true;
+    }
+
+    self.code.write(key.as_str());
+    self.code.write(" = ");
+    write_scalar_value(&mut self.code, value);
+  }
+
+  fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
+  where 
+    T: WriteCompoundValue 
+  {
+    T::write(value, schema, self);
+  }
+
+  fn write_compound_value_with_writer<T>(&mut self, schema: &T::Schema, serializer: &T)
+  where 
+    T: CompoundValueWriter 
+  {
+    serializer.write(schema, self);
   }
 }
 
@@ -674,7 +749,7 @@ pub struct Connection {
 
 pub enum ExecuteError {
   Fatal(rusqlite::Error),
-  DuplicatePrimaryKeyViolation
+  PrimaryKeyViolation,
 }
 
 impl Connection {
@@ -694,78 +769,11 @@ impl Connection {
 
     match sqlite_extended_error_code {
       libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
-        Err(ExecuteError::DuplicatePrimaryKeyViolation)
+        Err(ExecuteError::PrimaryKeyViolation)
       }
       _ => {
         Err(ExecuteError::Fatal(error))
       }
     }
-  }
-}
-
-pub struct CollectionItemUpdates {
-  code: SqlCode,
-  did_write_some_updates: bool,
-}
-
-impl CollectionItemUpdates {
-  pub fn new() -> Self {
-    Self {
-      code: SqlCode::new(),
-      did_write_some_updates: false,
-    }
-  }
-}
-
-impl CollectionItemUpdates {
-  pub fn inner(&self) -> Option<&str> {
-    if self.did_write_some_updates {
-      Some(self.code.as_str())
-    } else {
-      None
-    }
-  }
-}
-
-impl CompoundValueWriter for CollectionItemUpdates {
-  fn write_null(&mut self, key: Key) {
-    if self.did_write_some_updates {
-      self.code.write(", ");
-    } else {
-      self.did_write_some_updates = true;
-    }
-
-    self.code.write(key.as_str());
-    self.code.write(" = ");
-    self.code.write("NULL");
-  }
-
-  fn write_scalar_value<T>(&mut self, key: Key, value: &T)
-  where 
-    T: SerializableScalarValue 
-  {
-    if self.did_write_some_updates {
-      self.code.write(", ");
-    } else {
-      self.did_write_some_updates = true;
-    }
-
-    self.code.write(key.as_str());
-    self.code.write(" = ");
-    serialize_scalar_value(&mut self.code, value);
-  }
-
-  fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
-  where 
-    T: SerializableCompoundValue 
-  {
-    T::serialize(value, schema, self);
-  }
-
-  fn write_compound_value_with_serializer<T>(&mut self, schema: &T::Schema, serializer: &T)
-  where 
-    T: CompoundValueSerializer 
-  {
-    serializer.serialize(schema, self);
   }
 }

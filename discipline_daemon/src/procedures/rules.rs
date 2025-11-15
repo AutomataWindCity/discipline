@@ -1,15 +1,14 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
-use crate::{database::SqlCode, x::{Daemon, InstantX, Rule, UuidV4, rules_x::{self, RuleX, RuleGroupX}}};
+use crate::x::database::Transaction;
+use crate::x::{MonotonicInstant, UuidV4};
+use crate::x::rules_x::*;
 
-pub trait Transaction {}
-
-pub trait Writer {
+pub trait TransactionWriter {
   fn add_rule(
     &self, 
     transaction: &mut impl Transaction, 
     rule_id: &UuidV4, 
-    rule: &RuleX,
+    rule: &Rule,
   );
 
   fn delete_rule(
@@ -22,74 +21,14 @@ pub trait Writer {
     &self,
     transaction: &mut impl Transaction,
     rule_id: &UuidV4,
-    original: &RuleX,
-    modified: &RuleX,
+    original: &Rule,
+    modified: &Rule,
   );
 }
-
-pub struct CrossCollectionDraft {
-  code: SqlCode
-}
-
-pub struct CollectionItemDraft {
-  code: SqlCode
-}
-
-pub trait RuleGroupWriter {
-  fn add_rule(
-    &self, 
-    draft: &mut CrossCollectionDraft, 
-    rule_id: &UuidV4, 
-    rule: &RuleX,
-  );
-
-  fn delete_rule(
-    &self,
-    draft: &mut CrossCollectionDraft,
-    rule_id: &UuidV4,
-  );
-
-  fn update_rule(
-    &self,
-    rule_id: &UuidV4,
-    original: &RuleX,
-    modified: &RuleX,
-  );
-}
-
-pub trait RuleWriter {
-  
-}
-
-pub enum Tried<T, E, R> {
-  Ok(T),
-  OkWithRevert(T, R),
-  Revert(R),
-  Err(E),
-}
-
-impl<T, E, R> Tried<T, E, R> {
-  pub fn ok(value: T) -> Self {
-    Tried::Ok(value)
-  }
-
-  pub fn err(error: E) -> Self {
-    Tried::Err(error)
-  }
-
-  pub fn ok_with_revert(value: T, revert: R) -> Self {
-    Tried::OkWithRevert(value, revert)
-  }
-
-  pub fn revert(revert: R) -> Self {
-    Tried::Revert(revert)
-  }
-}
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddRule {
-  rule_creator: rules_x::RuleCreator,
+  rule_creator: RuleCreator,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,6 +37,7 @@ pub enum AddRuleError {
   TooManyRules,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RevertAddRule {
   rule_id: UuidV4,
 }
@@ -105,59 +45,62 @@ pub struct RevertAddRule {
 impl AddRule {
   pub fn execute(
     self, 
-    transaction: &mut CrossCollectionDraft,
-    writer: &impl RuleGroupWriter,
-    rule_group: &mut rules_x::RuleGroupX,
-  ) -> Tried<(), AddRuleError, RevertAddRule> {
+    transaction: &mut impl Transaction,
+    writer: &impl TransactionWriter,
+    rule_group: &mut RuleGroup,
+  ) -> Result<RevertAddRule, AddRuleError> {
     if rule_group.rules.len() >= rule_group.maximum_rule_number {
-      return Tried::Err(AddRuleError::TooManyRules);
+      return Err(AddRuleError::TooManyRules);
     }
     
     let rule_id = self.rule_creator.id.unwrap_or_else(UuidV4::generate);
     if rule_group.rules.contains_key(&rule_id) {
-      return Tried::Err(AddRuleError::DuplicateUuid);
+      return Err(AddRuleError::DuplicateUuid);
     }
 
-    let rule = rules_x::RuleX::new(
-      self.rule_creator.action_conditional.create(),
-      self.rule_creator.protection_conditional.create(),
+    let rule = Rule::new(
+      self.rule_creator.activator.create(),
+      self.rule_creator.enabler.create(),
     );
 
     writer.add_rule(transaction, &rule_id, &rule);
 
     rule_group.rules.insert(rule_id.clone(), rule);
     
-    Tried::revert(RevertAddRule { rule_id })
+    Ok(RevertAddRule { rule_id })
   }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnsureRuleDeleted {
   rule_id: UuidV4,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EnsureRuleDeletedError {
   RuleIsProtected,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RevertDeleteRule {
-  rule: RuleX,
+  rule: Rule,
   rule_id: UuidV4,
 }
 
 impl EnsureRuleDeleted {
   pub fn execute(
     self,
-    transaction: &mut CrossCollectionDraft,
-    writer: &impl RuleGroupWriter,
-    rule_group: &mut RuleGroupX,
-    now: InstantX,
-  ) -> Tried<(), EnsureRuleDeletedError, RevertDeleteRule> {
+    transaction: &mut impl Transaction,
+    writer: &impl TransactionWriter,
+    rule_group: &mut RuleGroup,
+    now: MonotonicInstant,
+  ) -> Result<Option<RevertDeleteRule>, EnsureRuleDeletedError> {
     let Some(rule) = rule_group.rules.get(&self.rule_id) else {
-      return Tried::ok(());
+      return Ok(None);
     };
 
     if rule.is_protected(now) {
-      return Tried::err(EnsureRuleDeletedError::RuleIsProtected);
+      return Err(EnsureRuleDeletedError::RuleIsProtected);
     }
 
     writer.delete_rule(transaction, &self.rule_id);
@@ -168,94 +111,124 @@ impl EnsureRuleDeleted {
       rule_group.rules.remove(&self.rule_id).unwrap_unchecked()
     };
   
-    Tried::revert(RevertDeleteRule { 
+    Ok(Some(RevertDeleteRule { 
       rule, 
       rule_id: self.rule_id,
-    })
+    }))
   }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModifyRule {
   rule_id: UuidV4,
-  modifications: Vec<RuleProcedure>,
+  modifications: Vec<RuleModification>,
 }
 
-pub enum ModifyRuleError {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ModifyRuleFailure {
   NoSuchRule,
-  RuleModificationError(RuleModificationFailure)
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModifyRuleSuccess {
   successes: Vec<RuleModificationSuccess>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModifyRuleRevert {
   rule_id: UuidV4,
-  rule_original_state: RuleX,
+  rule_original_state: Rule,
 }
 
 impl ModifyRule {
   pub fn execute(
     self,
     transaction: &mut impl Transaction,
-    writer: &impl Writer,
-    rule_group: &mut rules_x::RuleGroupX,
-  ) -> Result<(ModifyRuleSuccess, ModifyRuleRevert), ModifyRuleError> {
-    let Some(rule) = rule_group.rules.get_mut(&self.rule_id) else {
-      return Err(ModifyRuleError::NoSuchRule);
+    transaction_writer: &impl TransactionWriter,
+    rule_group: &mut RuleGroup,
+    now: MonotonicInstant,
+  ) -> Result<(ModifyRuleSuccess, ModifyRuleRevert), ModifyRuleFailure> {
+    let rule_id = self.rule_id;
+
+    let Some(rule) = rule_group.rules.get_mut(&rule_id) else {
+      return Err(ModifyRuleFailure::NoSuchRule);
     };
 
-    let mut rule_original_state = rule.clone();
+    let rule_original_state = rule.clone();
 
-    let mut successes = Vec::new();
-    for modification in self.modifications {
-      match modification.execute(&mut rule_original_state) {
-        Ok(value) => {
-          successes.push(value);
-        }
-        Err(error) => {
-          return Err(ModifyRuleError::RuleModificationError(error));
-        }
-      }
-    }
+    let successes = self
+      .modifications
+      .into_iter()
+      .map(|it| it.execute(rule, now))
+      .collect();
 
-    writer.update_rule(transaction, &self.rule_id, &rule_original_state, &rule);
+    transaction_writer.update_rule(
+      transaction, 
+      &rule_id, 
+      &rule_original_state, 
+      &rule,
+    );
 
     Ok((
       ModifyRuleSuccess { successes },
-      ModifyRuleRevert { rule_id: self.rule_id, rule_original_state }
+      ModifyRuleRevert { rule_id, rule_original_state }
     ))
   }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActivateRule;
 
 impl ActivateRule {
   pub fn execute(
     self,
-    rule: &mut RuleX,
-    now: InstantX,
+    rule: &mut Rule,
+    now: MonotonicInstant,
   ) {
     rule.activate(now);
   }
 }
 
-pub struct DeactivateRule {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeactivateRule;
 
+impl DeactivateRule {
+  pub fn execute(
+    self,
+    rule: &mut Rule,
+    now: MonotonicInstant,
+  ) {
+    rule.deactivate(now);
+  }
 }
 
-pub enum RuleProcedure {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RuleModification {
   Activate(ActivateRule),
   Deactivate(DeactivateRule),
 }
 
-pub struct RuleModificationSuccess {}
-pub struct RuleModificationFailure {}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RuleModificationSuccess {
+  Activate,
+  Deactivate,
+}
 
-impl RuleProcedure {
-  pub fn execute(self, rule: &mut RuleX) -> 
-    Result<RuleModificationSuccess, RuleModificationFailure> 
-  {
-    todo!()
+impl RuleModification {
+  pub fn execute(
+    self, 
+    rule: &mut Rule,
+    now: MonotonicInstant,
+  ) -> RuleModificationSuccess {
+    match self {
+      Self::Activate(proceduer) => {
+        proceduer.execute(rule, now);
+        RuleModificationSuccess::Activate
+      }
+      Self::Deactivate(procedure) => {
+        procedure.execute(rule, now);
+        RuleModificationSuccess::Deactivate
+      }
+    }
   }
 }

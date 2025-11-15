@@ -17,15 +17,15 @@ pub struct UserRuleSchema {
 static USER_ID: Key = Key::new("UserId");
 static RULE_ID: Key = Key::new("RuleId");
 static RULE_IS_ACTIVATED: Key = Key::new("RuleIsActivated");
-static RULE_ACTION_CONDITIONAL_ENUM_TYPE: Key = Key::new("RuleActionConditionalEnumType");
-static RULE_ACTION_CONDITIONAL_ENUM_DATA_1: Key = Key::new("RuleActionConditionalEnumData1");
-static RULE_ACTION_CONDITIONAL_ENUM_DATA_2: Key = Key::new("RuleActionConditionalEnumData2");
-static RULE_ACTION_CONDITIONAL_ENUM_DATA_3: Key = Key::new("RuleActionConditionalEnumData3");
-static RULE_PROTECTION_CONDITIONAL_ENUM_TYPE: Key = Key::new("RuleProtectionConditionalEnumType");
-static RULE_PROTECTION_CONDITIONAL_ENUM_DATA_1: Key = Key::new("RuleProtectionConditionalEnumData1");
-static RULE_PROTECTION_CONDITIONAL_ENUM_DATA_2: Key = Key::new("RuleProtectionConditionalEnumData2");
-static RULE_PROTECTION_CONDITIONAL_ENUM_DATA_3: Key = Key::new("RuleProtectionConditionalEnumData3");
-static RULE_PROTECTION_CONDITIONAL_ENUM_DATA_4: Key = Key::new("RuleProtectionConditionalEnumData4");
+static RULE_ACTIVATOR_ENUM_TYPE: Key = Key::new("RuleActivatorEnumType");
+static RULE_ACTIVATOR_ENUM_DATA_1: Key = Key::new("RuleActivatorEnumData1");
+static RULE_ACTIVATOR_ENUM_DATA_2: Key = Key::new("RuleActivatorEnumData2");
+static RULE_ACTIVATOR_ENUM_DATA_3: Key = Key::new("RuleActivatorEnumData3");
+static RULE_ENABLER_ENUM_TYPE: Key = Key::new("RuleEnablerEnumType");
+static RULE_ENABLER_ENUM_DATA_1: Key = Key::new("RuleEnablerEnumData1");
+static RULE_ENABLER_ENUM_DATA_2: Key = Key::new("RuleEnablerEnumData2");
+static RULE_ENABLER_ENUM_DATA_3: Key = Key::new("RuleEnablerEnumData3");
+static RULE_ENABLER_ENUM_DATA_4: Key = Key::new("RuleEnablerEnumData4");
 
 impl UserRuleSchema {
   pub fn new() -> Self {
@@ -33,15 +33,15 @@ impl UserRuleSchema {
       rule_id: RULE_ID,
       user_id: USER_ID,
       rule: RuleSchema::new(
-        RULE_ACTION_CONDITIONAL_ENUM_TYPE, 
-        RULE_ACTION_CONDITIONAL_ENUM_DATA_1, 
-        RULE_ACTION_CONDITIONAL_ENUM_DATA_2, 
-        RULE_ACTION_CONDITIONAL_ENUM_DATA_3, 
-        RULE_PROTECTION_CONDITIONAL_ENUM_TYPE, 
-        RULE_PROTECTION_CONDITIONAL_ENUM_DATA_1, 
-        RULE_PROTECTION_CONDITIONAL_ENUM_DATA_2, 
-        RULE_PROTECTION_CONDITIONAL_ENUM_DATA_3, 
-        RULE_PROTECTION_CONDITIONAL_ENUM_DATA_4, 
+        RULE_ACTIVATOR_ENUM_TYPE, 
+        RULE_ACTIVATOR_ENUM_DATA_1, 
+        RULE_ACTIVATOR_ENUM_DATA_2, 
+        RULE_ACTIVATOR_ENUM_DATA_3, 
+        RULE_ENABLER_ENUM_TYPE, 
+        RULE_ENABLER_ENUM_DATA_1, 
+        RULE_ENABLER_ENUM_DATA_2, 
+        RULE_ENABLER_ENUM_DATA_3, 
+        RULE_ENABLER_ENUM_DATA_4, 
         RULE_IS_ACTIVATED,
       ),
     }

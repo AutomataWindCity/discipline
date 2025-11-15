@@ -1,9 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
-use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use crate::x::{User, UuidV4};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct UserGroup {
   users: HashMap<UuidV4, Arc<Mutex<User>>>,
   maximum_user_number: usize,
@@ -17,7 +16,7 @@ impl UserGroup {
     }
   }
 
-  pub fn get_user_mut(&mut self, user_id: &UuidV4) -> Option<&mut User> {
+  pub fn get_user_mut(&mut self, user_id: &UuidV4) -> Option<&mut Arc<Mutex<User>>> {
     self.users.get_mut(user_id)
   }
 }

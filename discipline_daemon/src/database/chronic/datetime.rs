@@ -1,14 +1,14 @@
 use crate::x::{TextualError, DateTime, ToTextualError};
-use crate::x::database::{SerializableScalarValue, DeserializableScalarValue, ScalarValueReader, ScalarValueWrtier};
+use crate::x::database::{WriteScalarValue, ReadScalarValue, ScalarValueReadSource, ScalarValueWriteDestination};
 
-impl SerializableScalarValue for DateTime {
-  fn serialize(value: &Self, writer: &mut ScalarValueWrtier) {
+impl WriteScalarValue for DateTime {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(&value.millisecond_timestamp());
   }
 }
 
-impl DeserializableScalarValue for DateTime {
-  fn deserialize(reader: &mut ScalarValueReader) -> Result<Self, TextualError> {
+impl ReadScalarValue for DateTime {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let timestamp = reader.read_scalar_value()?;
     DateTime::from_millisecond_timestamp(timestamp).map_err(|error| {
       error.to_textual_error()

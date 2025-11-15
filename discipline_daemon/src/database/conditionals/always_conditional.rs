@@ -14,18 +14,18 @@ impl AlwaysConditionalSchema {
   }
 }
 
-impl SerializableCompoundValue for AlwaysConditional {
+impl WriteCompoundValue for AlwaysConditional {
   type Schema = AlwaysConditionalSchema;
 
-  fn serialize(_value: &Self, _schema: &Self::Schema, _writer: &mut impl CompoundValueWriter) {
+  fn write(_value: &Self, _schema: &Self::Schema, _writer: &mut impl CountdownValueWriteDestination) {
     // no operation
   }
 }
 
-impl DeserializableCompoundValue for AlwaysConditional {
+impl ReadCompoundValue for AlwaysConditional {
   type Schema = AlwaysConditionalSchema;
 
-  fn deserialize(_reader: &mut impl CompoundValueReader, _schema: &Self::Schema) -> Result<Self, TextualError> {
+  fn deserialize(_reader: &mut impl CompoundValueReadSource, _schema: &Self::Schema) -> Result<Self, TextualError> {
     Ok(AlwaysConditional::new())
   }
 }

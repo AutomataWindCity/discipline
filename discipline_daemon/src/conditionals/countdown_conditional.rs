@@ -1,110 +1,91 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Countdown, DateTime, Duration};
+use crate::x::{Countdown, Duration, countdown, monotonic};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CountdownConditional {
-  pub duration: Duration,
-  pub countdown: Option<Countdown>
+  pub countdown: countdown::Countdown,
 }
 
 impl CountdownConditional {
   pub fn new(duration: Duration) -> Self {
     Self {
-      duration,
-      countdown: None,
+      countdown: Countdown::new(duration),
     }
   }
 
-  pub fn from_fields(
-    duration: Duration, 
-    countdown: Option<Countdown>,
-  ) -> Self {
-    Self {
-      duration,
-      countdown: countdown.and_then(|countdown| if countdown.is_finished() {
-        None
-      } else {
-        Some(countdown)
-      })
-    }
+  pub fn construct(countdown: Countdown) -> Self {
+    Self { countdown }
   }
 
-  pub fn duration(&self) -> Duration {
-    self.duration
-  }
-
-  pub fn countdown(&self) -> &Option<Countdown> {
+  pub fn countdown(&self) -> &Countdown {
     &self.countdown
   }
-  
-  pub fn countdown2(&self) -> Option<&Countdown> {
-    self.countdown.as_ref()
+
+  pub fn is_activated(&self, now: monotonic::MonotonicInstant) -> bool {
+    self.countdown.is_running(now)
   }
 
-  pub fn activate(&mut self, now: DateTime) {
-    self.countdown = Some(Countdown::new(
-      self.duration,
-      now
-    ));
-  }
-
-  pub fn is_activated(&self) -> bool {
-    self.countdown.is_some()
-  }
-
-  pub fn synchronize(&mut self, now: DateTime) {
-    if let Some(countdown) = &mut self.countdown {
-      countdown.synchronize(now);
-      if countdown.is_finished() {
-        self.countdown = None;
-      }
-    }
+  pub fn activate(&mut self, now: monotonic::MonotonicInstant) {
+    self.countdown.begin(now);
   }
 }
 
-pub mod operations {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Creator {
+  duration: Duration,
+}
+
+impl Creator {
+  pub fn create(self) -> CountdownConditional {
+    CountdownConditional::new(self.duration)
+  }
+}
+
+pub mod procedures {
   use serde::{Serialize, Deserialize};
-  use crate::x::{CountdownConditional, DateTime};
+  use crate::x::{MonotonicInstant, CountdownConditional};
 
   #[derive(Debug, Clone, Serialize, Deserialize)]
   pub struct Activate;
 
   #[derive(Debug, Clone, Serialize, Deserialize)]
-  pub enum ActivateReturn {
-    Success,
+  pub enum ActivateSuccess {
     AlreadyActivated,
+    Success,
   }
 
   impl Activate {
     pub fn execute(
-      self,
-      conditional: &mut CountdownConditional, 
-    ) -> ActivateReturn {
-      if conditional.is_activated() {
-        return ActivateReturn::AlreadyActivated;
+      self, 
+      now: MonotonicInstant, 
+      conditional: &mut CountdownConditional,
+    ) -> ActivateSuccess {
+      if conditional.is_activated(now) {
+        return ActivateSuccess::AlreadyActivated;
       }
 
-      conditional.activate(DateTime::now());
-      ActivateReturn::Success
+      conditional.activate(now);
+      ActivateSuccess::Success
     }
   }
 
-  pub enum Call {
+  pub enum Procedure {
     Activate(Activate),
   }
 
-  pub enum CallReturn {
-    Activate(ActivateReturn),
+  pub enum ProcedureSuccess {
+    Activate(ActivateSuccess),
   }
 
-  impl Call {
+  impl Procedure {
     pub fn execute(
-      self,
+      self, 
+      now: MonotonicInstant, 
       conditional: &mut CountdownConditional,
-    ) -> CallReturn {
+    ) -> ProcedureSuccess {
       match self {
-        Call::Activate(call) => {
-          CallReturn::Activate(call.execute(conditional))
+        Procedure::Activate(operation) => {
+          ProcedureSuccess::Activate(operation.execute(now, conditional))
         }
       }
     }

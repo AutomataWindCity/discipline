@@ -5,6 +5,7 @@ use crate::x::database::*;
 pub struct RuleSchema {
   activator: RuleActivatorSchema,
   enabler: RuleEnablerSchema,
+  is_activated: Key,
 }
 
 impl RuleSchema {
@@ -17,6 +18,8 @@ impl RuleSchema {
     enabler_enum_data_1: Key,
     enabler_enum_data_2: Key,
     enabler_enum_data_3: Key,
+    enabler_enum_data_4: Key,
+    is_activated: Key,
   ) -> Self {
     Self {
       activator: RuleActivatorSchema::new(
@@ -30,45 +33,31 @@ impl RuleSchema {
         enabler_enum_data_1, 
         enabler_enum_data_2, 
         enabler_enum_data_3, 
+        enabler_enum_data_4,
       ),
+      is_activated,
     }
   }
 }
 
-impl WriteCompoundValue for Rule {
+impl SerializableCompoundValue for Rule {
   type Schema = RuleSchema;
 
-  fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CountdownValueWriteDestination) {
+  fn serialize(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter) {
+    writer.write_scalar_value(schema.is_activated, &value.is_activated());
     writer.write_compound_value(&schema.activator, value.activator());
     writer.write_compound_value(&schema.enabler, value.enabler());
   }
 }
 
-impl ReadCompoundValue for Rule {
+impl DeserializableCompoundValue for Rule {
   type Schema = RuleSchema;
 
-  fn deserialize(reader: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
+  fn deserialize(reader: &mut impl CompoundValueReader, schema: &Self::Schema) -> Result<Self, TextualError> {
     Ok(Rule::construct(
+      reader.read_scalar_value(schema.is_activated)?,
       reader.read_compound_value(&schema.activator)?,
       reader.read_compound_value(&schema.enabler)?,
     ))
-  }
-}
-
-impl WriteUpdates for Rule {
-  type Schema = RuleSchema;
-
-  fn write_updates(
-    original: &Self, 
-    modified: &Self,
-    schema: &Self::Schema,
-    modifications: &mut CompoundValueWriteDestinationForUpdate,
-  ) {
-    WriteUpdates::write_updates(
-      original.enabler(),
-      modified.enabler(),
-      &schema.enabler,
-      modifications,
-    );
   }
 }

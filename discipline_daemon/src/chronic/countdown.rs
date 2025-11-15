@@ -1,100 +1,67 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{DateTime, Duration, time_x};
+use crate::x::{Duration, MonotonicInstant};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Countdown {
-  pub remaining_duration: Duration,
-  pub previous_synchronization_time: DateTime,
+  pub from: MonotonicInstant,
+  pub duration: Duration,
 }
 
 impl Countdown {
-  pub fn new(duration: Duration, now: DateTime) -> Countdown {
-    Countdown { 
-      remaining_duration: duration,
-      previous_synchronization_time: now, 
-    }
+  pub fn new(duration: Duration) -> Countdown {
+    Countdown { from: MonotonicInstant::MAX, duration }
   }
 
-  pub fn from_fields(
-    remaining_duration: Duration,
-    previous_synchronization_time: DateTime,
-  ) -> Countdown {
-    Countdown {
-      remaining_duration, 
-      previous_synchronization_time 
-    }
+  pub fn construct(from: MonotonicInstant, duration: Duration) -> Countdown {
+    Countdown { from, duration }
   }
 
-  pub fn remaining_duration(&self) -> Duration {
-    self.remaining_duration
+  pub fn duration(&self) -> Duration {
+    self.duration
   }
 
-  pub fn previous_synchronization_time(&self) -> DateTime {
-    self.previous_synchronization_time
+  pub fn remaining_duration(&self, now: MonotonicInstant) -> Duration {
+    self.from.till_or_zero(now).minus_or_zero(self.duration)
   }
 
-  pub fn is_finished(&self) -> bool {
-    self.remaining_duration.is_zero()
+  pub fn is_finished(&self, now: MonotonicInstant) -> bool {
+    self.remaining_duration(now).is_zero()
   }
 
-  pub fn synchronize(&mut self, now: DateTime) {
-    let interval = self
-      .previous_synchronization_time
-      .till_or_zero(now);
+  pub fn is_running(&self, now: MonotonicInstant) -> bool {
+    !self.remaining_duration(now).is_zero()
+  }
 
-    self.remaining_duration = self
-      .remaining_duration
-      .minus_or_zero(interval);
+  pub fn begin(&mut self, now: MonotonicInstant) {
+    self.from = now;
+  }
 
-    self.previous_synchronization_time = now;
+  pub fn cancel(&mut self) {
+    self.from = MonotonicInstant::MAX;
   }
 }
 
-pub trait IsCountdown {
-  fn new(duration: Duration, now: DateTime) -> Self;
+// pub mod database {
+//   use crate::x::database::*;
+//   use crate::x::Countdown;
 
-  fn get_remaining_duration(&self) -> Duration;
-  fn set_remaining_duration(&mut self, new_value: Duration);
-  fn get_previous_synchronization_time(&self) -> DateTime;
-  fn set_previous_synchronization_time(&mut self, new_value: DateTime);
+//   pub struct Schema {
+//     from: Key,
+//     duration: Key,
+//   }
 
-  fn is_finished(&self) -> bool {
-    self.get_remaining_duration().is_zero()
-  }
+//   impl Schema {
+//     pub fn new(from: Key, duration: Key) -> Self {
+//       Self { from, duration }
+//     }
+//   }
 
-  fn synchronize(&mut self, now: DateTime) {
-    let interval = self
-      .get_previous_synchronization_time()
-      .till_or_zero(now);
+//   impl SerializableCompoundValue for Countdown {
+//     type Schema = Schema;
 
-    self.set_remaining_duration(
-      self
-        .get_remaining_duration()
-        .minus_or_zero(interval)
-    );
-
-    self.set_previous_synchronization_time(now);
-  }
-}
-
-pub mod snapshoot {
-  use crate::x::{Duration, DateTime, Countdown};
-
-  pub struct Snapshoot {
-    pub remaining_duration: Duration,
-    pub previous_synchronization_time: DateTime,
-  }
-
-  impl Snapshoot {
-    pub fn to_value(&self) -> Countdown {
-      Countdown { 
-        remaining_duration: self.remaining_duration, 
-        previous_synchronization_time: self.previous_synchronization_time,
-      }
-    }
-    pub fn apply_to(&self, countdown: &mut Countdown) {
-      countdown.remaining_duration = self.remaining_duration;
-      countdown.previous_synchronization_time = self.previous_synchronization_time;
-    }
-  }
-}
+//     fn serialize(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter) {
+//       writer.write_scalar_value(schema.from, &value.from);
+//       writer.write_scalar_value(schema.duration, &value.duration);
+//     }
+//   }
+// }
