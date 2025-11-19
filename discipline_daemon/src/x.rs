@@ -43,5 +43,7 @@ pub use crate::database;
 pub use crate::rules::{self, Rule, RuleGroup};
 pub use crate::rules as rules_x;
 
+pub use crate::regulation::block_device_access::{self, BlockDeviceAccess};
+
 pub use crate::daemon::Daemon;
 pub use crate::procedures;

@@ -96,10 +96,14 @@ impl Rule {
   pub fn enabler(&self) -> &RuleEnabler {
     &self.enabler
   }
+  pub fn enabler_mut(&mut self) -> &mut RuleEnabler {
+    &mut self.enabler
+  }
+  pub fn set_enabler(&mut self, new_value: RuleEnabler) {
+    self.enabler = new_value;
+  }
 
-  pub fn is_activated(&self, now: MonotonicInstant, time: Time, weekday: Weekday) -> bool {
-    self.enabler.evaluate(now)
-    &&
+  pub fn is_activated(&self, time: Time, weekday: Weekday) -> bool {
     self.activator.evaluate(time, weekday)
   }
 
@@ -114,7 +118,7 @@ impl Rule {
     self.activator.evaluate(time, weekday)
   }
 
-  pub fn is_protected(&self, now: MonotonicInstant) -> bool {
+  pub fn is_enabled(&self, now: MonotonicInstant) -> bool {
     self.enabler.evaluate(now)
   }
 
@@ -236,7 +240,7 @@ impl RuleGroup {
       return Ok(DeleteRuleSuccess::NoSuchRule);
     };
 
-    if rule.is_protected(now) {
+    if rule.is_enabled(now) {
       return Err(DeleteRuleError::RuleIsProtected);
     }
 

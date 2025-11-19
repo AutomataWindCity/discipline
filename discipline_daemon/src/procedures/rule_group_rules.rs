@@ -24,6 +24,10 @@ pub trait TransactionWriter {
     original: &Rule,
     modified: &Rule,
   );
+
+  fn return_error() {}
+  fn return_error_with_revert() {}
+  fn return_success() {}
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,7 +36,7 @@ pub struct AddRule {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum AddRuleError {
+pub enum AddRuleFailure {
   DuplicateUuid,
   TooManyRules,
 }
@@ -48,14 +52,14 @@ impl AddRule {
     transaction: &mut impl Transaction,
     writer: &impl TransactionWriter,
     rule_group: &mut RuleGroup,
-  ) -> Result<RevertAddRule, AddRuleError> {
+  ) -> Result<RevertAddRule, AddRuleFailure> {
     if rule_group.rules.len() >= rule_group.maximum_rule_number {
-      return Err(AddRuleError::TooManyRules);
+      return Err(AddRuleFailure::TooManyRules);
     }
     
     let rule_id = self.rule_creator.id.unwrap_or_else(UuidV4::generate);
     if rule_group.rules.contains_key(&rule_id) {
-      return Err(AddRuleError::DuplicateUuid);
+      return Err(AddRuleFailure::DuplicateUuid);
     }
 
     let rule = Rule::new(
@@ -77,7 +81,7 @@ pub struct EnsureRuleDeleted {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum EnsureRuleDeletedError {
+pub enum EnsureRuleDeletedFailure {
   RuleIsProtected,
 }
 
@@ -94,13 +98,13 @@ impl EnsureRuleDeleted {
     writer: &impl TransactionWriter,
     rule_group: &mut RuleGroup,
     now: MonotonicInstant,
-  ) -> Result<Option<RevertDeleteRule>, EnsureRuleDeletedError> {
+  ) -> Result<Option<RevertDeleteRule>, EnsureRuleDeletedFailure> {
     let Some(rule) = rule_group.rules.get(&self.rule_id) else {
       return Ok(None);
     };
 
-    if rule.is_protected(now) {
-      return Err(EnsureRuleDeletedError::RuleIsProtected);
+    if rule.is_enabled(now) {
+      return Err(EnsureRuleDeletedFailure::RuleIsProtected);
     }
 
     writer.delete_rule(transaction, &self.rule_id);
@@ -119,50 +123,50 @@ impl EnsureRuleDeleted {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModifyRule {
+pub struct UpdateRule {
   rule_id: UuidV4,
-  modifications: Vec<RuleModification>,
+  updates: Vec<RuleUpdate>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ModifyRuleFailure {
+pub enum UpdateRuleFailure {
   NoSuchRule,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModifyRuleSuccess {
-  successes: Vec<RuleModificationSuccess>,
+pub struct UpdateRuleSuccess {
+  successes: Vec<RuleUpdateSuccess>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModifyRuleRevert {
+pub struct RevertUpdateRule {
   rule_id: UuidV4,
   rule_original_state: Rule,
 }
 
-impl ModifyRule {
+impl UpdateRule {
   pub fn execute(
     self,
     transaction: &mut impl Transaction,
-    transaction_writer: &impl TransactionWriter,
+    writer: &impl TransactionWriter,
     rule_group: &mut RuleGroup,
     now: MonotonicInstant,
-  ) -> Result<(ModifyRuleSuccess, ModifyRuleRevert), ModifyRuleFailure> {
+  ) -> Result<(UpdateRuleSuccess, RevertUpdateRule), UpdateRuleFailure> {
     let rule_id = self.rule_id;
 
     let Some(rule) = rule_group.rules.get_mut(&rule_id) else {
-      return Err(ModifyRuleFailure::NoSuchRule);
+      return Err(UpdateRuleFailure::NoSuchRule);
     };
 
     let rule_original_state = rule.clone();
 
     let successes = self
-      .modifications
+      .updates
       .into_iter()
       .map(|it| it.execute(rule, now))
       .collect();
 
-    transaction_writer.update_rule(
+    writer.update_rule(
       transaction, 
       &rule_id, 
       &rule_original_state, 
@@ -170,8 +174,8 @@ impl ModifyRule {
     );
 
     Ok((
-      ModifyRuleSuccess { successes },
-      ModifyRuleRevert { rule_id, rule_original_state }
+      UpdateRuleSuccess { successes },
+      RevertUpdateRule { rule_id, rule_original_state }
     ))
   }
 }
@@ -203,31 +207,96 @@ impl DeactivateRule {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RuleModification {
+pub enum RuleUpdate {
   Activate(ActivateRule),
   Deactivate(DeactivateRule),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RuleModificationSuccess {
+pub enum RuleUpdateSuccess {
   Activate,
   Deactivate,
 }
 
-impl RuleModification {
+impl RuleUpdate {
   pub fn execute(
     self, 
     rule: &mut Rule,
     now: MonotonicInstant,
-  ) -> RuleModificationSuccess {
+  ) -> RuleUpdateSuccess {
     match self {
       Self::Activate(proceduer) => {
         proceduer.execute(rule, now);
-        RuleModificationSuccess::Activate
+        RuleUpdateSuccess::Activate
       }
       Self::Deactivate(procedure) => {
         procedure.execute(rule, now);
-        RuleModificationSuccess::Deactivate
+        RuleUpdateSuccess::Deactivate
+      }
+    }
+  }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Procedure {
+  AddRule(AddRule),
+  EnsureRuleDeleted(EnsureRuleDeleted),
+  UpdateRule(UpdateRule),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProcedureSuccess {
+  AddRule,
+  EnsureRuleDeleted,
+  UpdateRule(UpdateRuleSuccess),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProcedureFailure {
+  AddRule(AddRuleFailure),
+  EnsureRuleDeleted(EnsureRuleDeletedFailure),
+  UpdateRule(UpdateRuleFailure),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProcedureRevert {
+  AddRule(RevertAddRule),
+  EnsureRuleDeleted(Option<RevertDeleteRule>),
+  UpdateRule(RevertUpdateRule),
+}
+
+impl Procedure {
+  pub fn execute(
+    self,
+    transaction: &mut impl Transaction,
+    writer: &impl TransactionWriter,
+    rule_group: &mut RuleGroup,
+    now: MonotonicInstant,
+  ) -> Result<(ProcedureSuccess, ProcedureRevert), ProcedureFailure> {
+    match self {
+      Procedure::AddRule(inner) => {
+        inner.execute(transaction, writer, rule_group) 
+          .map(|revert| (
+            ProcedureSuccess::AddRule,
+            ProcedureRevert::AddRule(revert),
+          ))
+          .map_err(ProcedureFailure::AddRule)
+      }
+      Procedure::EnsureRuleDeleted(inner) => {
+        inner.execute(transaction, writer, rule_group, now)
+          .map(|revert| (
+            ProcedureSuccess::EnsureRuleDeleted,
+            ProcedureRevert::EnsureRuleDeleted(revert),
+          ))
+          .map_err(ProcedureFailure::EnsureRuleDeleted)
+      }
+      Procedure::UpdateRule(inner) => {
+        inner.execute(transaction, writer, rule_group, now)
+          .map(|(success, revert)| (
+            ProcedureSuccess::UpdateRule(success),
+            ProcedureRevert::UpdateRule(revert),
+          ))
+          .map_err(ProcedureFailure::UpdateRule)
       }
     }
   }

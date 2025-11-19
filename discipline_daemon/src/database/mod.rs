@@ -34,6 +34,6 @@ pub trait WriteUpdates<Other = Self> {
     original: &Self, 
     modified: &Other,
     schema: &Self::Schema,
-    modifications: &mut CompoundValueWriteDestinationForUpdate,
+    modifications: &mut impl CompoundValueWriteDestination,
   );
 }
