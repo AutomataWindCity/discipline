@@ -1,10 +1,8 @@
-use crate::x::TextualError;
-use crate::x::rules::*;
-use crate::x::database::*;
+use crate::x::{TextualError, rules::*, database::*};
 
 pub struct RuleSchema {
-  pub activator: RuleActivatorSchema,
   pub enabler: RuleEnablerSchema,
+  pub activator: RuleActivatorSchema,
 }
 
 impl RuleSchema {
@@ -35,7 +33,7 @@ impl RuleSchema {
   }
 }
 
-impl WriteCompoundValue for Rule {
+impl WriteCompoundValue for CachedRule {
   type Schema = RuleSchema;
 
   fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination) {
@@ -44,18 +42,18 @@ impl WriteCompoundValue for Rule {
   }
 }
 
-impl ReadCompoundValue for Rule {
+impl ReadCompoundValue for CachedRule {
   type Schema = RuleSchema;
 
   fn deserialize(reader: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
-    Ok(Rule::construct(
+    Ok(CachedRule::construct(
       reader.read_compound_value(&schema.activator)?,
       reader.read_compound_value(&schema.enabler)?,
     ))
   }
 }
 
-impl WriteUpdates for Rule {
+impl WriteUpdates for CachedRule {
   type Schema = RuleSchema;
 
   fn write_updates(

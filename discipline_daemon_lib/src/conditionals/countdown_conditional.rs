@@ -91,3 +91,7 @@ pub mod procedures {
     }
   }
 }
+
+pub mod database {
+  pub use crate::x::database::CountdownConditionalSchema as Schema;
+}

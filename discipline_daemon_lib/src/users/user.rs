@@ -1,20 +1,17 @@
 use serde::{Serialize, Deserialize};
-use crate::x::{UserName, operating_system, regulation};
+use crate::x::{operating_system, regulation};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct User {
-  name: UserName,
+pub struct CachedUser {
   pub regulation: regulation::PerUserInfo,
   operating_system_info: operating_system::PerUserInfo,
 }
 
-impl User {
+impl CachedUser {
   pub fn new(
-    name: UserName, 
     operating_system_info: operating_system::PerUserInfo,
   ) -> Self {
     Self {
-      name,
       regulation: regulation::PerUserInfo::new(),
       operating_system_info,
     }

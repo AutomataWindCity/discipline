@@ -1,6 +1,4 @@
-use crate::x::TextualError;
-use crate::x::rules::*;
-use crate::x::database::*;
+use crate::x::{TextualError, conditionals, rules::*, database::*};
 
 enum RuleEnablerType {
   Countdown,
@@ -53,8 +51,8 @@ impl ReadScalarValue for RuleEnablerType {
 
 pub struct RuleEnablerSchema {
   enum_type: Key,
-  enum_countdown: CountdownConditionalSchema,
-  enum_countdown_after_plea: CountdownAfterPleaConditionalSchema,
+  enum_countdown: conditionals::countdown::database::Schema,
+  enum_countdown_after_plea: conditionals::countdown_after_plea::database::Schema,
 }
 
 impl RuleEnablerSchema {
@@ -66,15 +64,24 @@ impl RuleEnablerSchema {
   ) -> Self {
     Self {
       enum_type,
-      enum_countdown: CountdownConditionalSchema::new(
-        enum_data_1, 
-        enum_data_2,
-      ),
-      enum_countdown_after_plea: CountdownAfterPleaConditionalSchema::new(
-        enum_data_1, 
-        enum_data_2, 
-        enum_data_3,
-      ),
+      enum_countdown: conditionals
+        ::countdown
+        ::database
+        ::Schema::new(
+          enum_data_1, 
+          enum_data_2,
+        )
+      ,
+      enum_countdown_after_plea: conditionals
+        ::countdown_after_plea
+        ::database
+        ::Schema
+        ::new(
+          enum_data_1, 
+          enum_data_2, 
+          enum_data_3,
+        )
+      ,
     }
   }
 }

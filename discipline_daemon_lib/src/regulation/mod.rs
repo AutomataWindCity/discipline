@@ -8,13 +8,13 @@ use crate::x::MonotonicInstant;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PerUserInfo {
-  pub block_device_access: block_device_access::ProfilesManager,
+  pub block_device_access: block_device_access::Regulation,
 }
 
 impl PerUserInfo {
   pub fn new() -> Self {
     Self {
-      block_device_access: block_device_access::ProfilesManager::new(),
+      block_device_access: block_device_access::Regulation::new(),
     }
   }
 

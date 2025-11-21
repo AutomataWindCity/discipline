@@ -30,6 +30,13 @@ impl SqlCode {
     WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
   }
 
+  pub fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
+  where
+    T: WriteCompoundValue
+  {
+    // WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
+  }
+
   pub fn as_str(&self) -> &str {
     &self.value
   }
@@ -749,8 +756,9 @@ pub struct Connection {
 }
 
 pub enum ExecuteError {
-  Fatal(rusqlite::Error),
+  Other(rusqlite::Error),
   PrimaryKeyViolation,
+  ForiegnKeyViolation,
 }
 
 impl Connection {
@@ -764,7 +772,7 @@ impl Connection {
         error.extended_code
       }
       other => {
-        return Err(ExecuteError::Fatal(other));
+        return Err(ExecuteError::Other(other));
       }
     };
 
@@ -773,7 +781,7 @@ impl Connection {
         Err(ExecuteError::PrimaryKeyViolation)
       }
       _ => {
-        Err(ExecuteError::Fatal(error))
+        Err(ExecuteError::Other(error))
       }
     }
   }

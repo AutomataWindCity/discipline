@@ -29,22 +29,28 @@ pub use crate::conditionals::countdown_conditional::CountdownConditional;
 pub use crate::conditionals::countdown_after_plea_conditional;
 pub use crate::conditionals::countdown_after_plea_conditional::CountdownAfterPleaConditional;
 
+pub mod conditionals {
+  pub use crate::conditionals::countdown_after_plea_conditional as countdown_after_plea;
+  pub use crate::conditionals::countdown_conditional as countdown;
+  pub use crate::conditionals::always_conditional as always;
+  pub use crate::conditionals::time_conditional as time;
+}
 pub use crate::regulation;
 pub use crate::operating_system;
 
 pub use crate::users::user_name;
 pub use crate::users::user_name::UserName;
 pub use crate::users::user;
-pub use crate::users::user::User;
+pub use crate::users::user::CachedUser;
 pub use crate::users::user_group;
 pub use crate::users::user_group::UserGroup;
 
 pub use crate::database;
 
-pub use crate::rules::{self, Rule, RuleGroup};
+pub use crate::rules::{self, CachedRule, CachedRuleGroup};
 pub use crate::rules as rules_x;
 
-pub use crate::regulation::block_device_access::{self, ProfilesManager};
+pub use crate::regulation::block_device_access::{self};
 
 pub use crate::daemon::{Daemon, State};
 pub use crate::procedures;

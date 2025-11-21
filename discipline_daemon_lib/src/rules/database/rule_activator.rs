@@ -1,6 +1,4 @@
-use crate::x::TextualError;
-use crate::x::rules::*;
-use crate::x::database::*;
+use crate::x::{TextualError, conditionals, rules::*, database::*};
 
 enum RuleActivatorType {
   Time,
@@ -53,8 +51,8 @@ impl ReadScalarValue for RuleActivatorType {
 
 pub struct RuleActivatorSchema {
   enum_type: Key,
-  enum_time: TimeConditionalSchema,
-  enum_always: AlwaysConditionalSchema,
+  enum_time: conditionals::time::database::Schema,
+  enum_always: conditionals::always::database::Schema,
 }
 
 impl RuleActivatorSchema {
@@ -66,12 +64,12 @@ impl RuleActivatorSchema {
   ) -> Self {
     Self {
       enum_type,
-      enum_time: TimeConditionalSchema::new(
+      enum_time: conditionals::time::database::Schema::new(
         enum_data_1, 
         enum_data_2, 
         enum_data_3,
       ),
-      enum_always: AlwaysConditionalSchema::new(),
+      enum_always: conditionals::always::database::Schema::new(),
     }
   }
 }

@@ -26,3 +26,7 @@ impl Creator {
     AlwaysConditional::new()
   }
 }
+
+pub mod database {
+  pub use crate::x::database::AlwaysConditionalSchema as Schema;
+}
