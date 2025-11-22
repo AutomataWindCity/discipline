@@ -9,13 +9,13 @@ pub enum RuleActivatorCreator {
 }
 
 impl RuleActivatorCreator {
-  pub fn create(self) -> CachedRuleActivator {
+  pub fn create(self) -> RuleActivator {
     match self {
       Self::Time(creator) => {
-        CachedRuleActivator::Time(creator.create())
+        RuleActivator::Time(creator.create())
       }
       Self::Always(creator) => {
-        CachedRuleActivator::Always(creator.create())
+        RuleActivator::Always(creator.create())
       }
     }
   }
@@ -28,13 +28,13 @@ pub enum RuleEnablerCreator {
 }
 
 impl RuleEnablerCreator {
-  pub fn create(self) -> CachedRuleEnabler {
+  pub fn create(self) -> RuleEnabler {
     match self {
       Self::Countdown(creator) => {
-        CachedRuleEnabler::Countdown(creator.create())
+        RuleEnabler::Countdown(creator.create())
       }
       Self::CountdownAfterPlea(creator) => {
-        CachedRuleEnabler::CountdownAfterPlea(creator.create())
+        RuleEnabler::CountdownAfterPlea(creator.create())
       }
     }
   }

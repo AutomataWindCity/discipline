@@ -74,16 +74,16 @@ impl RuleActivatorSchema {
   }
 }
 
-impl WriteCompoundValue for CachedRuleActivator {
+impl WriteCompoundValue for RuleActivator {
   type Schema = RuleActivatorSchema;
 
   fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination) {
     match value {
-      CachedRuleActivator::Time(inner) => {
+      RuleActivator::Time(inner) => {
         writer.write_scalar_value(schema.enum_type, &RuleActivatorType::Time);
         writer.write_compound_value(&schema.enum_time, inner);
       }
-      CachedRuleActivator::Always(inner) => {
+      RuleActivator::Always(inner) => {
         writer.write_scalar_value(schema.enum_type, &RuleActivatorType::Always);
         writer.write_compound_value(&schema.enum_always, inner);
       }
@@ -91,7 +91,7 @@ impl WriteCompoundValue for CachedRuleActivator {
   }
 }
 
-impl ReadCompoundValue for CachedRuleActivator {
+impl ReadCompoundValue for RuleActivator {
   type Schema = RuleActivatorSchema;
 
   fn deserialize(reader: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
@@ -99,12 +99,12 @@ impl ReadCompoundValue for CachedRuleActivator {
     
     Ok(match enum_type {
       RuleActivatorType::Time => {
-        CachedRuleActivator::Time(
+        RuleActivator::Time(
           reader.read_compound_value(&schema.enum_time)?
         )
       }
       RuleActivatorType::Always => {
-        CachedRuleActivator::Always(
+        RuleActivator::Always(
           reader.read_compound_value(&schema.enum_always)?
         )
       }

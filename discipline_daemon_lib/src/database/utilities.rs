@@ -755,14 +755,14 @@ pub struct Connection {
   inner: Arc<Mutex<rusqlite::Connection>>
 }
 
-pub enum ExecuteError {
+pub enum DbExecuteError {
   Other(rusqlite::Error),
   PrimaryKeyViolation,
   ForiegnKeyViolation,
 }
 
 impl Connection {
-  pub async fn execute(&self, code: &SqlCode) -> Result<(), ExecuteError> {
+  pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
     let Err(error) = self.inner.lock().await.execute_batch(code.as_str()) else {
       return Ok(());
     };
@@ -772,16 +772,16 @@ impl Connection {
         error.extended_code
       }
       other => {
-        return Err(ExecuteError::Other(other));
+        return Err(DbExecuteError::Other(other));
       }
     };
 
     match sqlite_extended_error_code {
       libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
-        Err(ExecuteError::PrimaryKeyViolation)
+        Err(DbExecuteError::PrimaryKeyViolation)
       }
       _ => {
-        Err(ExecuteError::Other(error))
+        Err(DbExecuteError::Other(error))
       }
     }
   }

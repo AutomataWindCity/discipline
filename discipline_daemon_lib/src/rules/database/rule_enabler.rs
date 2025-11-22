@@ -86,16 +86,16 @@ impl RuleEnablerSchema {
   }
 }
 
-impl WriteCompoundValue for CachedRuleEnabler {
+impl WriteCompoundValue for RuleEnabler {
   type Schema = RuleEnablerSchema;
 
   fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination) {
     match value {
-      CachedRuleEnabler::Countdown(inner) => {
+      RuleEnabler::Countdown(inner) => {
         writer.write_scalar_value(schema.enum_type, &RuleEnablerType::Countdown);
         writer.write_compound_value(&schema.enum_countdown, inner);
       }
-      CachedRuleEnabler::CountdownAfterPlea(inner) => {
+      RuleEnabler::CountdownAfterPlea(inner) => {
         writer.write_scalar_value(schema.enum_type, &RuleEnablerType::CountdownAfterPlea);
         writer.write_compound_value(&schema.enum_countdown_after_plea, inner);
       }
@@ -103,19 +103,19 @@ impl WriteCompoundValue for CachedRuleEnabler {
   }
 }
 
-impl ReadCompoundValue for CachedRuleEnabler {
+impl ReadCompoundValue for RuleEnabler {
   type Schema = RuleEnablerSchema;
 
   fn deserialize(reader: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
     let enum_type = reader.read_scalar_value(schema.enum_type)?;
     Ok(match enum_type {
       RuleEnablerType::Countdown => {
-        CachedRuleEnabler::Countdown(
+        RuleEnabler::Countdown(
           reader.read_compound_value(&schema.enum_countdown)?
         )
       }
       RuleEnablerType::CountdownAfterPlea => {
-        CachedRuleEnabler::CountdownAfterPlea(
+        RuleEnabler::CountdownAfterPlea(
           reader.read_compound_value(&schema.enum_countdown_after_plea)?
         )
       }
@@ -123,7 +123,7 @@ impl ReadCompoundValue for CachedRuleEnabler {
   }
 }
 
-impl WriteUpdates for CachedRuleEnabler {
+impl WriteUpdates for RuleEnabler {
   type Schema = RuleEnablerSchema;
 
   fn write_updates(
@@ -133,7 +133,7 @@ impl WriteUpdates for CachedRuleEnabler {
     destination: &mut impl CompoundValueWriteDestination,
   ) {
     match (modified, original) {
-      (CachedRuleEnabler::Countdown(modified), CachedRuleEnabler::Countdown(original)) => {
+      (RuleEnabler::Countdown(modified), RuleEnabler::Countdown(original)) => {
         WriteUpdates::write_updates(
           original, 
           modified, 
@@ -141,7 +141,7 @@ impl WriteUpdates for CachedRuleEnabler {
           destination,
         );
       }
-      (CachedRuleEnabler::CountdownAfterPlea(modified), CachedRuleEnabler::CountdownAfterPlea(original)) => {
+      (RuleEnabler::CountdownAfterPlea(modified), RuleEnabler::CountdownAfterPlea(original)) => {
         WriteUpdates::write_updates(
           original, 
           modified, 
@@ -149,11 +149,11 @@ impl WriteUpdates for CachedRuleEnabler {
           destination,
         );
       }
-      (CachedRuleEnabler::Countdown(new), _old) => {
+      (RuleEnabler::Countdown(new), _old) => {
         destination.write_scalar_value(schema.enum_type, &RuleEnablerType::Countdown);
         destination.write_compound_value(&schema.enum_countdown, new);
       }
-      (CachedRuleEnabler::CountdownAfterPlea(new), _old) => {
+      (RuleEnabler::CountdownAfterPlea(new), _old) => {
         destination.write_scalar_value(schema.enum_type, &RuleEnablerType::CountdownAfterPlea);
         destination.write_compound_value(&schema.enum_countdown_after_plea, new);
       }

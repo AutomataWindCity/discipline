@@ -1,80 +1,22 @@
-use crate::{rules::{CachedRuleActivator, CachedRuleEnabler}, x::UuidV4};
+use crate::x::{UuidV4, Database};
 use crate::x::database::*;
-use super::{RuleOwnerLocator, user_rule_collection, Connection};
+use crate::x::rules::{Rule, RuleActivator, RuleEnabler, Location};
+use crate::x::rules::database::user_rule_collection;
 
-pub struct RuleColections {
-  user_device_access_regulation: user_rule_collection::Collection,
-  user_account_access_regulation: user_rule_collection::Collection,
-  user_internet_access_regulation: user_rule_collection::Collection,
-}
-
-pub struct RuleCollectionsProcedures<'a> {
-  connection: &'a Connection,
-  collections: &'a RuleColections,
-}
-
-impl<'a> RuleCollectionsProcedures<'a> {
-  pub async fn add_rule(
-    &self, 
-    rule_id: &UuidV4, 
-    rule_activator: &CachedRuleActivator, 
-    rule_enabler: &CachedRuleEnabler, 
-    rule_owner_locator: &RuleOwnerLocator,
-  ) -> Result<(), ExecuteError> {
-    match rule_owner_locator {
-      RuleOwnerLocator::UserAccountAccessRegulation { user_id } => {
-        user_rule_collection::add_rule(
-          self.connection, 
-          &self.collections.user_account_access_regulation, 
-          rule_activator, 
-          rule_enabler, 
-          rule_id, 
-          user_id,
-        ).await
-      }
-      RuleOwnerLocator::UserDeviceAccessRegulation { user_id } => {
-        user_rule_collection::add_rule(
-          self.connection, 
-          &self.collections.user_device_access_regulation, 
-          rule_activator, 
-          rule_enabler, 
-          rule_id, 
-          user_id,
-        ).await
-      }
-      RuleOwnerLocator::UserInternetAccessRegulation { user_id } => {
-        user_rule_collection::add_rule(
-          self.connection, 
-          &self.collections.user_internet_access_regulation, 
-          rule_activator, 
-          rule_enabler, 
-          rule_id, 
-          user_id,
-        ).await
-      }
-    }
-  }
-
-  pub fn remove_rule(&self, rule_id: &UuidV4, rule_owner_locator: &RuleOwnerLocator) -> Result<(), ExecuteError> {
-    todo!()
-  }
-}
-
-pub enum AddRuleError {
+pub enum DbAddRuleError {
   DuplicateId,
-  NoSuchOwner,
-  Other,
+  InternalError,
 }
 
-pub async fn add_rule(
-  database: &crate::daemon::Database,
+pub async fn db_add_rule(
+  database: &Database,
+  location: &Location,
   rule_id: &UuidV4, 
-  rule_activator: &CachedRuleActivator, 
-  rule_enabler: &CachedRuleEnabler, 
-  rule_owner_locator: &RuleOwnerLocator,
-) -> Result<(), AddRuleError> {
-  match rule_owner_locator {
-    RuleOwnerLocator::UserAccountAccessRegulation { user_id } => {
+  rule_activator: &RuleActivator, 
+  rule_enabler: &RuleEnabler, 
+) -> Result<(), DbAddRuleError> {
+  let maybe_error = match location {
+    Location::UserAccountAccessRegulation { user_id } => {
       user_rule_collection::add_rule(
         &database.connection, 
         &database.user_account_access_regulation_rule_collection, 
@@ -84,7 +26,7 @@ pub async fn add_rule(
         user_id,
       ).await
     }
-    RuleOwnerLocator::UserDeviceAccessRegulation { user_id } => {
+    Location::UserDeviceAccessRegulation { user_id } => {
       user_rule_collection::add_rule(
         &database.connection, 
         &database.user_device_access_regulation_rule_collection, 
@@ -94,7 +36,7 @@ pub async fn add_rule(
         user_id,
       ).await
     }
-    RuleOwnerLocator::UserInternetAccessRegulation { user_id } => {
+    Location::UserInternetAccessRegulation { user_id } => {
       user_rule_collection::add_rule(
         &database.connection, 
         &database.user_internet_access_regulation_rule_collection, 
@@ -104,18 +46,75 @@ pub async fn add_rule(
         user_id,
       ).await
     }
-  }
+  };
+
+  let Err(error) = maybe_error else {
+    return Ok(());
+  };
+
+  Err(match error {
+    DbExecuteError::PrimaryKeyViolation => DbAddRuleError::DuplicateId,
+    DbExecuteError::ForiegnKeyViolation => DbAddRuleError::InternalError,
+    DbExecuteError::Other(it) => DbAddRuleError::InternalError,
+  })
 }
 
-pub enum RemoveRuleError {
+pub enum DbRemoveRuleError {
   NoSuchRule,
-  Other,
+  InternalError,
 }
 
 pub async fn remove_rule(
-  database: &crate::daemon::Database,
+  database: &Database,
+  location: &Location,
   rule_id: &UuidV4, 
-  rule_owner_locator: &RuleOwnerLocator,
-) -> Result<(), RemoveRuleError> {
-  todo!()
+) -> Result<(), DbRemoveRuleError> {
+  let maybe_error = match location {
+    Location::UserDeviceAccessRegulation { user_id } => {
+      user_rule_collection::remove_rule(
+        &database.connection, 
+        &database.user_device_access_regulation_rule_collection, 
+        rule_id,
+      ).await
+    }
+    Location::UserAccountAccessRegulation { user_id } => {
+      user_rule_collection::remove_rule(
+        &database.connection, 
+        &database.user_account_access_regulation_rule_collection, 
+        rule_id,
+      ).await
+    }
+    Location::UserInternetAccessRegulation { user_id } => {
+      user_rule_collection::remove_rule(
+        &database.connection, 
+        &database.user_internet_access_regulation_rule_collection,
+        rule_id,
+      ).await
+    }
+  };
+
+  let Err(error) = maybe_error else {
+    return Ok(());
+  };
+
+  Err(match error {
+    DbExecuteError::ForiegnKeyViolation => DbRemoveRuleError::InternalError,
+    DbExecuteError::Other(it) => DbRemoveRuleError::InternalError,
+    DbExecuteError::PrimaryKeyViolation => DbRemoveRuleError::InternalError,
+  })
+}
+
+pub enum DbUpdateRuleEnablerError {
+  NoSuchRule,
+  InternalError,
+}
+
+pub async fn db_update_rule_enabler(
+  database: &Database,
+  location: &Location,
+  rule_id: &UuidV4,
+  original_enabler: &RuleEnabler,
+  new_enabler: &RuleEnabler,
+) -> Result<(), DbUpdateRuleEnablerError> {
+  
 }

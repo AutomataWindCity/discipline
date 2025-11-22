@@ -16,11 +16,6 @@ pub struct Database {
   pub user_internet_access_regulation_rule_collection: crate::x::rules::database::user_rule_collection::Collection,
 }
 
-impl Database {
-  pub fn rule_collection(&self) -> crate::x::rules::database::rule_collection::RuleCollectionsProcedures {
-    todo!()
-  }
-}
 
 pub struct DaemonLaunchConfiguration {
   procedure_call_server_port: u64,

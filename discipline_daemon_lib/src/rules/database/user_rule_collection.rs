@@ -5,7 +5,7 @@ use crate::x::database::*;
 struct CollectionItem {
   rule_id: UuidV4, 
   user_id: UuidV4, 
-  rule: CachedRule,
+  rule: Rule,
 }
 
 pub struct CollectionItemSchema {
@@ -68,7 +68,7 @@ impl ReadCompoundValue for CollectionItem {
 }
 
 pub struct UserRuleSerializer<'a> {
-  pub rule: &'a CachedRule,
+  pub rule: &'a Rule,
   pub rule_id: &'a UuidV4,
   pub user_id: &'a UuidV4,
 }
@@ -113,8 +113,8 @@ impl<'a> UserRuleUpdates<'a> {
 pub fn write_add_rule(
   code: &mut SqlCode, 
   collection: &Collection,
-  rule_activator: &CachedRuleActivator,
-  rule_enabler: &CachedRuleEnabler,
+  rule_activator: &RuleActivator,
+  rule_enabler: &RuleEnabler,
   rule_id: &UuidV4,
   user_id: &UuidV4,
 ) {
@@ -176,11 +176,11 @@ fn write_update_rule(
 pub async fn add_rule(
   connection: &Connection,
   collection: &Collection,
-  rule_activator: &CachedRuleActivator,
-  rule_enabler: &CachedRuleEnabler,
+  rule_activator: &RuleActivator,
+  rule_enabler: &RuleEnabler,
   rule_id: &UuidV4, 
   user_id: &UuidV4,
-) -> Result<(), ExecuteError> {
+) -> Result<(), DbExecuteError> {
   let mut code = SqlCode::new();
   write_add_rule(&mut code, collection, rule_activator, rule_enabler, rule_id, user_id);
   connection.execute(&code).await
@@ -189,7 +189,7 @@ pub async fn add_rule(
 pub async fn remove_rule(
   connection: &Connection,
   collection: &Collection,
-  rule_id: &UuidV4) -> Result<(), ExecuteError> {
+  rule_id: &UuidV4) -> Result<(), DbExecuteError> {
   let mut code = SqlCode::new();
   write_delete_rule(&mut code, collection, rule_id);
   connection.execute(&code).await
@@ -200,7 +200,7 @@ pub async fn update_rule(
   collection: &Collection,
   rule_id: &UuidV4, 
   updates: &CompoundValueWriteDestinationForUpdate,
-) -> Result<(), ExecuteError> {
+) -> Result<(), DbExecuteError> {
   let mut code = SqlCode::new();
   write_update_rule(&mut code, collection, rule_id, updates);
   connection.execute(&code).await
@@ -218,13 +218,13 @@ impl<'a> UserRuleCollectionProcedures<'a> {
   //   self.connection.execute(&code).await
   // }
 
-  pub async fn remove_rule(&self, rule_id: &UuidV4) -> Result<(), ExecuteError> {
+  pub async fn remove_rule(&self, rule_id: &UuidV4) -> Result<(), DbExecuteError> {
     let mut code = SqlCode::new();
     write_delete_rule(&mut code, self.collection, rule_id);
     self.connection.execute(&code).await
   }
 
-  pub async fn update_rule(&self, rule_id: &UuidV4, updates: &CompoundValueWriteDestinationForUpdate) -> Result<(), ExecuteError> {
+  pub async fn update_rule(&self, rule_id: &UuidV4, updates: &CompoundValueWriteDestinationForUpdate) -> Result<(), DbExecuteError> {
     let mut code = SqlCode::new();
     write_update_rule(&mut code, self.collection, rule_id, updates);
     self.connection.execute(&code).await

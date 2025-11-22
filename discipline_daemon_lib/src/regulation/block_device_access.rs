@@ -47,7 +47,7 @@ use crate::x::rules;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Regulation {
-  pub rules: rules::CachedRuleGroup,
+  pub rules: rules::RuleGroup,
 }
 
 impl Regulation {

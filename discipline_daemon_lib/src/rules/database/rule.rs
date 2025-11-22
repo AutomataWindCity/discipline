@@ -33,7 +33,7 @@ impl RuleSchema {
   }
 }
 
-impl WriteCompoundValue for CachedRule {
+impl WriteCompoundValue for Rule {
   type Schema = RuleSchema;
 
   fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination) {
@@ -42,18 +42,18 @@ impl WriteCompoundValue for CachedRule {
   }
 }
 
-impl ReadCompoundValue for CachedRule {
+impl ReadCompoundValue for Rule {
   type Schema = RuleSchema;
 
   fn deserialize(reader: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
-    Ok(CachedRule::construct(
+    Ok(Rule::construct(
       reader.read_compound_value(&schema.activator)?,
       reader.read_compound_value(&schema.enabler)?,
     ))
   }
 }
 
-impl WriteUpdates for CachedRule {
+impl WriteUpdates for Rule {
   type Schema = RuleSchema;
 
   fn write_updates(
