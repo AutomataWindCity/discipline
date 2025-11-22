@@ -18,7 +18,7 @@ impl PerUserInfo {
     }
   }
 
-  pub fn has_activate_rules(&self, now: MonotonicInstant) -> bool {
+  pub fn has_enabled_rules(&self, now: MonotonicInstant) -> bool {
     // self
     //   .block_device_access
     //   .rules

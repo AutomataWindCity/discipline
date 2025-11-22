@@ -41,7 +41,7 @@ pub use crate::operating_system;
 pub use crate::users::user_name;
 pub use crate::users::user_name::UserName;
 pub use crate::users::user;
-pub use crate::users::user::CachedUser;
+pub use crate::users::user::User;
 pub use crate::users::user_group;
 pub use crate::users::user_group::UserGroup;
 

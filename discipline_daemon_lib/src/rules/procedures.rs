@@ -1,50 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::x::{MonotonicInstant, UuidV4, Database};
-use crate::x::rules::{Rule, RuleGroup, RuleCreator, RuleActivator, RuleEnabler, CrossGroupInfo, Location};
-
-pub enum DbAddRuleError {
-  DuplicateId,
-  InternalError,
-}
-
-async fn db_add_rule(
-  database: &Database,
-  location: &Location,
-  rule_id: &UuidV4,
-  rule_enabler: &RuleEnabler,
-  rule_activator: &RuleActivator,
-) -> Result<(), DbAddRuleError> {
-  todo!()
-}
-
-pub enum DbDeleteRuleError {
-  NoSuchRule,
-  InternalError,
-}
-
-async fn db_delete_rule(
-  database: &Database,
-  location: &Location,
-  rule_id: &UuidV4,
-) -> Result<(), DbDeleteRuleError> {
-  todo!()
-}
-
-pub enum DbUpdateRuleEnablerError {
-  NoSuchRule,
-  InternalError,
-}
-
-async fn db_update_rule_enabler(
-  database: &Database,
-  location: &Location,
-  rule_id: &UuidV4,
-  original_enabler: &RuleEnabler,
-  updated_enabler: &RuleEnabler,
-) -> Result<(), DbUpdateRuleEnablerError> {
-  todo!()
-}
-
+use crate::x::rules::{Rule, RuleGroup, RuleCreator, RuleActivator, RuleEnabler, CrossGroupInfo, Location, database};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddRule {
@@ -76,7 +32,7 @@ impl AddRule {
     let rule_enabler = self.creator.enabler.create();
     let rule_activator = self.creator.activator.create();
 
-    if let Err(error) = db_add_rule(
+    if let Err(error) = database::add_rule(
       database,
       location,
       &rule_id, 
@@ -84,14 +40,14 @@ impl AddRule {
       &rule_activator, 
     ).await {
       return match error {
-        DbAddRuleError::DuplicateId => {
+        database::AddRuleError::DuplicateId => {
           if id_was_created_by_client {
             AddRuleReturn::DuplicateId
           } else {
             AddRuleReturn::InternalError
           }
         }
-        DbAddRuleError::InternalError => {
+        database::AddRuleError::InternalError => {
           AddRuleReturn::InternalError
         }
       };
@@ -138,10 +94,10 @@ impl DeleteRule {
       return DeleteRuleReturn::RuleStillEnabled;
     }
 
-    if let Err(error) = db_delete_rule(database, location, &self.rule_id).await {
+    if let Err(error) = database::delete_rule(database, location, &self.rule_id).await {
       return match error {
-        DbDeleteRuleError::InternalError => DeleteRuleReturn::InternalError,
-        DbDeleteRuleError::NoSuchRule => DeleteRuleReturn::InternalError,
+        database::DeleteRuleError::InternalError => DeleteRuleReturn::InternalError,
+        database::DeleteRuleError::NoSuchRule => DeleteRuleReturn::InternalError,
       };
     }
 
@@ -179,7 +135,7 @@ impl ActivateRule {
     let mut enabler = rule.enabler.clone();
     enabler.activate(now);
 
-    if let Err(error) = db_update_rule_enabler(
+    if let Err(error) = database::update_rule_enabler(
       database, 
       location, 
       &self.rule_id, 
@@ -187,8 +143,8 @@ impl ActivateRule {
       &enabler,
     ).await {
       return match error {
-        DbUpdateRuleEnablerError::InternalError => ActivateRuleReturn::InternalError,
-        DbUpdateRuleEnablerError::NoSuchRule => ActivateRuleReturn::InternalError,
+        database::UpdateRuleEnablerError::InternalError => ActivateRuleReturn::InternalError,
+        database::UpdateRuleEnablerError::NoSuchRule => ActivateRuleReturn::InternalError,
       };
     }
 
@@ -224,7 +180,7 @@ impl DeactivateRule {
     let mut enabler = rule.enabler.clone();
     enabler.deactivate(now);
 
-    if let Err(error) = db_update_rule_enabler(
+    if let Err(error) = database::update_rule_enabler(
       database, 
       location, 
       &self.rule_id, 
@@ -232,8 +188,8 @@ impl DeactivateRule {
       &enabler,
     ).await {
       return match error {
-        DbUpdateRuleEnablerError::InternalError => DeactivateRuleReturn::InternalError,
-        DbUpdateRuleEnablerError::NoSuchRule => DeactivateRuleReturn::InternalError,
+        database::UpdateRuleEnablerError::InternalError => DeactivateRuleReturn::InternalError,
+        database::UpdateRuleEnablerError::NoSuchRule => DeactivateRuleReturn::InternalError,
       };
     }
 

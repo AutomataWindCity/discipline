@@ -1,20 +1,20 @@
 use crate::x::{UuidV4, Database};
 use crate::x::database::*;
-use crate::x::rules::{Rule, RuleActivator, RuleEnabler, Location};
+use crate::x::rules::{RuleActivator, RuleEnabler, Location};
 use crate::x::rules::database::user_rule_collection;
 
-pub enum DbAddRuleError {
+pub enum AddRuleError {
   DuplicateId,
   InternalError,
 }
 
-pub async fn db_add_rule(
+pub async fn add_rule(
   database: &Database,
   location: &Location,
   rule_id: &UuidV4, 
-  rule_activator: &RuleActivator, 
   rule_enabler: &RuleEnabler, 
-) -> Result<(), DbAddRuleError> {
+  rule_activator: &RuleActivator, 
+) -> Result<(), AddRuleError> {
   let maybe_error = match location {
     Location::UserAccountAccessRegulation { user_id } => {
       user_rule_collection::add_rule(
@@ -53,13 +53,13 @@ pub async fn db_add_rule(
   };
 
   Err(match error {
-    DbExecuteError::PrimaryKeyViolation => DbAddRuleError::DuplicateId,
-    DbExecuteError::ForiegnKeyViolation => DbAddRuleError::InternalError,
-    DbExecuteError::Other(it) => DbAddRuleError::InternalError,
+    DbExecuteError::PrimaryKeyViolation => AddRuleError::DuplicateId,
+    DbExecuteError::ForiegnKeyViolation => AddRuleError::InternalError,
+    DbExecuteError::Other(it) => AddRuleError::InternalError,
   })
 }
 
-pub enum DbRemoveRuleError {
+pub enum RemoveRuleError {
   NoSuchRule,
   InternalError,
 }
@@ -68,23 +68,23 @@ pub async fn remove_rule(
   database: &Database,
   location: &Location,
   rule_id: &UuidV4, 
-) -> Result<(), DbRemoveRuleError> {
+) -> Result<(), RemoveRuleError> {
   let maybe_error = match location {
-    Location::UserDeviceAccessRegulation { user_id } => {
+    Location::UserDeviceAccessRegulation { .. } => {
       user_rule_collection::remove_rule(
         &database.connection, 
         &database.user_device_access_regulation_rule_collection, 
         rule_id,
       ).await
     }
-    Location::UserAccountAccessRegulation { user_id } => {
+    Location::UserAccountAccessRegulation { .. } => {
       user_rule_collection::remove_rule(
         &database.connection, 
         &database.user_account_access_regulation_rule_collection, 
         rule_id,
       ).await
     }
-    Location::UserInternetAccessRegulation { user_id } => {
+    Location::UserInternetAccessRegulation { .. } => {
       user_rule_collection::remove_rule(
         &database.connection, 
         &database.user_internet_access_regulation_rule_collection,
@@ -98,23 +98,36 @@ pub async fn remove_rule(
   };
 
   Err(match error {
-    DbExecuteError::ForiegnKeyViolation => DbRemoveRuleError::InternalError,
-    DbExecuteError::Other(it) => DbRemoveRuleError::InternalError,
-    DbExecuteError::PrimaryKeyViolation => DbRemoveRuleError::InternalError,
+    DbExecuteError::ForiegnKeyViolation => RemoveRuleError::InternalError,
+    DbExecuteError::Other(it) => RemoveRuleError::InternalError,
+    DbExecuteError::PrimaryKeyViolation => RemoveRuleError::InternalError,
   })
 }
 
-pub enum DbUpdateRuleEnablerError {
+pub enum UpdateRuleEnablerError {
   NoSuchRule,
   InternalError,
 }
 
-pub async fn db_update_rule_enabler(
+pub async fn update_rule_enabler(
   database: &Database,
   location: &Location,
   rule_id: &UuidV4,
   original_enabler: &RuleEnabler,
   new_enabler: &RuleEnabler,
-) -> Result<(), DbUpdateRuleEnablerError> {
-  
+) -> Result<(), UpdateRuleEnablerError> {
+  todo!();
+}
+
+pub enum DeleteRuleError {
+  InternalError,
+  NoSuchRule,
+}
+
+pub async fn delete_rule(
+  database: &Database,
+  location: &Location,
+  rule_id: &UuidV4,
+) -> Result<(), DeleteRuleError> {
+  todo!()
 }
