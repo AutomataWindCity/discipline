@@ -2,7 +2,7 @@ mod core;
 pub mod database;
 use database::*;
 
-mod procedures;
+pub mod procedures;
 mod creators;
 
 pub use core::*;

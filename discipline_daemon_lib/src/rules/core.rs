@@ -8,6 +8,12 @@ pub enum Location {
   UserInternetAccessRegulation { user_id: UuidV4 },
 }
 
+pub enum LocationRef<'a> {
+  UserDeviceAccessRegulation { user_id: &'a UuidV4 },
+  UserAccountAccessRegulation { user_id: &'a UuidV4 },
+  UserInternetAccessRegulation { user_id: &'a UuidV4 },
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RuleActivator {
   Time(TimeConditional),
@@ -162,6 +168,10 @@ impl RuleGroup {
     Self {
       rules: HashMap::new(),
     }
+  }
+
+  pub fn are_some_rules_enabled(&self, now: MonotonicInstant) -> bool {
+    self.rules.values().any(|it| it.is_enabled(now))
   }
 }
 

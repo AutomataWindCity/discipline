@@ -53,7 +53,15 @@ pub struct Regulation {
 impl Regulation {
   pub fn new() -> Self {
     Self {
-      rules: todo!()
+      rules: rules::RuleGroup::new(),
     }
+  }
+
+  pub fn rules(&self) -> &rules::RuleGroup {
+    &self.rules
+  }
+
+  pub fn rules_mut(&mut self) -> &mut rules::RuleGroup {
+    &mut self.rules
   }
 }

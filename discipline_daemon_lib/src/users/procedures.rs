@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
-use std::collections::hash_map::Entry;
 use crate::x::{MonotonicInstant, User, UserGroup, UserName, UuidV4, Database, operating_system};
 
 mod database {
@@ -31,6 +30,19 @@ mod database {
     database: &Database,
     user_id: &UuidV4,
   ) -> Result<(), DeleteUserError> {
+    todo!()
+  }
+
+  pub enum ChangeUserNameError {
+    NoSuchUser,
+    InternalError,
+  }
+
+  pub async fn change_user_name(
+    database: &Database,
+    user_id: &UuidV4,
+    new_user_name: &UserName
+  ) -> Result<(), ChangeUserNameError> {
     todo!()
   }
 }
@@ -122,7 +134,7 @@ impl DeleteUser {
     database: &Database,
     user_group: &mut UserGroup,
   ) -> DeleteUserReturn {
-    let Some(user) = user_group.users.get(self.user_id) else {
+    let Some(user) = user_group.users.get(&self.user_id) else {
       return DeleteUserReturn::NoSuchUser;
     };
 
@@ -140,11 +152,12 @@ impl DeleteUser {
           DeleteUserReturn::InternalError
         }
         database::DeleteUserError::NoSuchUser => {
-          database::DeleteUserError::InternalError
+          DeleteUserReturn::InternalError
         }
       }
     }
 
+    drop(user);
     user_group.users.remove(&self.user_id);
 
     DeleteUserReturn::Success
@@ -168,10 +181,25 @@ impl UpdateName {
     database: &Database,
     user_group: &mut UserGroup,
   ) -> UpdateNameReturn {
-    let Some(user) = user_group.get_user_mut(&self.user_id) else {
+    if !user_group.users.contains_key(&self.user_id) {
       return UpdateNameReturn::NoSuchUser;
-    };
+    }
 
-    if let Err(error) = 
+    if let Err(error) = database::change_user_name(
+      database, 
+      &self.user_id, 
+      &self.new_user_name,
+    ).await {
+      return match error {
+        database::ChangeUserNameError::InternalError => {
+          UpdateNameReturn::InternalError
+        }
+        database::ChangeUserNameError::NoSuchUser => {
+          UpdateNameReturn::InternalError
+        }
+      };
+    }
+
+    UpdateNameReturn::Success
   }
 }

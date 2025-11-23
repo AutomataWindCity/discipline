@@ -8,7 +8,6 @@ pub struct State {
   pub rules: Arc<Mutex<rules::CrossGroupInfo>>,
 }
 
-
 pub struct Database {
   pub connection: crate::x::database::Connection,
   pub user_device_access_regulation_rule_collection: crate::x::rules::database::user_rule_collection::Collection,

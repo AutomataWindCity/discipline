@@ -1,10 +1,11 @@
 {
   "files.autoSave": "afterDelay",
-  "editor.fontSize": 24,
-  "editor.fontFamily": "Purisa",
+  "editor.fontSize": 27,
+  "editor.fontFamily": "DaddyTimeMono Nerd Font, _EnvyCodeR Nerd Font, Terminess Nerd Font, _Monor, '3270 Nerd Font', Purisa",
   "deno.enable": true,
   "rust-analyzer.linkedProjects": [
-    "discipline_daemon/Cargo.toml"
+    // "discipline_daemon/Cargo.toml",
+    "discipline_daemon_lib/Cargo.toml",
   ],
   "rust-analyzer.inlayHints.typeHints.enable": false,
   "rust-analyzer.inlayHints.parameterHints.enable": false,
