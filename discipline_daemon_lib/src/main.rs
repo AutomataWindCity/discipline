@@ -10,6 +10,7 @@ pub mod database;
 pub mod x;
 pub mod v2;
 pub mod procedures;
+pub mod protocol;
 
 fn main() {
   println!("Hello, world!");

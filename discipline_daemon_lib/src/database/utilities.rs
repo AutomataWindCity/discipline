@@ -17,6 +17,12 @@ impl SqlCode {
   pub fn write(&mut self, str: &str) {
     self.value.push_str(str);
   }
+
+  pub fn write_space(&mut self) {}
+  pub fn write_where(&mut self) {}
+  pub fn write_column_equal_value<T>(&mut self, key: Key, value: &T)
+  where 
+    T: WriteScalarValue {}
   
   pub fn write_key(&mut self, key: Key) {
     self.value.push_str(key.as_str());
@@ -33,6 +39,17 @@ impl SqlCode {
   pub fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
   where
     T: WriteCompoundValue
+  {
+    // WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
+  }
+
+  pub fn write_compound_value_with_writer_for_insert<T>(
+    &mut self, 
+    schema: &T::Schema, 
+    writer: &T,
+  )
+  where
+    T: CompoundValueWriter
   {
     // WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
   }
@@ -403,6 +420,11 @@ where
 
 pub trait WriteScalarValue {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination);
+  fn to_sqlite_repr(&self) -> String {
+    let mut code = SqlCode::new();
+    Self::write(self, &mut ScalarValueWriteDestination { code: &mut code });
+    code.value
+  }
 }
 
 impl WriteScalarValue for u8 {
@@ -589,7 +611,7 @@ pub trait CompoundValueWriteDestination {
     T: WriteCompoundValue;
 
     
-  fn write_compound_value_with_writer<T>(&mut self, schema: &T::Schema, serializer: &T)
+  fn write_compound_value_with_writer<T>(&mut self, schema: &T::Schema, writer: &T)
   where 
     T: CompoundValueWriter;
 }
@@ -603,7 +625,7 @@ pub trait WriteCompoundValue {
 pub trait CompoundValueWriter {
   type Schema;
 
-  fn write(&self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination);
+  fn write(&self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination);
 }
 
 pub struct CompoundValueWriteDestinationForInsert {
@@ -762,9 +784,36 @@ pub enum DbExecuteError {
 }
 
 impl Connection {
+  pub async fn changes(&self) {}
+
   pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
     let Err(error) = self.inner.lock().await.execute_batch(code.as_str()) else {
       return Ok(());
+    };
+    
+    let sqlite_extended_error_code = match error {
+      rusqlite::Error::SqliteFailure(error, _) => {
+        error.extended_code
+      }
+      other => {
+        return Err(DbExecuteError::Other(other));
+      }
+    };
+
+    match sqlite_extended_error_code {
+      libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
+        Err(DbExecuteError::PrimaryKeyViolation)
+      }
+      _ => {
+        Err(DbExecuteError::Other(error))
+      }
+    }
+  }
+
+  pub async fn execute_with_changes(&self, code: &SqlCode) -> Result<u64, DbExecuteError> {
+    let connection = self.inner.lock().await;
+    let Err(error) = connection.execute_batch(code.as_str()) else {
+      return Ok(connection.changes());
     };
     
     let sqlite_extended_error_code = match error {
