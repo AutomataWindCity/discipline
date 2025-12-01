@@ -39,3 +39,6 @@ pub trait WriteUpdates<Other = Self> {
     modifications: &mut impl CompoundValueWriteDestination,
   );
 }
+
+mod database;
+pub use database::Database;

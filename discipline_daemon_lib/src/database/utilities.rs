@@ -1,4 +1,4 @@
-use std::{any::type_name, sync::Arc};
+use std::{any::type_name, path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
 use crate::x::TextualError;
@@ -784,6 +784,9 @@ pub enum DbExecuteError {
 }
 
 impl Connection {
+  pub fn open(path: PathBuf) {
+    rsq
+  }
   pub async fn changes(&self) {}
 
   pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
