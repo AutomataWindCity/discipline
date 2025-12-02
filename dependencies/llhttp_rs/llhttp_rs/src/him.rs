@@ -1,39 +1,36 @@
-// mod me;
-// mod him;
-
-// pub use me::*;
-
 use llhttp_sys::*;
 use std::ffi::CStr;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Error(i32);
+pub struct Status(i32);
 
-impl Error {
-  /// new_unkown return a new error with code -1
-  pub fn new_unkown() -> Self {
+impl Status {
+  pub fn ok() -> Self {
+    Self(llhttp_errno::HPE_OK.0 as _)
+  }
+
+  pub fn error() -> Self {
     Self(-1)
   }
 
-  /// into_inner return the inner error code
-  pub fn into_inner(self) -> i32 {
-    self.0
+  pub fn paused() -> Self {
+    Self(llhttp_errno::HPE_PAUSED.0 as _)
   }
 }
 
-impl From<llhttp_errno_t> for Error {
+impl From<llhttp_errno_t> for Status {
   fn from(errno: llhttp_errno_t) -> Self {
-    Error(errno.0 as _)
+    Status(errno.0 as _)
   }
 }
 
-impl From<Error> for llhttp_errno_t {
-  fn from(e: Error) -> Self {
+impl From<Status> for llhttp_errno_t {
+  fn from(e: Status) -> Self {
     llhttp_errno_t(e.0 as _)
   }
 }
 
-impl std::fmt::Display for Error {
+impl std::fmt::Display for Status {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self.0 {
       -1 => write!(f, "unknown"),
@@ -46,9 +43,9 @@ impl std::fmt::Display for Error {
   }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for Status {}
 
-pub type ParserResult<T> = Result<T, Error>;
+pub type ParserResult<T> = Result<T, Status>;
 
 struct ParserContext<'a, H: Callbacks + 'a> {
   parser: &'a mut Parser,
@@ -161,15 +158,13 @@ pub trait Callbacks: Sized {
       on_chunk_header: Some(cb_wrapper!(on_chunk_header)),
       on_chunk_complete: Some(cb_wrapper!(on_chunk_complete)),
       on_reset: Some(cb_wrapper!(on_reset)),
-      on_protocol: None,
-      on_protocol_complete: None,
     }
   }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Parser {
-  pub inner: llhttp_t,
+  inner: llhttp_t,
 }
 
 impl Parser {

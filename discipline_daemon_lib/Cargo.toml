@@ -12,3 +12,4 @@ serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.48.0", features = ["full"] }
 uuid = { version = "1.18.1", features = ["v4"] }
 llhttp_rs = { path = "../dependencies/llhttp_rs/llhttp_rs" }
+bincode = { version = "2.0.1", features = [ "serde" ] }

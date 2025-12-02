@@ -1,9 +1,9 @@
 use std::sync::Arc;
-use tokio::sync::Mutex;
-use crate::x::{UserGroup, monotonic::MonotonicClock, rules};
+use tokio::sync::{Mutex, RwLock};
+use crate::x::{UserGroup, MonotonicClock, rules};
 
 pub struct State {
-  pub clock: MonotonicClock,
-  pub users: UserGroup,
+  pub clock: Arc<RwLock<MonotonicClock>>,
+  pub users: Arc<RwLock<UserGroup>>,
   pub rules: Arc<Mutex<rules::CrossGroupInfo>>,
 }

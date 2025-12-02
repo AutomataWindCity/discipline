@@ -1,20 +1,51 @@
 use std::path::PathBuf;
-use crate::x::{Database, Server, State};
+use std::sync::Arc;
+use crate::x::{Database, Server, State, TextualError, state};
 
 pub struct DaemonLaunchConfiguration {
-  server_port: u64,
+  api_server_port: u16,
   database_directory: PathBuf,
 }
 
 pub struct Daemon {
-  launch_configuration: DaemonLaunchConfiguration,
+  configuration: DaemonLaunchConfiguration,
   pub state: State,
   pub database: Database,
-  pub server: Server,
+  pub api_server: Server,
 }
 
 impl Daemon {
-  pub fn open(configuration: DaemonLaunchConfiguration) {
-    // let database = Database::
+  pub async fn open(configuration: DaemonLaunchConfiguration) -> Result<Arc<Self>, TextualError> {
+    let database = Database::open(configuration.database_directory.clone())
+      .map_err(|error| {
+        error.with_context("Opening Daemon")
+      })?;
+
+    let state = state::database::load(&database)
+      .await
+      .map_err(|error| {
+        error.with_context("Opening Daemon")
+      })?;
+
+    let server = Server::new(configuration.api_server_port)
+      .await
+      .map_err(|error| {
+        error.with_context("Opening Daemon")
+      })?;
+
+    Ok(Arc::new(Self {
+      state,
+      api_server: server,
+      database,
+      configuration,
+    }))
+  }
+
+  pub fn clone(self: &Arc<Self>) -> Arc<Self> {
+    Arc::clone(self)
+  }
+
+  pub async fn start(self: Arc<Self>) {
+    _ = self.clone().api_server.start(self).await;
   }
 }

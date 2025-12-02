@@ -5,6 +5,19 @@ pub struct DatumCollection {
   schema: DatumSchema,
 }
 
+impl DatumCollection {
+  pub fn new(name: impl Into<String>) -> Self {
+    Self {
+      name: name.into(),
+      schema: DatumSchema::new(
+        "vault_id".into(), 
+        "datum_id".into(), 
+        "datum_text".into()
+      ),
+    }
+  }
+}
+
 fn write_add_datum(
   code: &mut SqlCode,
   collection: &DatumCollection,

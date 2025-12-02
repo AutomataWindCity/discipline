@@ -84,8 +84,17 @@ impl<'a> CompoundValueWriter for UserRuleSerializer<'a> {
 }
 
 pub struct Collection {
-  name: Key,
+  name: String,
   schema: CollectionItemSchema,
+}
+
+impl Collection {
+  pub fn new(name: impl Into<String>) -> Self {
+    Self {
+      name: name.into(),
+      schema: CollectionItemSchema::new(),
+    }
+  }
 }
 
 pub struct UserRuleUpdates<'a> {
@@ -119,11 +128,11 @@ pub fn write_add_rule(
   user_id: &UuidV4,
 ) {
   code.write("INSERT INTO ");
-  code.write_key(collection.name);
+  code.write(&collection.name);
   code.write(" ");
   // TODO
-  code.write_compound_value(&collection.schema.rule.activator, rule_activator);
-  code.write_compound_value(&collection.schema.rule.enabler, rule_enabler);
+  code.write_compound_value_for_insert(&collection.schema.rule.activator, rule_activator);
+  code.write_compound_value_for_insert(&collection.schema.rule.enabler, rule_enabler);
   code.write_scalar_value(rule_id);
   code.write_scalar_value(user_id);
   code.write(";");
@@ -135,7 +144,7 @@ fn write_delete_rule(
   rule_id: &UuidV4,
 ) {
   code.write("DELETE FROM ");
-  code.write_key(collection.name);
+  code.write(&collection.name);
   code.write(" WHERE ");
   code.write_key(collection.schema.rule_id);
   code.write(" = ");
@@ -148,7 +157,7 @@ fn write_find_all_rules(
   collection: &Collection,
 ) {
   code.write("SELECT * FROM ");
-  code.write_key(collection.name);
+  code.write(&collection.name);
   code.write(";");
 }
 
@@ -163,7 +172,7 @@ fn write_update_rule(
   };
 
   code.write("UPDATE ");
-  code.write_key(collection.name);
+  code.write(&collection.name);
   code.write(" SET ");
   code.write(updates);
   code.write(" WHERE ");

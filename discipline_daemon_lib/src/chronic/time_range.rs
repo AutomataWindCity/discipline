@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Duration, Time};
+use crate::x::{Duration, Time, time};
 
-pub const MINIMUM_FROM_VALUE: u32 = 0;
-pub const MAXIMUM_FROM_VALUE: u32 = 1000 * 60 * 60 * 24 - 1;
+pub const MINIMUM_FROM_VALUE: u32 = time::MINIMUM_TIMESTAMP;
+pub const MAXIMUM_FROM_VALUE: u32 = time::MAXIMUM_TIMESTAMP;
 
-pub const MINIMUM_TILL_VALUE: u32 = 0;
-pub const MAXIMUM_TILL_VALUE: u32 = 1000 * 60 * 60 * 24 * 2 - 1;
+pub const MINIMUM_TILL_VALUE: u32 = time::MINIMUM_TIMESTAMP;
+pub const MAXIMUM_TILL_VALUE: u32 = time::MAXIMUM_TIMESTAMP * 2;
 
 const MILLISECONDS_PER_DAY: u32 = 1000 * 60 * 60 * 24;
 
@@ -43,11 +43,24 @@ impl TimeRange {
   }
 
   pub fn from(&self) -> Time {
-    todo!()
+    // TODO: Document this properly
+    unsafe {
+      Time::unchecked_from_millisecond_timestamp(self.from)
+    }
   }
 
   pub fn till(&self) -> Time {
-    todo!()
+    // TODO: Document this properly
+    let timestamp = if self.till > MAXIMUM_FROM_VALUE {
+      self.till - MILLISECONDS_PER_DAY
+    } else {
+      self.till
+    };
+
+    // TODO: Document this properly
+    unsafe {
+      Time::unchecked_from_millisecond_timestamp(timestamp)
+    }
   }
 
   pub fn from_timestamps(from: u32, till: u32) -> Result<TimeRange, CreateFromTimestampsError> {
@@ -85,10 +98,6 @@ impl TimeRange {
 
   pub fn duration(&self) -> Duration {
     Duration::from_milliseconds((self.till - self.from) as u64)
-  }
-
-  pub fn set_till_given_duration(&mut self, duration: Duration) {
-    todo!()
   }
 }
 

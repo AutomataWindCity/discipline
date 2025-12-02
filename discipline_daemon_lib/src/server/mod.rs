@@ -1,12 +1,13 @@
 use std::any::type_name;
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::sync::Arc;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
-use bincode::{Encode, Decode};
+use tokio::net::{TcpListener, TcpStream};
 use tokio::spawn;
 use tokio::sync::Mutex;
-use crate::daemon::procedures::{AnyProcedure, AnyProcedureReturn};
+use crate::daemon::procedures::{Procedure, ProcedureReturn};
 use crate::x::{Daemon, TextualError};
 
 pub enum Error {
@@ -45,9 +46,9 @@ static BINCODE_CONFIG: bincode::config::Configuration<
 
 fn bincode_serialize<T>(value: &T) -> Result<Vec<u8>, TextualError> 
 where 
-  T: Encode
+  T: Serialize
 {
-  bincode::encode_to_vec(value, BINCODE_CONFIG)
+  bincode::serde::encode_to_vec(value, BINCODE_CONFIG)
     .map_err(|error| {
       TextualError::new(format!("Serializing {} using bincode", type_name::<T>()))
         .with_attachement_display("Error", error)
@@ -56,9 +57,9 @@ where
 
 fn bincode_deserialize<T>(slice: &[u8]) -> Result<T, TextualError>
 where 
-  T: Decode<()>
+  T: DeserializeOwned
 {
-  let (value, read_bytes) = match bincode::decode_from_slice(slice, BINCODE_CONFIG) {
+  let (value, read_bytes) = match bincode::serde::decode_from_slice(slice, BINCODE_CONFIG) {
     Ok(value) => {
       value
     }
@@ -82,21 +83,21 @@ where
   Ok(value)
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct ClientConnectionConfiguration {
 
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum ClientConnectionCloseReason {
   Finished,
   InternalError,
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum ClientMessage {
   ConnectionConfiguration(ClientConnectionConfiguration),
-  CallProcedure(AnyProcedure),
+  CallProcedure(Procedure),
   CloseConnection(ClientConnectionCloseReason),
 }
 
@@ -170,25 +171,25 @@ struct ClientMessageHeader {
   message_length: ClientMessageLength,
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct ServerConnectionConfiguration {
 
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum ServerCloseReason {
   ServerInternalError,
   ServerBusy,
 }
 
-#[derive(Debug, Clone, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 enum ServerMessage {
   ConnectionConfiguration(ServerConnectionConfiguration),
-  ProcedureReturn(AnyProcedureReturn),
+  ProcedureReturn(ProcedureReturn),
   Close(ServerCloseReason),
 }
 
-#[derive(Debug, Clone, Copy, Encode, Decode)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 enum ServerMessageType {
   ConnectionConfiguration,
   ProcedureReturn,
@@ -433,23 +434,7 @@ impl ServerStatus {
 }
 
 impl ServerInner {
-  pub async fn new(address: impl ToSocketAddrs) -> Result<Self, CreateServerError> {
-    let tcp_listener = match TcpListener::bind(address).await {
-      Ok(value) => {
-        value
-      }
-      Err(error) => {
-        return Err(CreateServerError::BindError(error));
-      }
-    };
-
-    Ok(Self { 
-      tcp_listener, 
-      status: ServerStatus::Stopped, 
-      semaphore: Arc::new(Semaphore::const_new(6))
-    })
-  }
-
+  
   async fn accept_connection(&self) -> Result<ServerConnection, TextualError> {
     let connection = self.tcp_listener.accept().await
       .map(|value| {
@@ -475,11 +460,33 @@ pub struct Server {
 }
 
 impl Server {
-  async fn stop(self) {
-    self.server.lock().await.status = ServerStatus::Stopped;
+  fn clone(&self) -> Self {
+    Self {
+      server: Arc::clone(&self.server),
+    }
   }
 
-  pub async fn start(self, daemon: Arc<Daemon>) -> Result<(), ()> {
+  pub async fn new(port: u16) -> Result<Self, TextualError> {
+    let address = SocketAddrV4::new(Ipv4Addr::LOCALHOST, port);
+    
+    let tcp_listener = TcpListener::bind(&address)
+      .await
+      .map_err(|error| {
+        TextualError::new("Creating discipline api server")
+          .with_message(format!("An io error occured while binding a TCP listener to this address {}", address))
+          .with_attachement_display("Io error", error)
+      })?;
+
+    Ok(Self {
+      server: Arc::new(Mutex::new(ServerInner { 
+        tcp_listener, 
+        status: ServerStatus::Stopped, 
+        semaphore: Arc::new(Semaphore::const_new(6))
+      }))
+    })
+  }
+
+  async fn task(self, daemon: Arc<Daemon>) -> Result<(), ()> {
     let mut server = self.server.lock().await;
     if server.status.is_started() {
       return Err(());
@@ -503,5 +510,16 @@ impl Server {
 
       connection.launch_task(permit, Arc::clone(&daemon));
     }
+  }
+
+  pub async fn start(&self, daemon: Arc<Daemon>) {
+    let server = self.clone();
+    spawn(async {
+      server.task(daemon);
+    });
+  }
+
+  pub async fn stop(self) {
+    self.server.lock().await.status = ServerStatus::Stopped;
   }
 }

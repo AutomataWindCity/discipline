@@ -5,6 +5,25 @@ pub struct VaultCollection {
   schema: VaultSchema,
 }
 
+impl VaultCollection {
+  pub fn new(name: impl Into<String>) -> Self {
+    Self {
+      name: name.into(),
+      schema: VaultSchema { 
+        user_id: "user_id".into(),
+        vault_id: "vault_id".into(),
+        vault_name: "vault_name".into(),
+        vault_protector: ProtectorSchema::new(
+          "protector_enum_type".into(),
+          "protector_enum_data_1".into(),
+          "protector_enum_data_2".into(),
+          "protector_enum_data_3".into(),
+        ),
+      }
+    }
+  }
+}
+
 fn write_add_vault(
   code: &mut SqlCode,
   collection: &VaultCollection,

@@ -1,3 +1,4 @@
+use std::ffi::CString;
 use std::{any::type_name, path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
@@ -36,7 +37,7 @@ impl SqlCode {
     WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
   }
 
-  pub fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
+  pub fn write_compound_value_for_insert<T>(&mut self, schema: &T::Schema, value: &T)
   where
     T: WriteCompoundValue
   {
@@ -373,6 +374,30 @@ impl ReadScalarValue for String {
   }
 }
 
+impl ReadScalarValue for CString {
+  fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
+    let bytes = match reader.value_ref {
+      ValueRef::Text(bytes) => {
+        bytes
+      }
+      value => {
+        return Err(
+          TextualError::new("Reading CString from ScalarValueReader")
+            .with_message("Value is not Text")
+            .with_attachement_debug("Value", value)
+        )
+      }
+    };
+
+    CString::new(bytes).map_err(|error| {
+      TextualError::new("Reading CString from ScalarValueReader")
+        .with_message("Value is Text, but an error occured while creating a CString from it")
+        .with_attachement_debug("Text", bytes)
+        .with_attachement_display("Error", error)
+    })
+  }
+}
+
 impl<T> ReadScalarValue for Option<T>
 where 
   T: ReadScalarValue
@@ -511,6 +536,24 @@ impl WriteScalarValue for String {
   }
 }
 
+impl WriteScalarValue for CString {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write_char('\'');
+
+    for char in value.as_bytes() {
+      let char = *char;
+
+      if char == b'\'' {
+        writer.code.write("''");
+      } else {
+        writer.code.write_char(char as char);
+      }
+    }
+
+    writer.code.write_char('\'');
+  }
+}
+
 impl<T> WriteScalarValue for Option<T>
 where 
   T: WriteScalarValue
@@ -541,6 +584,12 @@ impl Key {
 
   pub fn as_str(&self) -> &str {
     self.value
+  }
+}
+
+impl Into<Key> for &'static str {
+  fn into(self) -> Key {
+    Key::new(self)
   }
 }
 
@@ -773,9 +822,7 @@ impl CompoundValueWriteDestination for CompoundValueWriteDestinationForUpdate {
   }
 }
 
-pub struct Connection {
-  inner: Arc<Mutex<rusqlite::Connection>>
-}
+pub struct Connection(Arc<Mutex<rusqlite::Connection>>);
 
 pub enum DbExecuteError {
   Other(rusqlite::Error),
@@ -784,13 +831,26 @@ pub enum DbExecuteError {
 }
 
 impl Connection {
-  pub fn open(path: PathBuf) {
-    rsq
+  pub fn open(directory: PathBuf) -> Result<Self, TextualError> {
+    let file = directory.join("data.sqlite");
+
+    rusqlite::Connection::open(&file)
+      .map(|inner| {
+        Self(Arc::new(Mutex::new(inner)))
+      })
+      .map_err(|error| {
+        TextualError::new("Opening connection to a SQLite database")
+          .with_message("An occured while opening the connection")
+          .with_attachement_display("Error", error)
+          .with_attachement_display("Database file", file.display())
+          .with_attachement_display("Database directory", directory.display())
+      })
   }
+
   pub async fn changes(&self) {}
 
   pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
-    let Err(error) = self.inner.lock().await.execute_batch(code.as_str()) else {
+    let Err(error) = self.0.lock().await.execute_batch(code.as_str()) else {
       return Ok(());
     };
     
@@ -814,7 +874,7 @@ impl Connection {
   }
 
   pub async fn execute_with_changes(&self, code: &SqlCode) -> Result<u64, DbExecuteError> {
-    let connection = self.inner.lock().await;
+    let connection = self.0.lock().await;
     let Err(error) = connection.execute_batch(code.as_str()) else {
       return Ok(connection.changes());
     };

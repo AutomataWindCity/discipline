@@ -2,50 +2,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use crate::x::{MonotonicInstant, User, UserGroup, UserName, UuidV4, Database, operating_system};
-
-mod database {
-  use crate::x::{Database, User, UserName, UuidV4};
-
-  pub enum AddUserError {
-    DuplicateId,
-    InternalError,
-  }
-
-  pub async fn add_user(
-    database: &Database,
-    user_id: &UuidV4,
-    user_name: &UserName,
-    per_user_regulation_info: &crate::x::regulation::PerUserInfo,
-    per_user_operating_system_info: &crate::x::operating_system::PerUserInfo,
-  ) -> Result<(), AddUserError> {
-    todo!()
-  }
-
-  pub enum DeleteUserError {
-    NoSuchUser,
-    InternalError,
-  }
-
-  pub async fn delete_user(
-    database: &Database,
-    user_id: &UuidV4,
-  ) -> Result<(), DeleteUserError> {
-    todo!()
-  }
-
-  pub enum ChangeUserNameError {
-    NoSuchUser,
-    InternalError,
-  }
-
-  pub async fn change_user_name(
-    database: &Database,
-    user_id: &UuidV4,
-    new_user_name: &UserName
-  ) -> Result<(), ChangeUserNameError> {
-    todo!()
-  }
-}
+use super::database;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddUser {
@@ -104,7 +61,7 @@ impl AddUser {
             AddUserReturn::InternalError
           }
         }
-        database::AddUserError::InternalError => {
+        database::AddUserError::Other => {
           AddUserReturn::InternalError
         }
       };
@@ -116,10 +73,12 @@ impl AddUser {
   }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeleteUser {
   user_id: UuidV4,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DeleteUserReturn {
   NoSuchUser,
   SomeRulesStillEnabled,
@@ -148,7 +107,7 @@ impl DeleteUser {
       &self.user_id,
     ).await {
       return match error {
-        database::DeleteUserError::InternalError => {
+        database::DeleteUserError::Other => {
           DeleteUserReturn::InternalError
         }
         database::DeleteUserError::NoSuchUser => {
@@ -164,25 +123,27 @@ impl DeleteUser {
   }
 }
 
-pub struct UpdateName {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SetUserName {
   user_id: UuidV4,
   new_user_name: UserName
 }
 
-pub enum UpdateNameReturn {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SetUserNameReturn {
   NoSuchUser,
   InternalError,
   Success,
 }
 
-impl UpdateName {
+impl SetUserName {
   pub async fn execute(
     self,
     database: &Database,
     user_group: &mut UserGroup,
-  ) -> UpdateNameReturn {
+  ) -> SetUserNameReturn {
     if !user_group.users.contains_key(&self.user_id) {
-      return UpdateNameReturn::NoSuchUser;
+      return SetUserNameReturn::NoSuchUser;
     }
 
     if let Err(error) = database::change_user_name(
@@ -191,15 +152,62 @@ impl UpdateName {
       &self.new_user_name,
     ).await {
       return match error {
-        database::ChangeUserNameError::InternalError => {
-          UpdateNameReturn::InternalError
+        database::ChangeUserNameError::Other => {
+          SetUserNameReturn::InternalError
         }
         database::ChangeUserNameError::NoSuchUser => {
-          UpdateNameReturn::InternalError
+          SetUserNameReturn::InternalError
         }
       };
     }
 
-    UpdateNameReturn::Success
+    SetUserNameReturn::Success
+  }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Procedure {
+  AddUser(AddUser),
+  DeleteUser(DeleteUser),
+  SetUserName(SetUserName)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProcedureReturn {
+  AddUser(AddUserReturn),
+  DeleteUser(DeleteUserReturn),
+  SetUserName(SetUserNameReturn),
+}
+
+impl Procedure {
+  pub async fn execute(
+    self,
+    now: MonotonicInstant,
+    database: &Database,
+    user_group: &mut UserGroup,
+  ) -> ProcedureReturn {
+    match self {
+      Self::AddUser(inner) => {
+        ProcedureReturn::AddUser(
+          inner
+            .execute(database, user_group)
+            .await
+        )
+      }
+      Self::DeleteUser(inner) => {
+        ProcedureReturn::DeleteUser(
+          inner
+            .execute(now, database, user_group)
+            .await
+        )
+      }
+      Self::SetUserName(inner) => {
+        ProcedureReturn::SetUserName(
+          inner
+            .execute(database, user_group)
+            .await
+        )
+      }
+    }
   }
 }

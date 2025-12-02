@@ -1,6 +1,6 @@
 use libc::{gid_t, uid_t, group, passwd};
 use std::ffi::{CStr, CString};
-use std::{mem, ptr, };
+use std::{mem, ptr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct UserId {
@@ -31,19 +31,9 @@ impl UserName {
     }
   }
 
-  pub fn inner(&self) -> &CStr {
+  pub fn inner(&self) -> &CString {
     &self.inner
   }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct PerUserInfo {
-  user_name: UserName,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CrossUserInfo {
-
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -6,6 +6,20 @@ pub struct DatumSchema {
   pub datum_text: Key,
 }
 
+impl DatumSchema {
+  pub fn new(
+    vault_id: Key,
+    datum_id: Key,
+    datum_text: Key,
+  ) -> Self {
+    Self {
+      vault_id,
+      datum_id,
+      datum_text,
+    }
+  }
+}
+
 pub struct DatumWriter<'a> {
   pub vault_id: &'a UuidV4,
   pub datum_id: &'a UuidV4,

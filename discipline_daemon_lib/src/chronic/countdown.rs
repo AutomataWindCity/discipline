@@ -9,11 +9,17 @@ pub struct Countdown {
 
 impl Countdown {
   pub fn new(duration: Duration) -> Countdown {
-    Countdown { from: MonotonicInstant::MAX, duration }
+    Countdown { 
+      from: MonotonicInstant::MAX, 
+      duration,
+    }
   }
 
   pub fn construct(from: MonotonicInstant, duration: Duration) -> Countdown {
-    Countdown { from, duration }
+    Countdown { 
+      from, 
+      duration,
+    }
   }
 
   pub fn duration(&self) -> Duration {
