@@ -46,28 +46,3 @@ impl Countdown {
     self.from = MonotonicInstant::MAX;
   }
 }
-
-// pub mod database {
-//   use crate::x::database::*;
-//   use crate::x::Countdown;
-
-//   pub struct Schema {
-//     from: Key,
-//     duration: Key,
-//   }
-
-//   impl Schema {
-//     pub fn new(from: Key, duration: Key) -> Self {
-//       Self { from, duration }
-//     }
-//   }
-
-//   impl SerializableCompoundValue for Countdown {
-//     type Schema = Schema;
-
-//     fn serialize(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriter) {
-//       writer.write_scalar_value(schema.from, &value.from);
-//       writer.write_scalar_value(schema.duration, &value.duration);
-//     }
-//   }
-// }

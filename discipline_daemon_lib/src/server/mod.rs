@@ -7,26 +7,28 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::spawn;
 use tokio::sync::Mutex;
-use crate::daemon::procedures::{Procedure, ProcedureReturn};
+use crate::match_procedure;
+use crate::x::procedures::Procedure;
 use crate::x::{Daemon, TextualError};
+
 
 pub enum Error {
   CreateServerIoError,
   ShutdownError,
 }
 
-trait MyIo {
-  async fn my_shutdown(&mut self);
-}
+// trait MyIo {
+//   async fn my_shutdown(&mut self);
+// }
 
-impl<T> MyIo for T 
-where
-  T: Unpin + AsyncRead + AsyncWrite
-{
-  async fn my_shutdown(&mut self) {
-    let _ = self.shutdown().await;
-  }
-}
+// impl<T> MyIo for T 
+// where
+//   T: Unpin + AsyncRead + AsyncWrite
+// {
+//   async fn my_shutdown(&mut self) {
+//     let _ = self.shutdown().await;
+//   }
+// }
 
 static PREFACE_MAGIC_BYTES: [u8; 16] = [
   0xDE, 0xAD, 0xBE, 0xEF,
@@ -185,7 +187,7 @@ enum ServerCloseReason {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum ServerMessage {
   ConnectionConfiguration(ServerConnectionConfiguration),
-  ProcedureReturn(ProcedureReturn),
+  ProcedureReturn(Vec<u8>),
   Close(ServerCloseReason),
 }
 
@@ -385,11 +387,17 @@ impl ServerConnection {
         }
       };
 
-      let procedure_return = procedure.execute(&daemon).await;
+      match_procedure!(procedure, it => {
+        let return_value = it.execute(&daemon).await;
 
-      if let Err(error) = self.write_message(&ServerMessage::ProcedureReturn(procedure_return)).await {
-        return;
-      }
+        let Ok(return_value) = bincode_serialize(&return_value) else {
+          return;
+        };
+
+        if let Err(error) = self.write_message(&ServerMessage::ProcedureReturn(return_value)).await {
+          return;
+        }
+      });
     }
   }
 

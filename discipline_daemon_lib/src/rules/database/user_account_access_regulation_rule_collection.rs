@@ -1,4 +1,4 @@
-use crate::x::{TextualError, UuidV4};
+use crate::x::{Daemon, TextualError, UuidV4};
 use crate::x::rules::*;
 use crate::x::database::*;
 
@@ -14,8 +14,8 @@ pub struct CollectionItemSchema {
   rule: RuleSchema,
 }
 
-static USER_ID: Key = Key::new("user_id");
-static RULE_ID: Key = Key::new("rule_id");
+static USER_ID: Key = Key::new("UserId");
+static RULE_ID: Key = Key::new("RuleId");
 static RULE_ACTIVATOR_ENUM_TYPE: Key = Key::new("RuleActivatorEnumType");
 static RULE_ACTIVATOR_ENUM_DATA_1: Key = Key::new("RuleActivatorEnumData1");
 static RULE_ACTIVATOR_ENUM_DATA_2: Key = Key::new("RuleActivatorEnumData2");
@@ -182,26 +182,37 @@ fn write_update_rule(
   code.write(";");
 }
 
+pub enum AddRuleError {
+  DuplicateId,
+  Other,
+}
 pub async fn add_rule(
-  connection: &Connection,
-  collection: &Collection,
+  daemon: &Daemon,
+  user_id: &UuidV4,
+  rule_id: &UuidV4, 
   rule_activator: &RuleActivator,
   rule_enabler: &RuleEnabler,
-  rule_id: &UuidV4, 
-  user_id: &UuidV4,
-) -> Result<(), DbExecuteError> {
-  let mut code = SqlCode::new();
-  write_add_rule(&mut code, collection, rule_activator, rule_enabler, rule_id, user_id);
-  connection.execute(&code).await
+) -> Result<(), AddRuleError> {
+  todo!()
+  // let mut code = SqlCode::new();
+  // write_add_rule(&mut code, collection, rule_activator, rule_enabler, rule_id, user_id);
+  // connection.execute(&code).await
 }
 
-pub async fn remove_rule(
-  connection: &Connection,
-  collection: &Collection,
-  rule_id: &UuidV4) -> Result<(), DbExecuteError> {
-  let mut code = SqlCode::new();
-  write_delete_rule(&mut code, collection, rule_id);
-  connection.execute(&code).await
+pub enum DeleteRuleError {
+  NoSuchRule,
+  Other,
+}
+
+pub async fn delete_rule(
+  daemon: &Daemon,
+  user_id: &UuidV4,
+  rule_id: &UuidV4,
+) -> Result<(), DeleteRuleError> {
+  // let mut code = SqlCode::new();
+  // write_delete_rule(&mut code, todo!(), rule_id);
+  // database.connection.execute(&code).await
+  todo!()
 }
 
 pub async fn update_rule(
@@ -213,4 +224,20 @@ pub async fn update_rule(
   let mut code = SqlCode::new();
   write_update_rule(&mut code, collection, rule_id, updates);
   connection.execute(&code).await
+}
+
+
+pub enum UpdateRuleEnablerError {
+  NoSuchRule,
+  InternalError,
+}
+
+pub async fn update_rule_enabler(
+  daemon: &Daemon,
+  user_id: &UuidV4,
+  rule_id: &UuidV4,
+  original_enabler: &RuleEnabler,
+  new_enabler: &RuleEnabler,
+) -> Result<(), UpdateRuleEnablerError> {
+  todo!();
 }

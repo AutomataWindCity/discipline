@@ -24,16 +24,22 @@ pub use crate::conditionals::always;
 pub use crate::conditionals::always::AlwaysConditional;
 // pub use crate::conditionals::time;
 pub use crate::conditionals::time::TimeConditional;
-pub use crate::conditionals::countdown_conditional;
-pub use crate::conditionals::countdown_conditional::CountdownConditional;
-pub use crate::conditionals::ountdown_after_plea;
-pub use crate::conditionals::ountdown_after_plea::CountdownAfterPleaConditional;
+pub use crate::conditionals::countdown::CountdownConditional;
+pub use crate::conditionals::countdown_after_plea;
+pub use crate::conditionals::countdown_after_plea::CountdownAfterPleaConditional;
 
 pub mod conditionals {
-  pub use crate::conditionals::ountdown_after_plea as countdown_after_plea;
-  pub use crate::conditionals::countdown_conditional as countdown;
+  pub use crate::conditionals::countdown_after_plea as countdown_after_plea;
+  pub use crate::conditionals::countdown as countdown;
   pub use crate::conditionals::always as always;
   pub use crate::conditionals::time as time;
+  pub use crate::conditionals::weekly_conditional as weekly;
+  pub use crate::conditionals::weekly_conditional::WeeklyConditional as Weekly;
+
+  pub use crate::conditionals::countdown_after_plea::CountdownAfterPleaConditional as CountdownAfterPlea;
+  pub use crate::conditionals::countdown::CountdownConditional as Countdown;
+  pub use crate::conditionals::always::AlwaysConditional as Always;
+  pub use crate::conditionals::time::TimeConditional as Time;
 }
 pub use crate::regulation;
 pub use crate::operating_system;

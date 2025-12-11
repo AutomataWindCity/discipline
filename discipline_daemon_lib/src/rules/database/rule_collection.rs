@@ -5,7 +5,7 @@ use crate::x::rules::database::user_rule_collection;
 
 pub enum AddRuleError {
   DuplicateId,
-  InternalError,
+  Other,
 }
 
 pub async fn add_rule(
@@ -54,8 +54,8 @@ pub async fn add_rule(
 
   Err(match error {
     DbExecuteError::PrimaryKeyViolation => AddRuleError::DuplicateId,
-    DbExecuteError::ForiegnKeyViolation => AddRuleError::InternalError,
-    DbExecuteError::Other(it) => AddRuleError::InternalError,
+    DbExecuteError::ForiegnKeyViolation => AddRuleError::Other,
+    DbExecuteError::Other(it) => AddRuleError::Other,
   })
 }
 

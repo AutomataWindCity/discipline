@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use crate::x::{UuidV4, TimeConditional, AlwaysConditional, Time, Weekday, MonotonicInstant, CountdownConditional, CountdownAfterPleaConditional};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Location {
   UserDeviceAccessRegulation { user_id: UuidV4 },
   UserAccountAccessRegulation { user_id: UuidV4 },
@@ -173,6 +174,12 @@ impl RuleGroup {
   pub fn are_some_rules_enabled(&self, now: MonotonicInstant) -> bool {
     self.rules.values().any(|it| it.is_enabled(now))
   }
+
+  pub fn add_rule(&mut self, rule_id: UuidV4, rule: Rule) {}
+  pub fn get_rule_mut(&mut self, rule_id: &UuidV4) -> Option<&mut Rule> {
+    self.rules.get_mut(rule_id)
+  }
+  pub fn delete_rule(&mut self, rule_id: &UuidV4) {}
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -187,6 +194,17 @@ impl CrossGroupInfo {
       rule_number: 0,
       maximum_rule_number,
     }
+  }
+
+  pub fn reached_maximum_rule_number(&self) -> bool {
+    self.rule_number >= self.maximum_rule_number
+  }
+
+  pub fn increment_rule_number(&mut self) {
+    self.rule_number = self.rule_number.saturating_add(1);
+  }
+  pub fn decrement_rule_number(&mut self) {
+    self.rule_number = self.rule_number.saturating_sub(1);
   }
 }
 

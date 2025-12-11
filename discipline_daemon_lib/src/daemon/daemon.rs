@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::spawn;
+
 use crate::x::{Database, Server, State, TextualError, state};
 
 pub struct DaemonLaunchConfiguration {
@@ -47,5 +49,12 @@ impl Daemon {
 
   pub async fn start(self: Arc<Self>) {
     _ = self.clone().api_server.start(self).await;
+
+
+    
+    spawn(async {
+      
+    });
   }
 }
+

@@ -8,10 +8,10 @@ pub mod users;
 pub mod daemon;
 pub mod database;
 pub mod x;
-pub mod v2;
-pub mod procedures;
 pub mod server;
+pub mod procedures;
 pub mod state;
+pub mod vs;
 
 fn main() {
   println!("Hello, world!");
