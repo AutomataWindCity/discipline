@@ -3,8 +3,6 @@ pub use utilities::*;
 
 mod other;
 
-mod regulation;
-
 mod chronic;
 use chronic::countdown::CountdownSchema;
 use chronic::time_range::TimeRangeSchema;

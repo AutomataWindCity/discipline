@@ -16,4 +16,14 @@ impl User {
       operating_system_info,
     }
   } 
+  
+  pub fn construct(
+    regulation_info: regulation::PerUserInfo,
+    operating_system_info: operating_system::PerUserInfo,
+  ) -> Self {
+    Self {
+      regulation_info,
+      operating_system_info,
+    }
+  } 
 }

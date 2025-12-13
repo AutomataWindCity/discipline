@@ -22,7 +22,7 @@ impl WeekdaySet {
   const SAT_ONLY_SET: Self = Self(Self::SAT_BITMASK);
   const SUN_ONLY_SET: Self = Self(Self::SUN_BITMASK);
 
-  const ALL: Self = Self(0b111_1111);
+  // const ALL: Self = Self(0b111_1111);
   const EMPTY: Self = Self(0b000_0000);
 
   pub fn from_bitmask(bitmask: u8) -> Self {

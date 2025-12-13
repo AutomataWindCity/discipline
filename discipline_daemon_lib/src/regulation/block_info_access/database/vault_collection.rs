@@ -107,33 +107,29 @@ pub enum AddVaultError {
 }
 
 pub async fn add_vault(
-  location: &Location,
+  // location: &Location,
   database: &Database,
+  user_id: &UuidV4,
   vault_id: &UuidV4,
   vault_name: &VaultName,
   vault_protector: &VaultProtector,
 ) -> Result<(), AddVaultError> {
   let mut code = SqlCode::new();
+  write_add_vault(
+    &mut code, 
+    &database.user_block_info_vault_collection, 
+    user_id, 
+    vault_id, 
+    vault_name, 
+    vault_protector,
+  );
 
-  let maybe_error = match location {
-    Location::User { user_id } => {
-      write_add_vault(
-        &mut code, 
-        &database.user_block_info_vault_collection, 
-        user_id, 
-        vault_id, 
-        vault_name, 
-        vault_protector,
-      );
-
-      database
-        .connection
-        .execute(&code)
-        .await
-    }
-  };
-
-  let Err(error) = maybe_error else {
+  let Err(error) = database
+    .connection
+    .execute(&code)
+    .await 
+    else 
+  {
     return Ok(());
   };
 
@@ -156,29 +152,21 @@ pub enum DeleteVaultError {
 }
 
 pub async fn delete_vault(
-  location: &Location,
   database: &Database,
   vault_id: &UuidV4,
 ) -> Result<(), DeleteVaultError> {
   let mut code = SqlCode::new();
+  write_delete_vault(
+    &mut code, 
+    &database.user_block_info_vault_collection, 
+    vault_id,
+  );
 
-  let maybe_error = match location {
-    Location::User { user_id } => {
-      write_delete_vault(
-        &mut code, 
-        &database.user_block_info_vault_collection, 
-        vault_id,
-      );
-
-      database
-        .connection
-        .execute_with_changes(&code)
-        .await
-    }
-  };
-
-
-  let changes = match maybe_error {
+  let changes = match database
+    .connection
+    .execute_with_changes(&code)
+    .await 
+  {
     Ok(changes) => {
       changes
     }
@@ -194,47 +182,40 @@ pub async fn delete_vault(
   Ok(())
 }
 
-pub enum ChangeVaultNameError {
+pub enum SetVaultNameError {
   NoSuchVault,
   Noop,
   Other,
 }
 
-pub async fn change_vault_name(
-  location: &Location,
+pub async fn set_vault_name(
   database: &Database,
   vault_id: &UuidV4,
   new_vault_name: &VaultName,
-) -> Result<(), ChangeVaultNameError> {
+) -> Result<(), SetVaultNameError> {
   let mut code = SqlCode::new();
+  write_change_vault_name(
+    &mut code, 
+    &database.user_block_info_vault_collection, 
+    vault_id, 
+    new_vault_name
+  );
 
-  let maybe_error = match location {
-    Location::User { user_id } => {
-      write_change_vault_name(
-        &mut code, 
-        &database.user_block_info_vault_collection, 
-        vault_id, 
-        new_vault_name
-      );
-
-      database
-        .connection
-        .execute_with_changes(&code)
-        .await
-    }
-  };
-
-  let changes = match maybe_error {
+  let changes = match database
+    .connection
+    .execute_with_changes(&code)
+    .await
+  {
     Ok(changes) => {
       changes
     }
     Err(error) => {
-      return Err(ChangeVaultNameError::Other);
+      return Err(SetVaultNameError::Other);
     }
   };
 
   if changes == 0 {
-    return Err(ChangeVaultNameError::NoSuchVault);
+    return Err(SetVaultNameError::NoSuchVault);
   }
 
   Ok(())

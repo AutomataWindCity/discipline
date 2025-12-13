@@ -1,8 +1,8 @@
 mod core;
-use core::*;
+pub use core::*;
 
 pub mod database;
 
-mod procedures;
+pub mod procedures;
 
 mod serialization;

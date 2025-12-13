@@ -5,8 +5,8 @@ use tokio::spawn;
 use crate::x::{Database, Server, State, TextualError, state};
 
 pub struct DaemonLaunchConfiguration {
-  api_server_port: u16,
-  database_directory: PathBuf,
+  pub api_server_port: u16,
+  pub database_directory: PathBuf,
 }
 
 pub struct Daemon {
@@ -19,6 +19,7 @@ pub struct Daemon {
 impl Daemon {
   pub async fn open(configuration: DaemonLaunchConfiguration) -> Result<Arc<Self>, TextualError> {
     let database = Database::open(configuration.database_directory.clone())
+      .await
       .map_err(|error| {
         error.with_context("Opening Daemon")
       })?;

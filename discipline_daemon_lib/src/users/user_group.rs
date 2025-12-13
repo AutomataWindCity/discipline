@@ -16,6 +16,16 @@ impl UserGroup {
     }
   }
 
+  pub fn construct(
+    users: HashMap<UuidV4, Arc<RwLock<User>>>, 
+    maximum_user_number: usize,
+  ) -> Self {
+    Self {
+      users,
+      maximum_user_number,
+    }
+  }
+
   pub fn get_user(&self, user_id: &UuidV4) -> Option<&Arc<RwLock<User>>> {
     self.users.get(user_id)
   }

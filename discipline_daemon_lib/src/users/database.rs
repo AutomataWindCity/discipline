@@ -1,4 +1,4 @@
-use crate::x::{Database, ToTextualError, UserName, UuidV4, operating_system, regulation, user_name};
+use crate::x::{Database, TextualError, ToTextualError, UserName, UuidV4, operating_system, regulation};
 use crate::x::database::*;
 
 impl WriteScalarValue for UserName {
@@ -20,6 +20,22 @@ static ID: Key = Key::new("id");
 static NAME: Key = Key::new("name");
 static OPERATING_SYSTEM_INFO_USER_ID: Key = Key::new("operating_system_user_id");
 static OPERATING_SYSTEM_INFO_USER_NAME: Key = Key::new("operating_system_user_name");
+
+pub struct CollectionItem {
+  pub id: UuidV4,
+  pub operating_system_info: operating_system::PerUserInfo,
+}
+
+impl ReadCompoundValue for CollectionItem {
+  type Schema = CollectionItemSchema;
+
+  fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
+    Ok(CollectionItem {
+      id: source.read_scalar_value(schema.id)?,
+      operating_system_info: source.read_compound_value(&schema.operating_system_info)?,
+    }) 
+  }
+}
 
 pub struct CollectionItemSchema {
   id: Key,
@@ -77,7 +93,7 @@ pub fn write_initialize(
   code: &mut SqlCode,
   collection: &Collection,
 ) {
-  code.write("CREATE TABLE OF NOT EXISTS ");
+  code.write("CREATE TABLE IF NOT EXISTS ");
   code.write(&collection.name);
   code.write(" (");
   code.write_key(ID);
@@ -137,6 +153,21 @@ fn write_change_user_name(
   code.write_column_equal_value(NAME, new_user_name);
   code.write(" WHERE ");
   code.write_column_equal_value(ID, user_id);
+  code.write_char(';');
+}
+
+fn write_get_all_users(
+  code: &mut SqlCode,
+  collection: &Collection,
+) {
+  code.write("SELECT ");
+  code.write_key(ID);
+  code.write(", ");
+  code.write_key(OPERATING_SYSTEM_INFO_USER_ID);
+  code.write(", ");
+  code.write_key(OPERATING_SYSTEM_INFO_USER_NAME);
+  code.write(" FROM ");
+  code.write(&collection.name);
   code.write_char(';');
 }
 
@@ -256,6 +287,40 @@ pub async fn change_user_name(
     Err(error) => {
       // TODO: Log this case.
       Err(ChangeUserNameError::Other)
+    }
+  }
+}
+
+pub async fn get_all_users<ForEach>(
+  database: &Database,
+  for_each: ForEach,
+) -> Result<(), TextualError>
+where 
+  ForEach: FnMut(CollectionItem)
+{
+  let mut code = SqlCode::new();
+  write_get_all_users(
+    &mut code, 
+    &database.user_collection,
+  );
+
+  database
+    .connection
+    .get_multiple(
+      &code, 
+      &database.user_collection.schema, 
+      for_each,
+    ).await
+}
+
+pub struct CrossUserInfoSchema {
+  maximum_user_number: Key,
+}
+
+impl CrossUserInfoSchema {
+  pub fn new(maximum_user_number: Key) -> Self {
+    Self {
+      maximum_user_number,
     }
   }
 }

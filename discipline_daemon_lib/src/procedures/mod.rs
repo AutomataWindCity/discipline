@@ -1,5 +1,6 @@
+use std::future::Future;
 use serde::{Deserialize, Serialize};
-use crate::x::{Daemon, rules, users};
+use crate::x::{rules, users, block_info_access};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Procedure {
@@ -11,6 +12,13 @@ pub enum Procedure {
   UserDeviceAccessRegulationDeleteRule(rules::procedures::user_device_access_regulation_rule_group::DeleteRule),
   UserDeviceAccessRegulationActivateRule(rules::procedures::user_device_access_regulation_rule_group::ActivateRule),
   UserDeviceAccessRegulationDeactivateRule(rules::procedures::user_device_access_regulation_rule_group::DeactivateRule),
+
+  UserInfoAccessRegulationAddVault(block_info_access::procedures::AddVault),
+  UserInfoAccessRegulationDeleteVault(block_info_access::procedures::DeleteVault),
+  UserInfoAccessRegulationSetVaultName(block_info_access::procedures::SetVaultName),
+  UserInfoAccessRegulationAddDatum(block_info_access::procedures::AddDatum),
+  UserInfoAccessRegulationDeleteDatum(block_info_access::procedures::DeleteDatum),
+
 
   // UserAccountAccessRegulationAddRule(rules::procedures::user_account_access_regulation_rule_group::AddRule),
   // UserAccountAccessRegulationDeleteRule(rules::procedures::user_account_access_regulation_rule_group::DeleteRule),
@@ -24,7 +32,7 @@ pub enum Procedure {
 }
 
 pub trait Sender: Sized {
-  async fn send(self, value: impl Serialize);
+  fn send(self, value: impl Serialize) -> impl Future<Output = ()> + Send;
 }
 
 impl Procedure {
@@ -79,6 +87,7 @@ impl Procedure {
   //     }
   //   }
   // }
+
 }
 
 #[macro_export]
@@ -106,6 +115,21 @@ macro_rules! match_procedure {
       Procedure::UserDeviceAccessRegulationDeactivateRule($identifier) => {
         $body
       }
-    }     
+      Procedure::UserInfoAccessRegulationAddVault($identifier) => {
+        $body
+      }
+      Procedure::UserInfoAccessRegulationDeleteVault($identifier) => {
+        $body
+      }
+      Procedure::UserInfoAccessRegulationSetVaultName($identifier) => {
+        $body
+      }
+      Procedure::UserInfoAccessRegulationAddDatum($identifier) => {
+        $body
+      }
+      Procedure::UserInfoAccessRegulationDeleteDatum($identifier) => {
+        $body
+      }
+    }
   };
 }

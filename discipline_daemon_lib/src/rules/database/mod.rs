@@ -14,3 +14,5 @@ pub use rule_collection::*;
 // pub mod user_account_access_regulation_rule_collection;
 // pub mod user_device_access_regulation_rule_collection;
 // pub mod user_internet_access_regulation_rule_collection;
+pub mod cross_rule_group_info;
+pub use cross_rule_group_info::CrossRuleGroupInfoSchema;

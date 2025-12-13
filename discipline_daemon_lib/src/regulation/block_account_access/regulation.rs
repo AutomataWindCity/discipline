@@ -13,6 +13,12 @@ impl Regulation {
     }
   }
 
+  pub fn construct(rules: rules::RuleGroup) -> Self {
+    Self {
+      rules,
+    }
+  }
+
   pub fn rules(&self) -> &rules::RuleGroup {
     &self.rules
   }

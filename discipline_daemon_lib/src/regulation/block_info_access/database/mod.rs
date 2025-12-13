@@ -19,3 +19,6 @@ use vault_protector::*;
 
 use super::*;
 use crate::x::{Database, TextualError, UuidV4, conditionals, database::*};
+
+mod cross_vaults_info;
+pub use cross_vaults_info::CrossVaultGroupInfoSchema;

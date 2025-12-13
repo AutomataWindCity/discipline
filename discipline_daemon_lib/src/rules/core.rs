@@ -171,15 +171,27 @@ impl RuleGroup {
     }
   }
 
+  pub fn construct(rules: HashMap<UuidV4, Rule>) -> Self {
+    Self { 
+      rules,
+    }
+  }
+
   pub fn are_some_rules_enabled(&self, now: MonotonicInstant) -> bool {
     self.rules.values().any(|it| it.is_enabled(now))
   }
 
-  pub fn add_rule(&mut self, rule_id: UuidV4, rule: Rule) {}
+  pub fn add_rule(&mut self, rule_id: UuidV4, rule: Rule) {
+    self.rules.insert(rule_id, rule);
+  }
+
   pub fn get_rule_mut(&mut self, rule_id: &UuidV4) -> Option<&mut Rule> {
     self.rules.get_mut(rule_id)
   }
-  pub fn delete_rule(&mut self, rule_id: &UuidV4) {}
+
+  pub fn delete_rule(&mut self, rule_id: &UuidV4) {
+    self.rules.remove(rule_id);
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

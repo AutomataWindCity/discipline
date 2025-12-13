@@ -1,7 +1,7 @@
 {
   "files.autoSave": "afterDelay",
-  "editor.fontSize": 26,
-  "editor.fontFamily": "Purisa",
+  "editor.fontSize": 24,
+  "editor.fontFamily": "DaddyTimeMono Nerd Font",
   "deno.enable": true,
   "rust-analyzer.linkedProjects": [
     // "discipline_daemon/Cargo.toml",

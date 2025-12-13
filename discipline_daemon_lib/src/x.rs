@@ -33,8 +33,8 @@ pub mod conditionals {
   pub use crate::conditionals::countdown as countdown;
   pub use crate::conditionals::always as always;
   pub use crate::conditionals::time as time;
-  pub use crate::conditionals::weekly_conditional as weekly;
-  pub use crate::conditionals::weekly_conditional::WeeklyConditional as Weekly;
+  // pub use crate::conditionals::weekly_conditional as weekly;
+  // pub use crate::conditionals::weekly_conditional::WeeklyConditional as Weekly;
 
   pub use crate::conditionals::countdown_after_plea::CountdownAfterPleaConditional as CountdownAfterPlea;
   pub use crate::conditionals::countdown::CountdownConditional as Countdown;
@@ -55,11 +55,11 @@ pub use crate::users::user_group::UserGroup;
 pub use crate::database;
 
 pub use crate::rules::{self, Rule, RuleGroup};
-pub use crate::rules as rules_x;
 
 pub use crate::regulation::block_device_access::{self};
+pub use crate::regulation::block_info_access::{self};
 
-pub use crate::daemon::Daemon;
+pub use crate::daemon::{Daemon, DaemonLaunchConfiguration};
 pub use crate::state::state::State;
 pub use crate::state;
 pub use crate::database::Database;

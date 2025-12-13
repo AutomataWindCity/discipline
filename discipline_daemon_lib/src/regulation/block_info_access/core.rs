@@ -1,4 +1,3 @@
-
 use serde::{Serialize, Deserialize};
 use crate::x::{UuidV4, CountdownAfterPleaConditional};
 
@@ -84,15 +83,62 @@ pub struct CrossVaultGroupInfo {
 }
 
 impl CrossVaultGroupInfo {
-  pub fn try_decrement_vault_number(&mut self) {}
-  pub fn try_increment_vault_number(&mut self) {}
-  pub fn may_add_another_vault(&self) -> bool {
-    todo!()
+  pub fn construct(
+    vault_number: usize,
+    maximum_vault_number: usize,
+    data_number: usize,
+    maximum_data_number: usize,
+  ) -> Self {
+    Self {
+      vault_number,
+      maximum_vault_number,
+      data_number,
+      maximum_data_number,
+    }
   }
-  pub fn try_decrement_data_number(&mut self) {}
-  pub fn try_increment_data_number(&mut self) {}
+  pub fn try_decrement_vault_number(&mut self) {
+    if let None = self.vault_number.checked_sub(1) {
+      // TODO: Log this case
+    }
+  }
+  
+  pub fn try_increment_vault_number(&mut self) {
+    if let None = self.vault_number.checked_add(1) {
+      // TODO: Log this case
+    }
+  }
+  
+  pub fn may_add_another_vault(&self) -> bool {
+    self.vault_number < self.maximum_vault_number
+  }
+
+  pub fn try_decrement_data_number(&mut self) {
+    if let None = self.data_number.checked_sub(1) {
+      // TODO: Log this case
+    }
+  }
+
+  pub fn try_increment_data_number(&mut self) {
+    if let None = self.data_number.checked_add(1) {
+      // TODO: Log this case
+    }
+  }
+
   pub fn may_add_another_datum(&mut self) -> bool {
-    todo!()
+    self.data_number < self.maximum_data_number
+  }
+
+  pub fn get_vault_number(&self) -> usize {
+    self.vault_number
+  }
+  pub fn get_maximum_vault_number(&self) -> usize {
+    self.maximum_vault_number
+  }
+  pub fn get_data_number(&self) -> usize {
+    self.data_number
+  }
+  pub fn get_maximum_data_number(&self) -> usize {
+    self.maximum_data_number
   }
 }
 

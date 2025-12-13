@@ -1,8 +1,12 @@
 use std::ffi::CString;
-use std::{any::type_name, path::PathBuf, sync::Arc};
+use std::any::type_name;
+use std::fmt::Display;
+use std::path::PathBuf;
+use std::sync::Arc;
 use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
 use crate::x::TextualError;
+
 
 pub struct SqlCode {
   value: String
@@ -19,11 +23,14 @@ impl SqlCode {
     self.value.push_str(str);
   }
 
-  pub fn write_space(&mut self) {}
-  pub fn write_where(&mut self) {}
   pub fn write_column_equal_value<T>(&mut self, key: Key, value: &T)
   where 
-    T: WriteScalarValue {}
+    T: WriteScalarValue 
+  {
+    self.value.push_str(key.as_str());
+    self.value.push_str(" = ");
+    write_scalar_value(self, value);
+  }
   
   pub fn write_key(&mut self, key: Key) {
     self.value.push_str(key.as_str());
@@ -41,7 +48,23 @@ impl SqlCode {
   where
     T: WriteCompoundValue
   {
-    // WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
+    let mut destination = CompoundValueWriteDestinationForInsert::new();
+
+    WriteCompoundValue::write(
+      value, 
+      schema, 
+      &mut destination,
+    );
+
+    // TODO: Make this more idiomatic.
+    // TODO: Panic if no values were written.
+    if destination.did_write_some_values {
+      self.value.push_str(&destination.keys.value);
+      self.value.push_str(" = ");
+      self.value.push_str(&destination.values.value);
+    } else {
+      panic!("WHAAAAAAAAAAAAAA. Calling 'write_compound_value_for_insert' on SqlCode: Value wrote zero fields in its 'WriteCompoundValue::write' implementation.")
+    }
   }
 
   pub fn write_compound_value_with_writer_for_insert<T>(
@@ -52,7 +75,19 @@ impl SqlCode {
   where
     T: CompoundValueWriter
   {
-    // WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
+  
+    let mut destination = CompoundValueWriteDestinationForInsert::new();
+    writer.write(schema, &mut destination);
+
+    // TODO: Make this more idiomatic.
+    // TODO: Panic if no values were written.
+    if destination.did_write_some_values {
+      self.value.push_str(&destination.keys.value);
+      self.value.push_str(" = ");
+      self.value.push_str(&destination.values.value);
+    } else {
+      panic!("WHAAAAAAAAAAAAAA. Calling 'write_compound_value_with_writer_for_insert' on SqlCode: Writer wrote zero fields in its 'CompoundValueWriter::write' implementation.")
+    }
   }
 
   pub fn as_str(&self) -> &str {
@@ -610,7 +645,7 @@ pub trait ReadCompoundValue: Sized {
 }
 
 pub struct CompoundValueReadSourceForSelect<'a> {
-  inner: rusqlite::Row<'a>
+  inner: &'a rusqlite::Row<'a>
 }
 
 impl<'a> CompoundValueReadSource for CompoundValueReadSourceForSelect<'a> {
@@ -648,6 +683,21 @@ impl<'a> CompoundValueReadSource for CompoundValueReadSourceForSelect<'a> {
   }
 }
 
+fn read_compound_value_from_select<T>(
+  row: &rusqlite::Row,
+  schema: &T::Schema,
+) -> Result<T, TextualError>
+where 
+  T: ReadCompoundValue 
+{
+  T::deserialize(
+    &mut CompoundValueReadSourceForSelect {
+      inner: row
+    }, 
+    schema
+  )
+}
+
 pub trait CompoundValueWriteDestination {
   fn write_null(&mut self, key: Key);
 
@@ -668,7 +718,7 @@ pub trait CompoundValueWriteDestination {
 pub trait WriteCompoundValue {
   type Schema;
 
-  fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination);
+  fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination);
 }
 
 pub trait CompoundValueWriter {
@@ -824,6 +874,7 @@ impl CompoundValueWriteDestination for CompoundValueWriteDestinationForUpdate {
 
 pub struct Connection(Arc<Mutex<rusqlite::Connection>>);
 
+#[derive(Debug)]
 pub enum DbExecuteError {
   Other(rusqlite::Error),
   PrimaryKeyViolation,
@@ -849,6 +900,105 @@ impl Connection {
 
   pub async fn changes(&self) {}
 
+  pub async fn get_multiple<T, ForEach>(
+    &self, 
+    code: &SqlCode, 
+    schema: &T::Schema, 
+    mut for_each: ForEach,
+  ) -> Result<(), TextualError>
+  where 
+    T: ReadCompoundValue,
+    ForEach: FnMut(T),
+  {
+    let connection = self.0.lock().await;
+    let mut statement = connection.prepare(code.as_str()).map_err(|error| {
+      TextualError::new("Getting multiple items from a database collection")
+        .with_message("A SQLite error occured while prepareing a statement")
+        .with_attachement_display("Statement code", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+    
+    let mut iterator = statement.query(()).map_err(|error| {
+      TextualError::new("Getting multiple items from a database collection")
+        .with_message("A SQLite error occured while creating an iterator")
+        .with_attachement_display("Statement", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+
+    loop {
+      let item = iterator.next().map_err(|error| {
+        TextualError::new("Getting multiple items from a database collection")
+          .with_message("A SQLite error occured while getting the next item in the iterator")
+          .with_attachement_display("Statement", code.as_str())
+          .with_attachement_display("Data type of the item", type_name::<T>())
+          .with_attachement_display("SQLite error", error)
+      })?;
+
+      let Some(item) = item else {
+        return Ok(());
+      };
+
+      for_each(
+        read_compound_value_from_select(item, schema).map_err(|error| {
+        error
+          .with_context("Getting multiple items from a database collection")
+          // TODO: Use a better word then 'deserializeing'
+          .with_message("An error occured while deserializing the item")
+          .with_attachement_display("Statement", code.as_str())
+      })?);
+    }
+  }
+
+  pub async fn get_one<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<T, TextualError>
+  where 
+    T: ReadCompoundValue
+  {
+    let connection = self.0.lock().await;
+    let mut statement = connection.prepare(code.as_str()).map_err(|error| {
+      TextualError::new("Getting one item from a database collection")
+        .with_message("A SQLite error occured while prepareing a statement")
+        .with_attachement_display("Statement code", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+    
+    let mut iterator = statement.query(()).map_err(|error| {
+      TextualError::new("Getting one item from a database collection")
+        .with_message("A SQLite error occured while creating an iterator")
+        .with_attachement_display("Statement", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+
+    loop {
+      let item = iterator.next().map_err(|error| {
+        TextualError::new("Getting one item from a database collection")
+          .with_message("A SQLite error occured while getting the first item in the iterator")
+          .with_attachement_display("Statement", code.as_str())
+          .with_attachement_display("Data type of the item", type_name::<T>())
+          .with_attachement_display("SQLite error", error)
+      })?;
+
+      let Some(item) = item else {
+        return Err(
+          TextualError::new("Getting one item from a database collection")
+            .with_message("The SQLite iterator retruned None for the first item")
+            .with_attachement_display("Statement", code.as_str())
+            .with_attachement_display("Data type of the item", type_name::<T>())
+        );
+      };
+
+      return read_compound_value_from_select(item, schema).map_err(|error| {
+        error
+          .with_context("Getting one item from a database collection")
+          .with_message("Failed to deserialize the item")
+          .with_attachement_display("Statement", code.as_str())
+      });
+    }
+  }
+
   pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
     let Err(error) = self.0.lock().await.execute_batch(code.as_str()) else {
       return Ok(());
@@ -871,6 +1021,10 @@ impl Connection {
         Err(DbExecuteError::Other(error))
       }
     }
+  }
+
+  pub async fn execute_2(&self, code: &SqlCode) -> Result<(), rusqlite::Error> {
+    self.0.lock().await.execute_batch(code.as_str())
   }
 
   pub async fn execute_with_changes(&self, code: &SqlCode) -> Result<u64, DbExecuteError> {

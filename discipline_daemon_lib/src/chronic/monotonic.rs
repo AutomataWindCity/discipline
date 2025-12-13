@@ -69,3 +69,39 @@ mod serialization {
     }
   }
 }
+
+pub mod database {
+  use crate::x::database::*;
+  use super::MonotonicClock;
+
+  pub struct Schema {
+    milliseconds: Key,
+  }
+
+  impl Schema {
+    pub fn new(milliseconds: Key) -> Self {
+      Self {
+        milliseconds,
+      }
+    }
+  }
+
+  impl WriteCompoundValue for MonotonicClock {
+    type Schema = Schema;
+
+    fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination) {
+      destination.write_scalar_value(schema.milliseconds, &value.milliseconds);
+    }
+  }
+
+  impl ReadCompoundValue for MonotonicClock {
+    type Schema = Schema;
+
+    fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, crate::x::TextualError> {
+      Ok(MonotonicClock { 
+        // TODO: Should we err if this returns 0?
+        milliseconds: source.read_scalar_value(schema.milliseconds)?,
+      })
+    }
+  }
+}

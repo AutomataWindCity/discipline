@@ -1,7 +1,9 @@
-use crate::x::{UuidV4, Database};
+use crate::x::{UuidV4, Database, TextualError};
 use crate::x::database::*;
 use crate::x::rules::{RuleActivator, RuleEnabler, Location};
 use crate::x::rules::database::user_rule_collection;
+
+pub use user_rule_collection::CollectionItem;
 
 pub enum AddRuleError {
   DuplicateId,
@@ -130,4 +132,43 @@ pub async fn delete_rule(
   rule_id: &UuidV4,
 ) -> Result<(), DeleteRuleError> {
   todo!()
+}
+
+pub enum CollectionSpecifier {
+  UserDeviceAccessRegulation,
+  UserAccountAccessRegulation,
+  UserInternetAccessRegulation,
+}
+
+pub async fn get_all_rules<T>(
+  database: &Database,
+  collection_specifier: CollectionSpecifier,
+  for_each: T
+) -> Result<(), TextualError>
+where 
+  T: Fn(user_rule_collection::CollectionItem)
+{
+  match collection_specifier {
+    CollectionSpecifier::UserAccountAccessRegulation => {
+      user_rule_collection::get_all_rules(
+        &database.connection, 
+        &database.user_account_access_regulation_rule_collection, 
+        for_each,
+      ).await
+    }
+    CollectionSpecifier::UserDeviceAccessRegulation => {
+      user_rule_collection::get_all_rules(
+        &database.connection, 
+        &database.user_device_access_regulation_rule_collection, 
+        for_each,
+      ).await
+    }
+    CollectionSpecifier::UserInternetAccessRegulation => {
+      user_rule_collection::get_all_rules(
+        &database.connection, 
+        &database.user_internet_access_regulation_rule_collection, 
+        for_each,
+      ).await
+    }
+  }
 }

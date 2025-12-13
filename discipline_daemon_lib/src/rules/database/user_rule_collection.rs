@@ -2,10 +2,10 @@ use crate::x::{TextualError, UuidV4};
 use crate::x::rules::*;
 use crate::x::database::*;
 
-struct CollectionItem {
-  rule_id: UuidV4, 
-  user_id: UuidV4, 
-  rule: Rule,
+pub struct CollectionItem {
+  pub rule_id: UuidV4, 
+  pub user_id: UuidV4, 
+  pub rule: Rule,
 }
 
 pub struct CollectionItemSchema {
@@ -14,8 +14,8 @@ pub struct CollectionItemSchema {
   rule: RuleSchema,
 }
 
-static USER_ID: Key = Key::new("user_id");
-static RULE_ID: Key = Key::new("rule_id");
+static USER_ID: Key = Key::new("UserId");
+static RULE_ID: Key = Key::new("RuleId");
 static RULE_ACTIVATOR_ENUM_TYPE: Key = Key::new("RuleActivatorEnumType");
 static RULE_ACTIVATOR_ENUM_DATA_1: Key = Key::new("RuleActivatorEnumData1");
 static RULE_ACTIVATOR_ENUM_DATA_2: Key = Key::new("RuleActivatorEnumData2");
@@ -119,6 +119,35 @@ impl<'a> UserRuleUpdates<'a> {
   }
 }
 
+pub fn write_initialize(
+  code: &mut SqlCode, 
+  collection: &Collection,
+) {
+  code.write("CREATE TABLE IF NOT EXISTS ");
+  code.write(&collection.name);
+  code.write(" (");
+  code.write_key(RULE_ID);
+  code.write(" TEXT PRIMARY KEY, ");
+  code.write_key(USER_ID);
+  code.write(" TEXT NOT NULL, ");
+  code.write_key(RULE_ACTIVATOR_ENUM_TYPE);
+  code.write(" INTEGER NOT NULL, ");
+  code.write_key(RULE_ACTIVATOR_ENUM_DATA_1);
+  code.write(", ");
+  code.write_key(RULE_ACTIVATOR_ENUM_DATA_2);
+  code.write(", ");
+  code.write_key(RULE_ACTIVATOR_ENUM_DATA_3);
+  code.write(", ");
+  code.write_key(RULE_ENABLER_ENUM_TYPE);
+  code.write(" INTEGER NOT NULL, ");
+  code.write_key(RULE_ENABLER_ENUM_DATA_1);
+  code.write(", ");
+  code.write_key(RULE_ENABLER_ENUM_DATA_2);
+  code.write(", ");
+  code.write_key(RULE_ENABLER_ENUM_DATA_3);
+  code.write(");");
+}
+
 pub fn write_add_rule(
   code: &mut SqlCode, 
   collection: &Collection,
@@ -198,7 +227,8 @@ pub async fn add_rule(
 pub async fn remove_rule(
   connection: &Connection,
   collection: &Collection,
-  rule_id: &UuidV4) -> Result<(), DbExecuteError> {
+  rule_id: &UuidV4,
+) -> Result<(), DbExecuteError> {
   let mut code = SqlCode::new();
   write_delete_rule(&mut code, collection, rule_id);
   connection.execute(&code).await
@@ -213,4 +243,22 @@ pub async fn update_rule(
   let mut code = SqlCode::new();
   write_update_rule(&mut code, collection, rule_id, updates);
   connection.execute(&code).await
+}
+
+pub async fn get_all_rules<T>(
+  connection: &Connection,
+  collection: &Collection,
+  for_each: T
+) -> Result<(), TextualError> 
+where 
+  T: FnMut(CollectionItem)
+{
+  let mut code = SqlCode::new();
+  write_find_all_rules(&mut code, collection);
+
+  connection.get_multiple(
+    &code, 
+    &collection.schema, 
+    for_each,
+  ).await
 }

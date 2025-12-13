@@ -58,7 +58,6 @@ pub enum AddDatumError {
 }
 
 pub async fn add_datum(
-  location: &Location,
   database: &Database,
   vault_id: &UuidV4,
   datum_id: &UuidV4,
@@ -97,7 +96,6 @@ pub enum DeleteDatumError {
 }
 
 pub async fn delete_datum(
-  location: &Location,
   database: &Database,
   datum_id: &UuidV4,
 ) -> Result<(), DeleteDatumError> {
