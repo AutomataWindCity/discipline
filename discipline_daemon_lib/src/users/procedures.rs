@@ -1,8 +1,6 @@
-use std::sync::Arc;
 use serde::{Deserialize, Serialize};
-use tokio::sync::RwLock;
 use crate::x::{MonotonicInstant, User, UserGroup, UserName, UuidV4, Database, operating_system, Daemon};
-use super::database;
+use super::{database, UsersSingleton};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AddUserReturn {
@@ -16,11 +14,12 @@ pub enum AddUserReturn {
 pub async fn add_user(
   database: &Database,
   user_group: &mut UserGroup,
+  singleton: &UsersSingleton,
   user_id: Option<UuidV4>,
   user_name: UserName,
   operating_system_user_name: operating_system::UserName,
 ) -> AddUserReturn {
-  if user_group.users.len() >= user_group.maximum_user_number {
+  if user_group.get_users_number() >= singleton.get_maximum_user_number() {
     return AddUserReturn::TooManyUsers;
   }
   
@@ -44,7 +43,6 @@ pub async fn add_user(
     database, 
     &user_id,
     &user_name,
-    &user.regulation_info,
     &user.operating_system_info,
   ).await {
     return match error {
@@ -61,7 +59,7 @@ pub async fn add_user(
     };
   }
 
-  user_group.users.insert(user_id, Arc::new(RwLock::new(user)));
+  user_group.add_user(user_id, user);
 
   AddUserReturn::Success
 }
@@ -80,7 +78,7 @@ pub async fn delete_user(
   user_id: &UuidV4,
   now: MonotonicInstant,
 ) -> DeleteUserReturn {
-  let Some(user) = user_group.users.get(user_id) else {
+  let Some(user) = user_group.get_user(user_id) else {
     return DeleteUserReturn::NoSuchUser;
   };
 
@@ -104,7 +102,7 @@ pub async fn delete_user(
   }
 
   drop(user);
-  user_group.users.remove(user_id);
+  user_group.delete_user(user_id);
 
   DeleteUserReturn::Success
 }
@@ -122,20 +120,20 @@ pub async fn set_user_name(
   user_id: &UuidV4,
   new_user_name: &UserName,
 ) -> SetUserNameReturn {
-  if !user_group.users.contains_key(user_id) {
+  if !user_group.contains_user(user_id) {
     return SetUserNameReturn::NoSuchUser;
   }
 
-  if let Err(error) = database::change_user_name(
+  if let Err(error) = database::set_user_name(
     database, 
     user_id, 
     &new_user_name,
   ).await {
     return match error {
-      database::ChangeUserNameError::Other => {
+      database::SetUserNameError::Other => {
         SetUserNameReturn::InternalError
       }
-      database::ChangeUserNameError::NoSuchUser => {
+      database::SetUserNameError::NoSuchUser => {
         SetUserNameReturn::InternalError
       }
     };
@@ -156,9 +154,12 @@ impl AddUser {
     let mut user_group_guard = daemon.state.users.write().await;
     let user_group = &mut *user_group_guard;
 
+    let singleton = &*daemon.state.users_singleton.read().await;
+
     add_user(
       &daemon.database, 
       user_group, 
+      singleton,
       self.user_id,
       self.user_name, 
       self.operating_system_user_name,

@@ -38,25 +38,25 @@ pub trait Sender: Sized {
 impl Procedure {
   // pub async fn execute(self, daemon: &Daemon, sender: impl Sender) {
   //   match self {
-  //     Procedure::AddUser($identifier) => {
+  //     Procedure::AddUser($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::DeleteUser($identifier) => {
+  //     Procedure::DeleteUser($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::SetUserName($identifier) => {
+  //     Procedure::SetUserName($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationAddRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationAddRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationDeleteRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationDeleteRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationActivateRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationActivateRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationDeactivateRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationDeactivateRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
   //   }
@@ -64,25 +64,25 @@ impl Procedure {
 
   // pub async fn execute_and_serialize(self, daemon: &Daemon, sender: impl Sender) {
   //   match self {
-  //     Procedure::AddUser($identifier) => {
+  //     Procedure::AddUser($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::DeleteUser($identifier) => {
+  //     Procedure::DeleteUser($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::SetUserName($identifier) => {
+  //     Procedure::SetUserName($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationAddRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationAddRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationDeleteRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationDeleteRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationActivateRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationActivateRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
-  //     Procedure::UserDeviceAccessRegulationDeactivateRule($identifier) => {
+  //     Procedure::UserDeviceAccessRegulationDeactivateRule($procedure) => {
   //       sender.send(it.execute(daemon).await).await;
   //     }
   //   }
@@ -92,42 +92,42 @@ impl Procedure {
 
 #[macro_export]
 macro_rules! match_procedure {
-  ($procedure: expr, $identifier: ident => $body: block) => {
+  ($procedure: ident => $body: block) => {
     match $procedure {
-      Procedure::AddUser($identifier) => {
+      Procedure::AddUser($procedure) => {
         $body
       }
-      Procedure::DeleteUser($identifier) => {
+      Procedure::DeleteUser($procedure) => {
         $body
       }
-      Procedure::SetUserName($identifier) => {
+      Procedure::SetUserName($procedure) => {
         $body
       }
-      Procedure::UserDeviceAccessRegulationAddRule($identifier) => {
+      Procedure::UserDeviceAccessRegulationAddRule($procedure) => {
         $body
       }
-      Procedure::UserDeviceAccessRegulationDeleteRule($identifier) => {
+      Procedure::UserDeviceAccessRegulationDeleteRule($procedure) => {
         $body
       }
-      Procedure::UserDeviceAccessRegulationActivateRule($identifier) => {
+      Procedure::UserDeviceAccessRegulationActivateRule($procedure) => {
         $body
       }
-      Procedure::UserDeviceAccessRegulationDeactivateRule($identifier) => {
+      Procedure::UserDeviceAccessRegulationDeactivateRule($procedure) => {
         $body
       }
-      Procedure::UserInfoAccessRegulationAddVault($identifier) => {
+      Procedure::UserInfoAccessRegulationAddVault($procedure) => {
         $body
       }
-      Procedure::UserInfoAccessRegulationDeleteVault($identifier) => {
+      Procedure::UserInfoAccessRegulationDeleteVault($procedure) => {
         $body
       }
-      Procedure::UserInfoAccessRegulationSetVaultName($identifier) => {
+      Procedure::UserInfoAccessRegulationSetVaultName($procedure) => {
         $body
       }
-      Procedure::UserInfoAccessRegulationAddDatum($identifier) => {
+      Procedure::UserInfoAccessRegulationAddDatum($procedure) => {
         $body
       }
-      Procedure::UserInfoAccessRegulationDeleteDatum($identifier) => {
+      Procedure::UserInfoAccessRegulationDeleteDatum($procedure) => {
         $body
       }
     }

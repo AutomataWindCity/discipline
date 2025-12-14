@@ -10,7 +10,7 @@ pub struct Database {
   pub user_device_access_regulation_rule_collection: crate::x::rules::database::user_rule_collection::Collection,
   pub user_account_access_regulation_rule_collection: crate::x::rules::database::user_rule_collection::Collection,
   pub user_internet_access_regulation_rule_collection: crate::x::rules::database::user_rule_collection::Collection,
-  pub singleton_collection: crate::x::state::database::Collection,
+  pub singleton_collection: crate::x::state::database::SingletonCollection,
 }
 
 impl Database {
@@ -68,7 +68,7 @@ impl Database {
       ::x
       ::state
       ::database
-      ::Collection
+      ::SingletonCollection
       ::new("Singleton");
 
     let mut code = SqlCode::new();

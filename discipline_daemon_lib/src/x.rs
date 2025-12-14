@@ -50,7 +50,7 @@ pub use crate::users::user_name::UserName;
 pub use crate::users::user;
 pub use crate::users::user::User;
 pub use crate::users::user_group;
-pub use crate::users::user_group::UserGroup;
+pub use crate::users::user_group::{UserGroup, UsersSingleton};
 
 pub use crate::database;
 
@@ -63,5 +63,7 @@ pub use crate::daemon::{Daemon, DaemonLaunchConfiguration};
 pub use crate::state::state::State;
 pub use crate::state;
 pub use crate::database::Database;
-pub use crate::server::Server;
+pub use crate::api::Server;
+pub use crate::api;
 pub use crate::procedures;
+pub use crate::match_procedure;

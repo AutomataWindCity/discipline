@@ -1,4 +1,4 @@
-use crate::x::{Database, TextualError, ToTextualError, UserName, UuidV4, operating_system, regulation};
+use crate::x::{Database, TextualError, ToTextualError, UserName, UsersSingleton, UuidV4, operating_system};
 use crate::x::database::*;
 
 impl WriteScalarValue for UserName {
@@ -16,10 +16,10 @@ impl ReadScalarValue for UserName {
   }
 }
 
-static ID: Key = Key::new("id");
-static NAME: Key = Key::new("name");
-static OPERATING_SYSTEM_INFO_USER_ID: Key = Key::new("operating_system_user_id");
-static OPERATING_SYSTEM_INFO_USER_NAME: Key = Key::new("operating_system_user_name");
+static ID: Key = Key::new("UserId");
+static NAME: Key = Key::new("UserName");
+static OPERATING_SYSTEM_INFO_USER_ID: Key = Key::new("OperatingSystemUserId");
+static OPERATING_SYSTEM_INFO_USER_NAME: Key = Key::new("OperationgSystemUserName");
 
 pub struct CollectionItem {
   pub id: UuidV4,
@@ -141,7 +141,7 @@ fn write_delete_user(
   code.write_char(';');
 }
 
-fn write_change_user_name(
+fn write_set_user_name(
   code: &mut SqlCode,
   collection: &Collection,
   user_id: &UuidV4,
@@ -180,7 +180,6 @@ pub async fn add_user(
   database: &Database,
   user_id: &UuidV4,
   user_name: &UserName,
-  user_regulation_info: &regulation::PerUserInfo,
   user_operating_system_info: &operating_system::PerUserInfo,
 ) -> Result<(), AddUserError> {
   let mut code = SqlCode::new();
@@ -227,66 +226,71 @@ pub async fn delete_user(
     user_id,
   );
 
-  let result = database
-    .connection 
-    .execute_with_changes(&code)
-    .await;
+  let connection = database.connection.lock().await;
 
-  match result {
-    Ok(0) => {
+  if let Err(error) = connection.execute_or_textual_error(&code) {
+    eprintln!("{error}");
+    return Err(DeleteUserError::Other); 
+  }
+
+  match connection.changes() {
+    0 => {
       Err(DeleteUserError::NoSuchUser)
     }
-    Ok(1) => {
+    1 => {
       Ok(())
     }
-    Ok(number) => {
-      // TODO: Log this case
-      Ok(())
-    }
-    Err(error) => {
+    number => {
+      let error = TextualError::new("Deleting a user from the database")
+        .with_message(format!("Expected the number of effected rows to be 1, but SQLite reported it as {number}. This shouldn't happen. It's either a problem with our SQL code or with SQLite itself."))
+        .with_attachement_display("SQL code", code.as_str());
+
+      eprintln!("{error}");
+
       Err(DeleteUserError::Other)
     }
   }
 }
 
-pub enum ChangeUserNameError {
+pub enum SetUserNameError {
   NoSuchUser,
   Other,
 }
 
-pub async fn change_user_name(
+pub async fn set_user_name(
   database: &Database,
   user_id: &UuidV4,
   new_user_name: &UserName
-) -> Result<(), ChangeUserNameError> {
+) -> Result<(), SetUserNameError> {
   let mut code = SqlCode::new();
-  write_change_user_name(
+  write_set_user_name(
     &mut code, 
     &database.user_collection, 
     user_id, 
     new_user_name,
   );
 
-  let result = database 
-    .connection 
-    .execute_with_changes(&code)
-    .await;
+  let connection = database.connection.lock().await;
 
-  match result {
-    Ok(0) => {
-      Err(ChangeUserNameError::NoSuchUser)
+  if let Err(mut error) = connection.execute_or_textual_error(&code) {
+    error.change_context("Changing a user's name");
+    error.change_context("Modifing the database");
+    eprintln!("{error}");
+    return Err(SetUserNameError::Other);
+  }
+
+  match connection.changes() {
+    0 => {
+      Err(SetUserNameError::NoSuchUser)
     }
-    Ok(1) => {
+    1 => {
       Ok(())
     }
-    Ok(number) => {
+    number => {
+      eprintln!("Setting user name in the database. The number of modified rows is {number}.");
       // This case shouldn't be reached unless our database schema is corrupted.
       // TODO: Log this case.
       Ok(())
-    }
-    Err(error) => {
-      // TODO: Log this case.
-      Err(ChangeUserNameError::Other)
     }
   }
 }
@@ -313,14 +317,32 @@ where
     ).await
 }
 
-pub struct CrossUserInfoSchema {
+pub struct SingletonSchema {
   maximum_user_number: Key,
 }
 
-impl CrossUserInfoSchema {
+impl SingletonSchema {
   pub fn new(maximum_user_number: Key) -> Self {
     Self {
       maximum_user_number,
     }
+  }
+}
+
+impl ReadCompoundValue for UsersSingleton {
+  type Schema = SingletonSchema;
+
+  fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
+    Ok(UsersSingleton::construct(
+      source.read_scalar_value(schema.maximum_user_number)?,
+    ))
+  }
+}
+
+impl WriteCompoundValue for UsersSingleton {
+  type Schema = SingletonSchema;
+
+  fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination) {
+    destination.write_scalar_value(schema.maximum_user_number, &value.get_maximum_user_number());
   }
 }

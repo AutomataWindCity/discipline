@@ -160,8 +160,8 @@ pub fn write_add_rule(
   code.write(&collection.name);
   code.write(" ");
   // TODO
-  code.write_compound_value_for_insert(&collection.schema.rule.activator, rule_activator);
-  code.write_compound_value_for_insert(&collection.schema.rule.enabler, rule_enabler);
+  code.write_compound_value_as_keys_then_values(&collection.schema.rule.activator, rule_activator);
+  code.write_compound_value_as_keys_then_values(&collection.schema.rule.enabler, rule_enabler);
   code.write_scalar_value(rule_id);
   code.write_scalar_value(user_id);
   code.write(";");

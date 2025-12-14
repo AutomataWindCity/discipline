@@ -19,71 +19,101 @@ static BLOCK_INFO_ACCESS_MAXIMUM_DATUM_NUMBER: Key = Key::new("BlockInfoAccessMa
 
 static USERS_MAXIMUM_USER_NUMBER: Key = Key::new("MaximumUserNumber");
 
-pub struct Schema {
-  clock: monotonic::database::Schema,
-  rules: rules::database::CrossRuleGroupInfoSchema,
-  block_info_access: block_info_access::database::CrossVaultGroupInfoSchema,
-  maximum_user_number: Key,
+pub struct SingletonSchema {
+  id: Key,
+  clock_singleton: monotonic::database::Schema,
+  users_singleton: users::database::SingletonSchema,
+  rules_singleton: rules::database::CrossRuleGroupInfoSchema,
+  vaults_singleton: block_info_access::database::CrossVaultGroupInfoSchema,
 }
 
-impl Schema {
+impl SingletonSchema {
   pub fn new() -> Self {
     Self {
-      clock: monotonic::database::Schema::new(
+      id: ID,
+      clock_singleton: monotonic::database::Schema::new(
         CLOCK_MILLISECONDS,
       ),
-      rules: rules::database::CrossRuleGroupInfoSchema::new(
+      rules_singleton: rules::database::CrossRuleGroupInfoSchema::new(
         RULES_RULE_NUMBER, 
         RULES_MAXIMUM_RULE_NUMBER,
       ),
-      block_info_access: block_info_access::database::CrossVaultGroupInfoSchema::new(
+      vaults_singleton: block_info_access::database::CrossVaultGroupInfoSchema::new(
         BLOCK_INFO_ACCESS_VAULT_NUMBER, 
         BLOCK_INFO_ACCESS_MAXIMUM_VAULT_NUMBER, 
         BLOCK_INFO_ACCESS_DATUM_NUMBER, 
         BLOCK_INFO_ACCESS_MAXIMUM_DATUM_NUMBER,
       ),
-      maximum_user_number: USERS_MAXIMUM_USER_NUMBER,
+      users_singleton: users::database::SingletonSchema::new(
+        USERS_MAXIMUM_USER_NUMBER,
+      ),
     }
   }
 }
 
-pub struct Collection {
+pub struct SingletonCollection {
   name: String,
-  schema: Schema,
+  schema: SingletonSchema,
 }
 
-impl Collection {
+impl SingletonCollection {
   pub fn new(name: impl Into<String>) -> Self {
     Self {
       name: name.into(),
-      schema: Schema::new(),
+      schema: SingletonSchema::new(),
     }
   }
 }
 
-pub struct NormalizedState {
-  clock: MonotonicClock,
-  rules: rules::CrossGroupInfo,
-  block_info_access: block_info_access::CrossVaultGroupInfo,
-  maximum_user_number: usize,
+pub struct Singleton {
+  id: u8,
+  clock_singleton: MonotonicClock,
+  rules_singleton: rules::RulesSingleton,
+  users_singleton: users::UsersSingleton,
+  vaults_singleton: block_info_access::VaultsSingleton,
 }
 
-impl ReadCompoundValue for NormalizedState {
-  type Schema = Schema;
+impl Default for Singleton {
+  fn default() -> Self {
+    Self {
+      id: 1,
+      clock_singleton: Default::default(),
+      rules_singleton: Default::default(),
+      users_singleton: Default::default(),
+      vaults_singleton: Default::default(),
+    }
+  }
+}
+
+impl ReadCompoundValue for Singleton {
+  type Schema = SingletonSchema;
 
   fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
-    Ok(NormalizedState { 
-      clock: source.read_compound_value(&schema.clock)?, 
-      rules: source.read_compound_value(&schema.rules)?, 
-      block_info_access: source.read_compound_value(&schema.block_info_access)?,
-      maximum_user_number: source.read_scalar_value(schema.maximum_user_number)?,
+    Ok(Singleton { 
+      id: source.read_scalar_value(schema.id)?,
+      clock_singleton: source.read_compound_value(&schema.clock_singleton)?, 
+      users_singleton: source.read_compound_value(&schema.users_singleton)?,
+      rules_singleton: source.read_compound_value(&schema.rules_singleton)?, 
+      vaults_singleton: source.read_compound_value(&schema.vaults_singleton)?,
     })
+  }
+}
+
+impl WriteCompoundValue for Singleton {
+  type Schema = SingletonSchema;
+
+  fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination) {
+    destination.write_scalar_value(schema.id, &value.id);
+    destination.write_compound_value(&schema.clock_singleton, &value.clock_singleton);
+    destination.write_compound_value(&schema.users_singleton, &value.users_singleton);
+    destination.write_compound_value(&schema.rules_singleton, &value.rules_singleton);
+    destination.write_compound_value(&schema.vaults_singleton, &value.vaults_singleton);
   }
 }
 
 pub fn write_initialize(
   code: &mut SqlCode,
-  collection: &Collection,
+  collection: &SingletonCollection,
 ) {
   code.write("CREATE TABLE IF NOT EXISTS ");
   code.write(&collection.name);
@@ -106,6 +136,14 @@ pub fn write_initialize(
   code.write(" INTEGER NOT NULL, ");
   code.write_key(USERS_MAXIMUM_USER_NUMBER);
   code.write(" INTEGER NOT NULL);");
+
+  code.write("INSERT OR IGNORE INTO ");
+  code.write(&collection.name);
+  code.write_compound_value_as_keys_then_values(
+    &collection.schema, 
+    &Singleton::default(),
+  );
+  code.write_char(';');
 }
 
 pub async fn load(database: &Database) -> Result<State, TextualError> {
@@ -114,9 +152,9 @@ pub async fn load(database: &Database) -> Result<State, TextualError> {
   code.write(&database.singleton_collection.name);
   code.write(" WHERE ");
   code.write_key(ID);
-  code.write(" = 0 LIMIT 1;");
+  code.write(" = 1 LIMIT 1;");
 
-  let state: NormalizedState = database.connection.get_one(
+  let state: Singleton = database.connection.get_one(
     &code, 
     &database.singleton_collection.schema,
   ).await?;
@@ -209,9 +247,10 @@ pub async fn load(database: &Database) -> Result<State, TextualError> {
   }).await?;
 
   Ok(State {
-    clock: Arc::new(RwLock::const_new(state.clock)),
-    rules: Arc::new(RwLock::const_new(state.rules)),
-    users: Arc::new(RwLock::const_new(UserGroup::construct(users, state.maximum_user_number))),
-    block_info_access: Arc::new(RwLock::const_new(state.block_info_access)),
+    clock: Arc::new(RwLock::const_new(state.clock_singleton)),
+    users: Arc::new(RwLock::const_new(UserGroup::construct(users))),
+    users_singleton: Arc::new(RwLock::const_new(state.users_singleton)),
+    rules_singleton: Arc::new(RwLock::const_new(state.rules_singleton)),
+    vaults_singleton: Arc::new(RwLock::const_new(state.vaults_singleton)),
   })
 }

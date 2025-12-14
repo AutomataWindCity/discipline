@@ -5,3 +5,4 @@ pub mod procedures;
 pub mod database;
 
 pub use user_name::UserName;
+pub use user_group::UsersSingleton;

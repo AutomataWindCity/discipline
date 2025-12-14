@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::x::{Database, MonotonicInstant, UuidV4};
-use crate::x::rules::{Rule, RuleGroup, RuleActivatorCreator, RuleEnablerCreator, CrossGroupInfo, Location};
+use crate::x::rules::{Rule, RuleGroup, RuleActivatorCreator, RuleEnablerCreator, RulesSingleton, Location};
 use crate::x::rules::database;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,7 +15,7 @@ pub async fn add_rule(
   database: &Database,
   location: &Location,
   rule_group: &mut RuleGroup,
-  cross_group_info: &mut CrossGroupInfo,
+  cross_group_info: &mut RulesSingleton,
   rule_id: Option<UuidV4>,
   rule_activator_creator: RuleActivatorCreator,
   rule_enabler_creator: RuleEnablerCreator,
@@ -69,7 +69,7 @@ pub async fn delete_rule(
   database: &Database,
   location: &Location,
   rule_group: &mut RuleGroup,
-  cross_group_info: &mut CrossGroupInfo,
+  cross_group_info: &mut RulesSingleton,
   rule_id: &UuidV4,
   now: MonotonicInstant,
 ) -> DeleteRuleReturn {

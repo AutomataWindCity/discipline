@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+// mod ui_text;
+
 pub mod chronic;
 pub mod other;
 pub mod conditionals;
@@ -10,7 +12,7 @@ pub mod users;
 pub mod daemon;
 pub mod database;
 pub mod x;
-pub mod server;
+pub mod api;
 pub mod procedures;
 pub mod state;
 // pub mod vs;
@@ -19,10 +21,11 @@ pub mod state;
 async fn main() {
   use crate::x::{Daemon, DaemonLaunchConfiguration};
 
+  println!("Hi from main");
   let daemon = Daemon::open(DaemonLaunchConfiguration {
     api_server_port: 9090,
     database_directory: PathBuf::from("/workspaces/discipline/discipline_daemon_lib/data"),
   }).await.unwrap();
 
-  
+  daemon.start().await;
 }

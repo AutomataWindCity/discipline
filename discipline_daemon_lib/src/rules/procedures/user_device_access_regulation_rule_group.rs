@@ -30,7 +30,7 @@ impl AddRule {
     
     let user = &mut *user.write().await;
     let rule_group = &mut user.regulation_info.block_device_access.rules;
-    let cross_group_info = &mut *daemon.state.rules.write().await;
+    let cross_group_info = &mut *daemon.state.rules_singleton.write().await;
 
     let return_value = core::add_rule(
       &daemon.database, 
@@ -77,7 +77,7 @@ impl DeleteRule {
     let now = daemon.state.clock.read().await.now();
     let user = &mut *user.write().await;
     let rule_group = &mut user.regulation_info.block_device_access.rules;
-    let cross_group_info = &mut *daemon.state.rules.write().await;
+    let cross_group_info = &mut *daemon.state.rules_singleton.write().await;
 
     let return_value = core::delete_rule(
       &daemon.database, 

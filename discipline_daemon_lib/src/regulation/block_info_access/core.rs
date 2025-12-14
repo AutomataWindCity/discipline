@@ -74,15 +74,27 @@ pub struct Vault {
   protector: VaultProtector,
 }
 
+// TODO: Rename to CommonInfo or Singleton
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CrossVaultGroupInfo {
+pub struct VaultsSingleton {
   vault_number: usize,
   maximum_vault_number: usize,
   data_number: usize,
   maximum_data_number: usize,
 }
 
-impl CrossVaultGroupInfo {
+impl Default for VaultsSingleton {
+  fn default() -> Self {
+    Self {
+      data_number: 0,
+      maximum_data_number: 500,
+      vault_number: 0,
+      maximum_vault_number: 500,
+    }
+  }
+}
+
+impl VaultsSingleton {
   pub fn construct(
     vault_number: usize,
     maximum_vault_number: usize,

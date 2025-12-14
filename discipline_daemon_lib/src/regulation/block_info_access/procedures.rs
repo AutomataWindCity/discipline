@@ -34,7 +34,7 @@ pub enum AddVaultReturn {
 
 impl AddVault {
   pub async fn execute(self, daemon: &Daemon) -> AddVaultReturn {
-    let mut info = daemon.state.block_info_access.write().await;
+    let mut info = daemon.state.vaults_singleton.write().await;
     if !info.may_add_another_vault() {
       return AddVaultReturn::TooManyVaults;
     }
@@ -91,7 +91,7 @@ impl DeleteVault {
       };
     }
 
-    let mut info = daemon.state.block_info_access.write().await;
+    let mut info = daemon.state.vaults_singleton.write().await;
     info.try_decrement_vault_number();
     DeleteVaultReturn::Succes
   }
@@ -147,7 +147,7 @@ pub enum AddDatumReturn {
 
 impl AddDatum {
   pub async fn execute(self, daemon: &Daemon) -> AddDatumReturn {
-    let mut info = daemon.state.block_info_access.write().await;
+    let mut info = daemon.state.vaults_singleton.write().await;
     if info.may_add_another_datum() {
       return AddDatumReturn::TooManyData;
     }
@@ -199,7 +199,7 @@ pub enum DeleteDatumReturn {
 
 impl DeleteDatum {
   pub async fn execute(self, daemon: &Daemon) -> DeleteDatumReturn {
-    let mut info = daemon.state.block_info_access.write().await;
+    let mut info = daemon.state.vaults_singleton.write().await;
 
     let Err(error) = database::delete_datum(
       &daemon.database, 

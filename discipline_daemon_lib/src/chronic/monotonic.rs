@@ -4,6 +4,14 @@ pub struct MonotonicClock {
   milliseconds: u64,
 }
 
+impl Default for MonotonicClock {
+  fn default() -> Self {
+    Self {
+      milliseconds: 1,
+    }
+  }
+}
+
 impl MonotonicClock {
   pub fn now(&self) -> MonotonicInstant {
     MonotonicInstant { timestamp: self.milliseconds }

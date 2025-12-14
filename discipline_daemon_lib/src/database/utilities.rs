@@ -1,12 +1,10 @@
 use std::ffi::CString;
 use std::any::type_name;
-use std::fmt::Display;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
 use crate::x::TextualError;
-
 
 pub struct SqlCode {
   value: String
@@ -44,7 +42,7 @@ impl SqlCode {
     WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
   }
 
-  pub fn write_compound_value_for_insert<T>(&mut self, schema: &T::Schema, value: &T)
+  pub fn write_compound_value_as_keys_then_values<T>(&mut self, schema: &T::Schema, value: &T)
   where
     T: WriteCompoundValue
   {
@@ -59,9 +57,11 @@ impl SqlCode {
     // TODO: Make this more idiomatic.
     // TODO: Panic if no values were written.
     if destination.did_write_some_values {
+      self.value.push('(');
       self.value.push_str(&destination.keys.value);
-      self.value.push_str(" = ");
+      self.value.push_str(") VALUES (");
       self.value.push_str(&destination.values.value);
+      self.value.push(')');
     } else {
       panic!("WHAAAAAAAAAAAAAA. Calling 'write_compound_value_for_insert' on SqlCode: Value wrote zero fields in its 'WriteCompoundValue::write' implementation.")
     }
@@ -872,91 +872,21 @@ impl CompoundValueWriteDestination for CompoundValueWriteDestinationForUpdate {
   }
 }
 
-pub struct Connection(Arc<Mutex<rusqlite::Connection>>);
-
-#[derive(Debug)]
-pub enum DbExecuteError {
-  Other(rusqlite::Error),
-  PrimaryKeyViolation,
-  ForiegnKeyViolation,
+pub struct MyConnection {
+  connection: rusqlite::Connection,
 }
 
-impl Connection {
-  pub fn open(directory: PathBuf) -> Result<Self, TextualError> {
-    let file = directory.join("data.sqlite");
-
-    rusqlite::Connection::open(&file)
-      .map(|inner| {
-        Self(Arc::new(Mutex::new(inner)))
-      })
-      .map_err(|error| {
-        TextualError::new("Opening connection to a SQLite database")
-          .with_message("An occured while opening the connection")
-          .with_attachement_display("Error", error)
-          .with_attachement_display("Database file", file.display())
-          .with_attachement_display("Database directory", directory.display())
-      })
+impl MyConnection {
+  pub fn changes(&self) -> u64 {
+    self.connection.changes()
   }
 
-  pub async fn changes(&self) {}
 
-  pub async fn get_multiple<T, ForEach>(
-    &self, 
-    code: &SqlCode, 
-    schema: &T::Schema, 
-    mut for_each: ForEach,
-  ) -> Result<(), TextualError>
-  where 
-    T: ReadCompoundValue,
-    ForEach: FnMut(T),
-  {
-    let connection = self.0.lock().await;
-    let mut statement = connection.prepare(code.as_str()).map_err(|error| {
-      TextualError::new("Getting multiple items from a database collection")
-        .with_message("A SQLite error occured while prepareing a statement")
-        .with_attachement_display("Statement code", code.as_str())
-        .with_attachement_display("Data type of the item", type_name::<T>())
-        .with_attachement_display("SQLite error", error)
-    })?;
-    
-    let mut iterator = statement.query(()).map_err(|error| {
-      TextualError::new("Getting multiple items from a database collection")
-        .with_message("A SQLite error occured while creating an iterator")
-        .with_attachement_display("Statement", code.as_str())
-        .with_attachement_display("Data type of the item", type_name::<T>())
-        .with_attachement_display("SQLite error", error)
-    })?;
-
-    loop {
-      let item = iterator.next().map_err(|error| {
-        TextualError::new("Getting multiple items from a database collection")
-          .with_message("A SQLite error occured while getting the next item in the iterator")
-          .with_attachement_display("Statement", code.as_str())
-          .with_attachement_display("Data type of the item", type_name::<T>())
-          .with_attachement_display("SQLite error", error)
-      })?;
-
-      let Some(item) = item else {
-        return Ok(());
-      };
-
-      for_each(
-        read_compound_value_from_select(item, schema).map_err(|error| {
-        error
-          .with_context("Getting multiple items from a database collection")
-          // TODO: Use a better word then 'deserializeing'
-          .with_message("An error occured while deserializing the item")
-          .with_attachement_display("Statement", code.as_str())
-      })?);
-    }
-  }
-
-  pub async fn get_one<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<T, TextualError>
+  pub fn get_one<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<T, TextualError>
   where 
     T: ReadCompoundValue
   {
-    let connection = self.0.lock().await;
-    let mut statement = connection.prepare(code.as_str()).map_err(|error| {
+    let mut statement = self.connection.prepare(code.as_str()).map_err(|error| {
       TextualError::new("Getting one item from a database collection")
         .with_message("A SQLite error occured while prepareing a statement")
         .with_attachement_display("Statement code", code.as_str())
@@ -999,8 +929,58 @@ impl Connection {
     }
   }
 
-  pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
-    let Err(error) = self.0.lock().await.execute_batch(code.as_str()) else {
+  pub fn get_multiple<T, ForEach>(
+    &self, 
+    code: &SqlCode, 
+    schema: &T::Schema, 
+    mut for_each: ForEach,
+  ) -> Result<(), TextualError>
+  where 
+    T: ReadCompoundValue,
+    ForEach: FnMut(T),
+  {
+    let mut statement = self.connection.prepare(code.as_str()).map_err(|error| {
+      TextualError::new("Getting multiple items from a database collection")
+        .with_message("A SQLite error occured while prepareing a statement")
+        .with_attachement_display("Statement code", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+    
+    let mut iterator = statement.query(()).map_err(|error| {
+      TextualError::new("Getting multiple items from a database collection")
+        .with_message("A SQLite error occured while creating an iterator")
+        .with_attachement_display("Statement", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+
+    loop {
+      let item = iterator.next().map_err(|error| {
+        TextualError::new("Getting multiple items from a database collection")
+          .with_message("A SQLite error occured while getting the next item in the iterator")
+          .with_attachement_display("Statement", code.as_str())
+          .with_attachement_display("Data type of the item", type_name::<T>())
+          .with_attachement_display("SQLite error", error)
+      })?;
+
+      let Some(item) = item else {
+        return Ok(());
+      };
+
+      for_each(
+        read_compound_value_from_select(item, schema).map_err(|error| {
+        error
+          .with_context("Getting multiple items from a database collection")
+          // TODO: Use a better word then 'deserializeing'
+          .with_message("An error occured while deserializing the item")
+          .with_attachement_display("Statement", code.as_str())
+      })?);
+    }
+  }
+
+  pub fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
+    let Err(error) = self.connection.execute_batch(code.as_str()) else {
       return Ok(());
     };
     
@@ -1023,12 +1003,91 @@ impl Connection {
     }
   }
 
+  pub fn execute_or_textual_error(&self, code: &SqlCode) -> Result<(), TextualError> {
+    self
+      .connection
+      .execute_batch(code.as_str())
+      .map_err(|error| {
+        TextualError::new("Executing SQLite code")
+          .with_message("A SQLite error occured")
+          .with_attachement_display("SQLite error", error)
+      })
+  }
+}
+
+
+pub struct Connection {
+  connection: Arc<Mutex<MyConnection>>,
+}
+
+#[derive(Debug)]
+pub enum DbExecuteError {
+  Other(rusqlite::Error),
+  PrimaryKeyViolation,
+  ForiegnKeyViolation,
+}
+
+impl Connection {
+  pub fn open(directory: PathBuf) -> Result<Self, TextualError> {
+    let file = directory.join("data.sqlite");
+
+    rusqlite::Connection::open(&file)
+      .map(|connection| {
+        Self {
+          connection: Arc::new(
+            Mutex::new(
+              MyConnection { connection }
+            ),
+          ),
+        }
+      })
+      .map_err(|error| {
+        TextualError::new("Opening connection to a SQLite database")
+          .with_message("An occured while opening the connection")
+          .with_attachement_display("Error", error)
+          .with_attachement_display("Database file", file.display())
+          .with_attachement_display("Database directory", directory.display())
+      })
+  }
+
+  pub async fn changes(&self) -> u64 {
+    self.connection.lock().await.changes()
+  }
+
+  pub async fn get_one<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<T, TextualError>
+  where 
+    T: ReadCompoundValue
+  {
+    self.connection.lock().await.get_one(code, schema)
+  }
+
+  pub async fn get_multiple<T, ForEach>(
+    &self, 
+    code: &SqlCode, 
+    schema: &T::Schema, 
+    for_each: ForEach,
+  ) -> Result<(), TextualError>
+  where 
+    T: ReadCompoundValue,
+    ForEach: FnMut(T),
+  {
+    self.connection.lock().await.get_multiple(code, schema, for_each)
+  }
+
+  pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
+    self.connection.lock().await.execute(code)
+  }
+
+  pub async fn execute_or_textual_error(&self, code: &SqlCode) -> Result<(), TextualError> {
+    self.connection.lock().await.execute_or_textual_error(code)
+  }
+
   pub async fn execute_2(&self, code: &SqlCode) -> Result<(), rusqlite::Error> {
-    self.0.lock().await.execute_batch(code.as_str())
+    self.connection.lock().await.connection.execute_batch(code.as_str())
   }
 
   pub async fn execute_with_changes(&self, code: &SqlCode) -> Result<u64, DbExecuteError> {
-    let connection = self.0.lock().await;
+    let connection = &self.connection.lock().await.connection;
     let Err(error) = connection.execute_batch(code.as_str()) else {
       return Ok(connection.changes());
     };
@@ -1050,5 +1109,9 @@ impl Connection {
         Err(DbExecuteError::Other(error))
       }
     }
+  }
+
+  pub async fn lock(&self) -> MyConnection {
+    self.connection.lock().await
   }
 }

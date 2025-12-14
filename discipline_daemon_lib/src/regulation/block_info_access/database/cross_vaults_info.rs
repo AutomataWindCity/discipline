@@ -23,7 +23,7 @@ impl CrossVaultGroupInfoSchema {
   }
 }
 
-impl WriteCompoundValue for CrossVaultGroupInfo {
+impl WriteCompoundValue for VaultsSingleton {
   type Schema = CrossVaultGroupInfoSchema;
 
   fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination) {
@@ -34,11 +34,11 @@ impl WriteCompoundValue for CrossVaultGroupInfo {
   }
 }
 
-impl ReadCompoundValue for CrossVaultGroupInfo {
+impl ReadCompoundValue for VaultsSingleton {
   type Schema = CrossVaultGroupInfoSchema;
 
   fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
-    Ok(CrossVaultGroupInfo::construct(
+    Ok(VaultsSingleton::construct(
       source.read_scalar_value(schema.vault_number)?, 
       source.read_scalar_value(schema.maximum_vault_number)?, 
       source.read_scalar_value(schema.data_number)?, 

@@ -18,7 +18,7 @@ impl CrossRuleGroupInfoSchema {
   }
 }
 
-impl WriteCompoundValue for CrossGroupInfo {
+impl WriteCompoundValue for RulesSingleton {
   type Schema = CrossRuleGroupInfoSchema;
 
   fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination) {
@@ -27,11 +27,11 @@ impl WriteCompoundValue for CrossGroupInfo {
   }
 }
 
-impl ReadCompoundValue for CrossGroupInfo {
+impl ReadCompoundValue for RulesSingleton {
   type Schema = CrossRuleGroupInfoSchema;
 
   fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, crate::x::TextualError> {
-    Ok(CrossGroupInfo {
+    Ok(RulesSingleton {
       rule_number: source.read_scalar_value(schema.rule_number)?,
       maximum_rule_number: source.read_scalar_value(schema.maximum_rule_number)?,
     })

@@ -195,12 +195,21 @@ impl RuleGroup {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CrossGroupInfo {
+pub struct RulesSingleton {
   pub rule_number: usize,
   pub maximum_rule_number: usize,
 }
 
-impl CrossGroupInfo {
+impl Default for RulesSingleton {
+  fn default() -> Self {
+    Self {
+      rule_number: 0,
+      maximum_rule_number: 500,
+    }
+  }
+}
+
+impl RulesSingleton {
   pub fn new(maximum_rule_number: usize) -> Self {
     Self {
       rule_number: 0,
