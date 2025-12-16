@@ -27,14 +27,14 @@ pub trait Transaction {
   fn code(&mut self) -> &mut SqlCode;
 }
 
-pub trait WriteUpdates<Other = Self> {
+pub trait WriteCompoundValueDifferences<Other = Self> {
   type Schema;
 
-  fn write_updates(
+  fn write_differences(
     original: &Self, 
     modified: &Other,
     schema: &Self::Schema,
-    modifications: &mut impl CompoundValueWriteDestination,
+    destination: &mut impl CompoundValueWriteDestination,
   );
 }
 

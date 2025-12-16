@@ -12,7 +12,7 @@ pub mod users;
 pub mod daemon;
 pub mod database;
 pub mod x;
-pub mod api;
+pub mod protocol;
 pub mod procedures;
 pub mod state;
 // pub mod vs;

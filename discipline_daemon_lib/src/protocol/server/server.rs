@@ -2,7 +2,7 @@ use std::net::{Ipv4Addr, SocketAddrV4};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::{Mutex, Semaphore};
-use crate::x::{Daemon, TextualError, api::*};
+use crate::x::{Daemon, TextualError, protocol::*};
 
 #[derive(Debug)]
 enum ServerStatus {
@@ -15,9 +15,9 @@ impl ServerStatus {
     matches!(self, Self::Started)
   }
 
-  fn is_stopped(&self) -> bool {
-    matches!(self, Self::Stopped)
-  }
+  // fn is_stopped(&self) -> bool {
+  //   matches!(self, Self::Stopped)
+  // }
 }
 
 struct ServerSharedData {
@@ -109,6 +109,10 @@ impl Server {
   }
 
   pub async fn stop_auto_serving(self) {
+    // TODO: It will take way too long to aquire a lock due to
+    // the "server.accept_connection().await" in "start_auto_serving".
+    // This is not a problem now because "stop_auto_serving" is never
+    // called anywhere yet. 
     self.server.lock().await.status = ServerStatus::Stopped;
   }
 }

@@ -5,11 +5,10 @@ use tokio::net::TcpStream;
 use tokio::spawn;
 use tokio::task::JoinHandle;
 use crate::x::procedures::Procedure;
-use crate::x::{Daemon, TextualError, match_procedure, api::*};
+use crate::x::{Daemon, TextualError, match_procedure, protocol::*};
 
 pub struct ServerConnection {
   connection: TcpStream,
-  is_closed: bool,
 }
 
 impl ServerConnection {
@@ -37,7 +36,6 @@ impl ServerConnection {
 
       return Ok(Self { 
         connection,
-        is_closed: false,
       });
     }
   }
@@ -69,7 +67,7 @@ impl ServerConnection {
           .with_attachement_display("Io error", error)
       })?;
 
-    bincode_deserialize(&message)
+    deserialize(&message)
       .map_err(|error| {
         error
           .with_context("Reading client message")
@@ -78,7 +76,7 @@ impl ServerConnection {
   }
 
   async fn write_message(&mut self, message: &ServerMessage) -> Result<(), TextualError> {
-    let content = bincode_serialize(message).map_err(|error| {
+    let content = serialize(message).map_err(|error| {
       error
         .with_context("Writing server message")
         .with_message("Failed to serialize the server message")
@@ -151,7 +149,7 @@ async fn respond_to_incoming_message(
   match_procedure!(procedure => {
     let return_value = procedure.execute(daemon).await;
 
-    let return_value_serialized = match bincode_serialize(&return_value) {
+    let return_value_serialized = match serialize(&return_value) {
       Ok(value) => {
         value
       }

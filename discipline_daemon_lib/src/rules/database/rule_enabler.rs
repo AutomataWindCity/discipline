@@ -123,10 +123,10 @@ impl ReadCompoundValue for RuleEnabler {
   }
 }
 
-impl WriteUpdates for RuleEnabler {
+impl WriteCompoundValueDifferences for RuleEnabler {
   type Schema = RuleEnablerSchema;
 
-  fn write_updates(
+  fn write_differences(
     original: &Self, 
     modified: &Self,
     schema: &Self::Schema,
@@ -134,7 +134,7 @@ impl WriteUpdates for RuleEnabler {
   ) {
     match (modified, original) {
       (RuleEnabler::Countdown(modified), RuleEnabler::Countdown(original)) => {
-        WriteUpdates::write_updates(
+        WriteCompoundValueDifferences::write_differences(
           original, 
           modified, 
           &schema.enum_countdown, 
@@ -142,7 +142,7 @@ impl WriteUpdates for RuleEnabler {
         );
       }
       (RuleEnabler::CountdownAfterPlea(modified), RuleEnabler::CountdownAfterPlea(original)) => {
-        WriteUpdates::write_updates(
+        WriteCompoundValueDifferences::write_differences(
           original, 
           modified, 
           &schema.enum_countdown_after_plea, 

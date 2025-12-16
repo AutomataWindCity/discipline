@@ -310,7 +310,7 @@ where
 
   database
     .connection
-    .get_multiple(
+    .select_multiple(
       &code, 
       &database.user_collection.schema, 
       for_each,

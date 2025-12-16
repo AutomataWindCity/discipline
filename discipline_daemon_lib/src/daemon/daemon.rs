@@ -8,7 +8,7 @@ pub struct DaemonLaunchConfiguration {
 }
 
 pub struct Daemon {
-  configuration: DaemonLaunchConfiguration,
+  _configuration: DaemonLaunchConfiguration,
   pub state: State,
   pub database: Database,
   pub api_server: Server,
@@ -23,7 +23,7 @@ impl Daemon {
         error.with_context("Opening Daemon")
       })?;
 
-    let state = state::database::load(&database)
+    let state = state::database::select(&database)
       .await
       .map_err(|error| {
         error.with_context("Opening Daemon")
@@ -39,7 +39,7 @@ impl Daemon {
       state,
       api_server: server,
       database,
-      configuration,
+      _configuration: configuration,
     }))
   }
 

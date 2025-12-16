@@ -42,10 +42,10 @@ impl ReadCompoundValue for CountdownAfterPleaConditional {
   }
 }
 
-impl WriteUpdates for CountdownAfterPleaConditional {
+impl WriteCompoundValueDifferences for CountdownAfterPleaConditional {
   type Schema = CountdownAfterPleaConditionalSchema;
 
-  fn write_updates(
+  fn write_differences(
     original: &Self, 
     modified: &Self,
     schema: &Self::Schema,
@@ -55,7 +55,7 @@ impl WriteUpdates for CountdownAfterPleaConditional {
       modifications.write_scalar_value(schema.is_activated, &modified.is_activated());
     }
     
-    WriteUpdates::write_updates(
+    WriteCompoundValueDifferences::write_differences(
       original.countdown(), 
       modified.countdown(), 
       &schema.countdown, 

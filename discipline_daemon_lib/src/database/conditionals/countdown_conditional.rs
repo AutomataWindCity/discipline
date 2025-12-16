@@ -37,16 +37,16 @@ impl ReadCompoundValue for CountdownConditional {
   }
 }
 
-impl WriteUpdates for CountdownConditional {
+impl WriteCompoundValueDifferences for CountdownConditional {
   type Schema = CountdownConditionalSchema;
 
-  fn write_updates(
+  fn write_differences(
     original: &Self, 
     modified: &Self,
     schema: &Self::Schema,
     modifications: &mut impl CompoundValueWriteDestination,
   ) {
-    WriteUpdates::write_updates(
+    WriteCompoundValueDifferences::write_differences(
       original.countdown(), 
       modified.countdown(), 
       &schema.countdown, 

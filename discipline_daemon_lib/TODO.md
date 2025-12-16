@@ -1,0 +1,3 @@
+- Should use SQLite's terminlogy or ours in database files
+- Rename 'writer' parameter to 'destination' in WriteCompoundValue implementations
+- Add WITHOUT ROWID to table definitions

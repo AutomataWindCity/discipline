@@ -42,7 +42,7 @@ impl SqlCode {
     WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
   }
 
-  pub fn write_compound_value_as_keys_then_values<T>(&mut self, schema: &T::Schema, value: &T)
+  pub fn write_compound_value_for_insert<T>(&mut self, schema: &T::Schema, value: &T)
   where
     T: WriteCompoundValue
   {
@@ -1003,6 +1003,33 @@ impl MyConnection {
     }
   }
 
+  pub fn execute_with_textual_error(
+    &self, 
+    code: &SqlCode,
+  ) -> Result<(), DbExecuteError> {
+    let Err(error) = self.connection.execute_batch(code.as_str()) else {
+      return Ok(());
+    };
+    
+    let sqlite_extended_error_code = match error {
+      rusqlite::Error::SqliteFailure(error, _) => {
+        error.extended_code
+      }
+      other => {
+        return Err(DbExecuteError::Other(other));
+      }
+    };
+
+    match sqlite_extended_error_code {
+      libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
+        Err(DbExecuteError::PrimaryKeyViolation)
+      }
+      _ => {
+        Err(DbExecuteError::Other(error))
+      }
+    }
+  }
+
   pub fn execute_or_textual_error(&self, code: &SqlCode) -> Result<(), TextualError> {
     self
       .connection
@@ -1023,6 +1050,13 @@ pub struct Connection {
 #[derive(Debug)]
 pub enum DbExecuteError {
   Other(rusqlite::Error),
+  PrimaryKeyViolation,
+  ForiegnKeyViolation,
+}
+
+#[derive(Debug)]
+pub enum DbExecuteError2 {
+  Other,
   PrimaryKeyViolation,
   ForiegnKeyViolation,
 }
@@ -1061,7 +1095,7 @@ impl Connection {
     self.connection.lock().await.get_one(code, schema)
   }
 
-  pub async fn get_multiple<T, ForEach>(
+  pub async fn select_multiple<T, ForEach>(
     &self, 
     code: &SqlCode, 
     schema: &T::Schema, 
@@ -1111,7 +1145,7 @@ impl Connection {
     }
   }
 
-  pub async fn lock(&self) -> MyConnection {
+  pub async fn lock(&self) -> tokio::sync::MutexGuard<'_, MyConnection> {
     self.connection.lock().await
   }
 }

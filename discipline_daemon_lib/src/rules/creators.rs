@@ -40,6 +40,7 @@ impl RuleEnablerCreator {
   }
 }
 
+// TODO: This is not used anywhere. Delete it.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RuleCreator {
   pub id: Option<UuidV4>,

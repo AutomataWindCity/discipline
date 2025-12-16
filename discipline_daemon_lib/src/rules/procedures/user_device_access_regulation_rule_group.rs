@@ -32,7 +32,7 @@ impl AddRule {
     let rule_group = &mut user.regulation_info.block_device_access.rules;
     let cross_group_info = &mut *daemon.state.rules_singleton.write().await;
 
-    let return_value = core::add_rule(
+    let return_value = core::create_rule(
       &daemon.database, 
       &Location::UserDeviceAccessRegulation { user_id: self.user_id },
       rule_group, 
@@ -43,10 +43,10 @@ impl AddRule {
     ).await;
     
     match return_value {
-      core::AddRuleReturn::DuplicateId => AddRuleReturn::DuplicateId,
-      core::AddRuleReturn::TooManyRules => AddRuleReturn::TooManyRules,
-      core::AddRuleReturn::InternalError => AddRuleReturn::InternalError,
-      core::AddRuleReturn::Success => AddRuleReturn::Success,
+      core::CreateRuleReturn::DuplicateId => AddRuleReturn::DuplicateId,
+      core::CreateRuleReturn::TooManyRules => AddRuleReturn::TooManyRules,
+      core::CreateRuleReturn::InternalError => AddRuleReturn::InternalError,
+      core::CreateRuleReturn::Success => AddRuleReturn::Success,
     }
   }
 }

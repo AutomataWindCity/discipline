@@ -7,11 +7,9 @@ use crate::x::database::*;
 static ID: Key = Key::new("ID");
 
 static CLOCK_MILLISECONDS: Key = Key::new("ClockMilliseconds");
-static CLOCK_PREVIOUS_SYNCHRONIZATION_TIME: Key = Key::new("ClockPreviousSynchronizationTime");
-static CLOCK_SYNCHRONIZATION_INTERVAL: Key = Key::new("ClockSynchronizationInterval");
 
 static RULES_RULE_NUMBER: Key = Key::new("RulesNumber");
-static RULES_MAXIMUM_RULE_NUMBER: Key = Key::new("RulesMaximumNumber");
+static RULES_MAXIMUM_RULE_NUMBER: Key = Key::new("MaximumRulesNumber");
 
 static BLOCK_INFO_ACCESS_VAULT_NUMBER: Key = Key::new("BlockInfoAccessVaultNumber");
 static BLOCK_INFO_ACCESS_MAXIMUM_VAULT_NUMBER: Key = Key::new("BlockInfoAccessMaximumVaultNumber");
@@ -35,8 +33,6 @@ impl SingletonSchema {
       id: ID,
       clock_singleton: monotonic::database::Schema::new(
         CLOCK_MILLISECONDS,
-        CLOCK_PREVIOUS_SYNCHRONIZATION_TIME,
-        CLOCK_SYNCHRONIZATION_INTERVAL,
       ),
       rules_singleton: rules::database::CrossRuleGroupInfoSchema::new(
         RULES_RULE_NUMBER, 
@@ -55,12 +51,12 @@ impl SingletonSchema {
   }
 }
 
-pub struct SingletonTable {
+pub struct SingletonCollection {
   name: String,
   schema: SingletonSchema,
 }
 
-impl SingletonTable {
+impl SingletonCollection {
   pub fn new(name: impl Into<String>) -> Self {
     Self {
       name: name.into(),
@@ -94,7 +90,6 @@ impl ReadCompoundValue for Singleton {
 
   fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
     Ok(Singleton { 
-      // TODO: Verify that 'id' is '1'.
       id: source.read_scalar_value(schema.id)?,
       clock_singleton: source.read_compound_value(&schema.clock_singleton)?, 
       users_singleton: source.read_compound_value(&schema.users_singleton)?,
@@ -118,7 +113,7 @@ impl WriteCompoundValue for Singleton {
 
 pub fn write_initialize(
   code: &mut SqlCode,
-  collection: &SingletonTable,
+  collection: &SingletonCollection,
 ) {
   code.write("CREATE TABLE IF NOT EXISTS ");
   code.write(&collection.name);
@@ -140,18 +135,18 @@ pub fn write_initialize(
   code.write_key(BLOCK_INFO_ACCESS_MAXIMUM_DATUM_NUMBER);
   code.write(" INTEGER NOT NULL, ");
   code.write_key(USERS_MAXIMUM_USER_NUMBER);
-  code.write(" INTEGER NOT NULL) WITHOUT ROWID;");
+  code.write(" INTEGER NOT NULL);");
 
   code.write("INSERT OR IGNORE INTO ");
   code.write(&collection.name);
-  code.write_compound_value_for_insert(
+  code.write_compound_value_as_keys_then_values(
     &collection.schema, 
     &Singleton::default(),
   );
   code.write_char(';');
 }
 
-pub async fn select(database: &Database) -> Result<State, TextualError> {
+pub async fn load(database: &Database) -> Result<State, TextualError> {
   let mut code = SqlCode::new();
   code.write("SELECT * FROM ");
   code.write(&database.singleton_collection.name);
@@ -166,9 +161,9 @@ pub async fn select(database: &Database) -> Result<State, TextualError> {
 
   
   let mut block_device_access_rule_groups = HashMap::<UuidV4, HashMap<UuidV4, rules::Rule>>::new();
-  rules::database::user_rule_table::select_all_rules(
+  rules::database::user_rule_collection::get_all_rules(
     &database.connection, 
-    &database.user_device_access_regulation_rule_table, 
+    &database.user_device_access_regulation_rule_collection, 
     |item| {
       if let Some(rule_group) = block_device_access_rule_groups.get_mut(&item.user_id) {
         rule_group.insert(item.rule_id, item.rule);
@@ -181,9 +176,9 @@ pub async fn select(database: &Database) -> Result<State, TextualError> {
   ).await?;
 
   let mut block_account_access_rule_groups = HashMap::<UuidV4, HashMap<UuidV4, rules::Rule>>::new();
-  rules::database::user_rule_table::select_all_rules(
+  rules::database::user_rule_collection::get_all_rules(
     &database.connection, 
-    &database.user_account_access_regulation_rule_table, 
+    &database.user_account_access_regulation_rule_collection, 
     |item| {
       if let Some(rule_group) = block_account_access_rule_groups.get_mut(&item.user_id) {
         rule_group.insert(item.rule_id, item.rule);
@@ -196,9 +191,9 @@ pub async fn select(database: &Database) -> Result<State, TextualError> {
   ).await?;
 
   let mut block_internet_access_rule_group = HashMap::<UuidV4, HashMap<UuidV4, rules::Rule>>::new();
-  rules::database::user_rule_table::select_all_rules(
+  rules::database::user_rule_collection::get_all_rules(
     &database.connection, 
-    &database.user_internet_access_regulation_rule_table, 
+    &database.user_internet_access_regulation_rule_collection, 
     |item| {
       if let Some(rule_group) = block_internet_access_rule_group.get_mut(&item.user_id) {
         rule_group.insert(item.rule_id, item.rule);

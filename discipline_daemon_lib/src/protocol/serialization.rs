@@ -1,13 +1,6 @@
 use std::any::type_name;
 use serde::{Serialize, de::DeserializeOwned};
-use crate::x::{TextualError, };
-
-static PREFACE_MAGIC_BYTES: [u8; 16] = [
-  0xDE, 0xAD, 0xBE, 0xEF,
-  0xCA, 0xFE, 0xBA, 0xBE,
-  0x0D, 0x15, 0xEA, 0x5E,
-  0x50, 0x52, 0x30, 0x54
-];
+use crate::x::TextualError;
 
 type BincodeConfiguration = bincode
   ::config
@@ -23,7 +16,7 @@ static BINCODE_CONFIG: BincodeConfiguration = bincode::config::standard()
   .with_fixed_int_encoding()
   .with_limit();
 
-pub fn bincode_serialize<T>(value: &T) -> Result<Vec<u8>, TextualError> 
+pub fn serialize<T>(value: &T) -> Result<Vec<u8>, TextualError> 
 where 
   T: Serialize
 {
@@ -34,7 +27,7 @@ where
     })
 }
 
-pub fn bincode_deserialize<T>(slice: &[u8]) -> Result<T, TextualError>
+pub fn deserialize<T>(slice: &[u8]) -> Result<T, TextualError>
 where 
   T: DeserializeOwned
 {

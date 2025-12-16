@@ -1,4 +1,4 @@
-pub use crate::other::textual_error::{TextualError, TextualErrorAttachement, TextualErrorContext, ToTextualError};
+pub use crate::other::textual_error::{TextualError, TextualErrorAttachement, TextualErrorContext, ToTextualError, IsTextualError};
 pub use crate::other::uuid_v4::UuidV4;
 
 pub use crate::chronic::monotonic::{self, MonotonicInstant, MonotonicClock};
@@ -63,7 +63,7 @@ pub use crate::daemon::{Daemon, DaemonLaunchConfiguration};
 pub use crate::state::state::State;
 pub use crate::state;
 pub use crate::database::Database;
-pub use crate::api::Server;
-pub use crate::api;
+pub use crate::protocol::Server;
+pub use crate::protocol;
 pub use crate::procedures;
 pub use crate::match_procedure;

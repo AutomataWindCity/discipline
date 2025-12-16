@@ -4,57 +4,56 @@ use crate::x::rules::{Rule, RuleGroup, RuleActivatorCreator, RuleEnablerCreator,
 use crate::x::rules::database;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum AddRuleReturn {
+pub enum CreateRuleReturn {
   TooManyRules,
   DuplicateId,
   InternalError,
   Success,
 }
 
-pub async fn add_rule(
+pub async fn create_rule(
   database: &Database,
   location: &Location,
   rule_group: &mut RuleGroup,
-  cross_group_info: &mut RulesSingleton,
+  rules_singleton: &mut RulesSingleton,
   rule_id: Option<UuidV4>,
   rule_activator_creator: RuleActivatorCreator,
   rule_enabler_creator: RuleEnablerCreator,
-) -> AddRuleReturn {
-  if cross_group_info.reached_maximum_rule_number() {
-    return AddRuleReturn::TooManyRules;
+) -> CreateRuleReturn {
+  if rules_singleton.reached_maximum_rule_number() {
+    return CreateRuleReturn::TooManyRules;
   }
 
   let rule_id_is_created_by_client = rule_id.is_some();
   let rule_id = rule_id.unwrap_or_else(UuidV4::generate);
   let rule_activator = rule_activator_creator.create();
   let rule_enabler = rule_enabler_creator.create();
+  let rule = Rule::new(rule_activator, rule_enabler);
 
-  if let Err(error) = database::add_rule(
+  if let Err(error) = database::insert_rule(
     database,
     location,
     &rule_id, 
-    &rule_enabler, 
-    &rule_activator, 
+    &rule,
   ).await {
     return match error {
-      database::AddRuleError::DuplicateId => {
+      database::InsertRuleError::DuplicateId => {
         if rule_id_is_created_by_client {
-          AddRuleReturn::DuplicateId
+          CreateRuleReturn::DuplicateId
         } else {
-          AddRuleReturn::InternalError
+          CreateRuleReturn::InternalError
         }
       }
-      database::AddRuleError::Other => {
-        AddRuleReturn::InternalError
+      database::InsertRuleError::Other => {
+        CreateRuleReturn::InternalError
       }
     };
   }
 
-  let rule = Rule::new(rule_activator, rule_enabler);
   rule_group.add_rule(rule_id, rule);
-  cross_group_info.increment_rule_number();
+  rules_singleton.increment_rule_number();
 
-  AddRuleReturn::Success
+  CreateRuleReturn::Success
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -116,23 +115,23 @@ pub async fn activate_rule(
     return ActivateRuleReturn::NoSuchRule;
   };
 
-  let mut enabler = rule.enabler.clone();
-  enabler.activate(now);
+  let mut modified_enabler = rule.enabler.clone();
+  modified_enabler.activate(now);
 
-  if let Err(error) = database::update_rule_enabler(
+  if let Err(error) = database::set_rule_enabler(
     database,
     location,
     rule_id,
     &rule.enabler, 
-    &enabler,
+    &modified_enabler,
   ).await {
     return match error {
-      database::UpdateRuleEnablerError::InternalError => ActivateRuleReturn::InternalError,
-      database::UpdateRuleEnablerError::NoSuchRule => ActivateRuleReturn::InternalError,
+      database::SetRuleEnablerError::Other => ActivateRuleReturn::InternalError,
+      database::SetRuleEnablerError::NoSuchRule => ActivateRuleReturn::InternalError,
     };
   }
 
-  rule.enabler = enabler;
+  rule.enabler = modified_enabler;
   ActivateRuleReturn::Success
 }
 
@@ -157,7 +156,7 @@ pub async fn deactivate_rule(
   let mut enabler = rule.enabler.clone();
   enabler.deactivate(now);
 
-  if let Err(error) = database::update_rule_enabler(
+  if let Err(error) = database::set_rule_enabler(
     database, 
     location, 
     rule_id, 
@@ -165,8 +164,8 @@ pub async fn deactivate_rule(
     &enabler,
   ).await {
     return match error {
-      database::UpdateRuleEnablerError::InternalError => DeactivateRuleReturn::InternalError,
-      database::UpdateRuleEnablerError::NoSuchRule => DeactivateRuleReturn::InternalError,
+      database::SetRuleEnablerError::Other => DeactivateRuleReturn::InternalError,
+      database::SetRuleEnablerError::NoSuchRule => DeactivateRuleReturn::InternalError,
     };
   }
 

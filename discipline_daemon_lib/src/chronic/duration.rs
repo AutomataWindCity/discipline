@@ -8,6 +8,16 @@ impl Duration {
     Self { milliseconds }
   }
 
+  pub const fn from_minutes_or_panic(minutes: u64) -> Duration {
+    let Some(milliseconds) = minutes.checked_mul(1000 * 60) else {
+      // TODO: Write a proper error message.
+      panic!("Creating ");
+    };
+
+
+    Self { milliseconds }
+  }
+
   pub fn zero() -> Duration {
     Self { milliseconds: 0 }
   }
@@ -32,6 +42,10 @@ impl Duration {
 
   pub fn milliseconds(self) -> u64 {
     self.milliseconds
+  }
+
+  pub fn to_std_duration(self) -> std::time::Duration {
+    std::time::Duration::from_millis(self.milliseconds)
   }
 }
 

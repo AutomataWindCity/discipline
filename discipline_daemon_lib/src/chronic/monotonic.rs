@@ -1,13 +1,19 @@
-use crate::x::Duration;
+use std::sync::Arc;
+use tokio::{sync::RwLock, time::sleep};
+use crate::x::{DateTime, Duration};
 
 pub struct MonotonicClock {
   milliseconds: u64,
+  previous_synchronization_time: Option<DateTime>,
+  synchronization_interval: Duration,
 }
 
 impl Default for MonotonicClock {
   fn default() -> Self {
     Self {
       milliseconds: 1,
+      previous_synchronization_time: None,
+      synchronization_interval: Duration::from_minutes_or_panic(5)
     }
   }
 }
@@ -15,6 +21,47 @@ impl Default for MonotonicClock {
 impl MonotonicClock {
   pub fn now(&self) -> MonotonicInstant {
     MonotonicInstant { timestamp: self.milliseconds }
+  }
+}
+
+pub struct SharedMonotonicClock {
+  clock: Arc<RwLock<MonotonicClock>>,
+}
+
+fn synchronization_loop_iteration(clock: &mut MonotonicClock) {
+  let current_time = DateTime::now();
+
+  let previous_synchronization_time = match clock.previous_synchronization_time {
+    None => {
+      clock.previous_synchronization_time = Some(current_time);
+      return;
+    }
+    Some(time) => {
+      time
+    }
+  };
+
+  let interval = previous_synchronization_time
+    .till_or_zero(current_time);
+
+  // TODO: Log an error if "clock.milliseconds" reaches the maximum value for
+  // "u64".
+  clock.milliseconds = clock.milliseconds.saturating_add(interval.milliseconds());
+
+  // TODO: Update the database, too.
+}
+
+impl SharedMonotonicClock {
+  pub async fn start_synchronization_loop(self) {
+    loop {
+      let mut clock_guard = self.clock.write().await;
+      let clock = &mut *clock_guard;
+      let interval = clock.synchronization_interval.to_std_duration();
+      
+      synchronization_loop_iteration(clock);
+      drop(clock_guard);
+      sleep(interval).await;
+    }
   }
 }
 
@@ -84,12 +131,20 @@ pub mod database {
 
   pub struct Schema {
     milliseconds: Key,
+    previous_synchronization_time: Key,
+    synchronization_interval: Key,
   }
 
   impl Schema {
-    pub fn new(milliseconds: Key) -> Self {
+    pub fn new(
+      milliseconds: Key,
+      previous_synchronization_time: Key,
+      synchronization_interval: Key,
+    ) -> Self {
       Self {
         milliseconds,
+        previous_synchronization_time,
+        synchronization_interval,
       }
     }
   }
@@ -99,6 +154,8 @@ pub mod database {
 
     fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination) {
       destination.write_scalar_value(schema.milliseconds, &value.milliseconds);
+      destination.write_scalar_value(schema.previous_synchronization_time, &value.previous_synchronization_time);
+      destination.write_scalar_value(schema.synchronization_interval, &value.synchronization_interval);
     }
   }
 
@@ -109,6 +166,8 @@ pub mod database {
       Ok(MonotonicClock { 
         // TODO: Should we err if this returns 0?
         milliseconds: source.read_scalar_value(schema.milliseconds)?,
+        previous_synchronization_time: source.read_scalar_value(schema.previous_synchronization_time)?,
+        synchronization_interval: source.read_scalar_value(schema.synchronization_interval)?,
       })
     }
   }

@@ -43,7 +43,7 @@ impl AddVault {
     let vault_id = self.vault_id.unwrap_or_else(UuidV4::generate);
     let vault_protector = self.vault_protector.create();
 
-    if let Err(error) = database::add_vault(
+    if let Err(error) = database::insert_vault(
       &daemon.database,
       &self.user_id,
       &vault_id,

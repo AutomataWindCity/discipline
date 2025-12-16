@@ -197,3 +197,15 @@ impl Debug for TextualError {
     write!(f, "{}", self)
   }
 }
+
+pub trait IsTextualError {
+  fn new(action: impl Into<String>) -> Self;
+  fn add_message(&mut self, new_error_message: impl Into<String>);
+  fn add_attachement_debug(&mut self, name: impl Into<String>, value: impl Debug);
+  fn add_attachement_display(&mut self, name: impl Into<String>, value: impl Display);
+  fn change_context(&mut self, new_context_action: impl Into<String>);
+  fn with_message(self, message: impl Into<String>) -> Self;
+  fn with_attachement_debug(self, name: impl Into<String>, value: impl Debug) -> TextualError;
+  fn with_attachement_display(self, name: impl Into<String>, value: impl Display) -> TextualError;
+  fn with_context(self, action: impl Into<String>) -> TextualError;
+}

@@ -35,10 +35,10 @@ impl ReadCompoundValue for Countdown {
   }
 }
 
-impl WriteUpdates for Countdown {
+impl WriteCompoundValueDifferences for Countdown {
   type Schema = CountdownSchema;
   
-  fn write_updates(
+  fn write_differences(
     original: &Self, 
     modified: &Self,
     schema: &Self::Schema,
