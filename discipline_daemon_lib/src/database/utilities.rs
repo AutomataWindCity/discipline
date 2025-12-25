@@ -571,6 +571,20 @@ impl WriteScalarValue for String {
   }
 }
 
+impl<'a> WriteScalarValue for &'a str {
+  fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
+    writer.code.write_char('\'');
+    for char in value.chars() {
+      if char == '\'' {
+        writer.code.write("''");
+      } else {
+        writer.code.write_char(char);
+      }
+    }
+    writer.code.write_char('\'');
+  }
+}
+
 impl WriteScalarValue for CString {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write_char('\'');
@@ -701,6 +715,7 @@ where
 pub trait CompoundValueWriteDestination {
   fn write_null(&mut self, key: Key);
 
+  // TODO: Panic, in debug mode, if a column was written twice
   fn write_scalar_value<T>(&mut self, key: Key, value: &T)
   where 
     T: WriteScalarValue;
@@ -881,7 +896,6 @@ impl MyConnection {
     self.connection.changes()
   }
 
-
   pub fn get_one<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<T, TextualError>
   where 
     T: ReadCompoundValue
@@ -926,6 +940,51 @@ impl MyConnection {
           .with_message("Failed to deserialize the item")
           .with_attachement_display("Statement", code.as_str())
       });
+    }
+  }
+
+  pub fn get_one_or_none<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<Option<T>, TextualError>
+  where 
+    T: ReadCompoundValue
+  {
+    let mut statement = self.connection.prepare(code.as_str()).map_err(|error| {
+      TextualError::new("Getting one item from a database collection")
+        .with_message("A SQLite error occured while prepareing a statement")
+        .with_attachement_display("Statement code", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+    
+    let mut iterator = statement.query(()).map_err(|error| {
+      TextualError::new("Getting one item from a database collection")
+        .with_message("A SQLite error occured while creating an iterator")
+        .with_attachement_display("Statement", code.as_str())
+        .with_attachement_display("Data type of the item", type_name::<T>())
+        .with_attachement_display("SQLite error", error)
+    })?;
+
+    loop {
+      let item = iterator.next().map_err(|error| {
+        TextualError::new("Getting one item from a database collection")
+          .with_message("A SQLite error occured while getting the first item in the iterator")
+          .with_attachement_display("Statement", code.as_str())
+          .with_attachement_display("Data type of the item", type_name::<T>())
+          .with_attachement_display("SQLite error", error)
+      })?;
+
+      let Some(item) = item else {
+        return Ok(None);
+      };
+
+      return Ok(Some(
+        read_compound_value_from_select(item, schema)
+          .map_err(|error| {
+            error
+              .with_context("Getting one item from a database collection")
+              .with_message("Failed to deserialize the item")
+              .with_attachement_display("Statement", code.as_str())
+          })?
+      ));
     }
   }
 
@@ -1038,6 +1097,7 @@ impl MyConnection {
         TextualError::new("Executing SQLite code")
           .with_message("A SQLite error occured")
           .with_attachement_display("SQLite error", error)
+          .with_attachement_display("SQL code", code.as_str())
       })
   }
 }
@@ -1093,6 +1153,13 @@ impl Connection {
     T: ReadCompoundValue
   {
     self.connection.lock().await.get_one(code, schema)
+  }
+
+  pub async fn get_one_or_none<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<Option<T>, TextualError>
+  where 
+    T: ReadCompoundValue
+  {
+    self.connection.lock().await.get_one_or_none(code, schema)
   }
 
   pub async fn select_multiple<T, ForEach>(

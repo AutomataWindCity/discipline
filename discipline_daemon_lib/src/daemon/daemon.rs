@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use crate::x::{Database, Server, State, TextualError, state};
+use crate::x::{Database, Server, State, TextualError, database};
 
 pub struct DaemonLaunchConfiguration {
   pub api_server_port: u16,
@@ -23,7 +23,7 @@ impl Daemon {
         error.with_context("Opening Daemon")
       })?;
 
-    let state = state::database::select(&database)
+    let state = database::singleton::select_state(&database)
       .await
       .map_err(|error| {
         error.with_context("Opening Daemon")

@@ -1,7 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::x::{Database, MonotonicInstant, UuidV4};
-use crate::x::rules::{Rule, RuleGroup, RuleActivatorCreator, RuleEnablerCreator, RulesSingleton, Location};
-use crate::x::rules::database;
+use crate::x::rules::{Rule, RuleGroup, RuleActivatorCreator, RuleEnablerCreator, RulesSingleton, Location, database};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CreateRuleReturn {

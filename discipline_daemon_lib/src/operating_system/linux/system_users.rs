@@ -36,6 +36,24 @@ impl UserName {
   }
 }
 
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct UserNameRef<'a> {
+  inner: &'a CStr
+}
+
+impl<'a> UserNameRef<'a> {
+  pub fn new(inner: &'a CStr) -> Self {
+    Self { 
+      inner 
+    }
+  }
+
+  pub fn inner(&self) -> &'a CStr {
+    &self.inner
+  }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GroupId {
   inner: gid_t,

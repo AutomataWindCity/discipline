@@ -3,7 +3,7 @@ use tokio::{sync::RwLock, time::sleep};
 use crate::x::{DateTime, Duration};
 
 pub struct MonotonicClock {
-  milliseconds: u64,
+  total_elapsed_duration: u64,
   previous_synchronization_time: Option<DateTime>,
   synchronization_interval: Duration,
 }
@@ -11,7 +11,7 @@ pub struct MonotonicClock {
 impl Default for MonotonicClock {
   fn default() -> Self {
     Self {
-      milliseconds: 1,
+      total_elapsed_duration: 1,
       previous_synchronization_time: None,
       synchronization_interval: Duration::from_minutes_or_panic(5)
     }
@@ -19,8 +19,32 @@ impl Default for MonotonicClock {
 }
 
 impl MonotonicClock {
+  pub fn construct(
+    total_elapsed_duration: Duration,
+    previous_synchronization_time: Option<DateTime>,
+    synchronization_interval: Duration,
+  ) -> Self {
+    Self {
+      total_elapsed_duration: total_elapsed_duration.milliseconds(),
+      previous_synchronization_time,
+      synchronization_interval,
+    }
+  }
+
   pub fn now(&self) -> MonotonicInstant {
-    MonotonicInstant { timestamp: self.milliseconds }
+    MonotonicInstant { timestamp: self.total_elapsed_duration }
+  }
+
+  pub fn total_elapsed_duration(&self) -> Duration {
+    Duration::from_milliseconds(self.total_elapsed_duration)
+  }
+
+  pub fn previous_synchronization_time(&self) -> Option<DateTime> {
+    self.previous_synchronization_time
+  }
+
+  pub fn synchronization_interval(&self) -> Duration {
+    self.synchronization_interval
   }
 }
 
@@ -46,7 +70,7 @@ fn synchronization_loop_iteration(clock: &mut MonotonicClock) {
 
   // TODO: Log an error if "clock.milliseconds" reaches the maximum value for
   // "u64".
-  clock.milliseconds = clock.milliseconds.saturating_add(interval.milliseconds());
+  clock.total_elapsed_duration = clock.total_elapsed_duration.saturating_add(interval.milliseconds());
 
   // TODO: Update the database, too.
 }
@@ -121,54 +145,6 @@ mod serialization {
       D: serde::Deserializer<'a> 
     {
       u64::deserialize(deserializer).map(|timestamp| MonotonicInstant { timestamp })
-    }
-  }
-}
-
-pub mod database {
-  use crate::x::database::*;
-  use super::MonotonicClock;
-
-  pub struct Schema {
-    milliseconds: Key,
-    previous_synchronization_time: Key,
-    synchronization_interval: Key,
-  }
-
-  impl Schema {
-    pub fn new(
-      milliseconds: Key,
-      previous_synchronization_time: Key,
-      synchronization_interval: Key,
-    ) -> Self {
-      Self {
-        milliseconds,
-        previous_synchronization_time,
-        synchronization_interval,
-      }
-    }
-  }
-
-  impl WriteCompoundValue for MonotonicClock {
-    type Schema = Schema;
-
-    fn write(value: &Self, schema: &Self::Schema, destination: &mut impl CompoundValueWriteDestination) {
-      destination.write_scalar_value(schema.milliseconds, &value.milliseconds);
-      destination.write_scalar_value(schema.previous_synchronization_time, &value.previous_synchronization_time);
-      destination.write_scalar_value(schema.synchronization_interval, &value.synchronization_interval);
-    }
-  }
-
-  impl ReadCompoundValue for MonotonicClock {
-    type Schema = Schema;
-
-    fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, crate::x::TextualError> {
-      Ok(MonotonicClock { 
-        // TODO: Should we err if this returns 0?
-        milliseconds: source.read_scalar_value(schema.milliseconds)?,
-        previous_synchronization_time: source.read_scalar_value(schema.previous_synchronization_time)?,
-        synchronization_interval: source.read_scalar_value(schema.synchronization_interval)?,
-      })
     }
   }
 }

@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 pub mod chronic;
 pub mod other;
+pub use other::textual_error::*;
 pub mod conditionals;
 pub mod rules;
 pub mod regulation;

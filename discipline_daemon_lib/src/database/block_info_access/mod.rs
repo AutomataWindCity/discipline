@@ -17,8 +17,8 @@ pub use vault_collection::*;
 mod vault_protector;
 use vault_protector::*;
 
-use super::*;
 use crate::x::{Database, TextualError, UuidV4, conditionals, database::*};
+use crate::x::block_info_access::*;
 
-mod cross_vaults_info;
-pub use cross_vaults_info::CrossVaultGroupInfoSchema;
+mod singleton;
+pub use singleton::SingletonSchema;

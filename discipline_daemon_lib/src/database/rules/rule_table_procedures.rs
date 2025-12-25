@@ -3,7 +3,7 @@
 use crate::x::{UuidV4, Database, TextualError};
 use crate::x::database::*;
 use crate::x::rules::{Rule, RuleEnabler, Location};
-use crate::x::rules::database::user_rule_table as table;
+use crate::x::database::rules::user_rule_table as table;
 
 pub use table::Row;
 

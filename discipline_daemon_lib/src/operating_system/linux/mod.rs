@@ -8,6 +8,7 @@ use system_users::{
 pub use system_users::{
   UserId,
   UserName,
+  UserNameRef,
 };
 
 

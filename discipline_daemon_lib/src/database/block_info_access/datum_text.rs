@@ -2,7 +2,7 @@ use super::*;
 
 impl WriteScalarValue for Datum {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
-    writer.write_scalar_value(&value.string);
+    writer.write_scalar_value(&value.as_ref());
   }
 }
 

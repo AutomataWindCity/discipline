@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::x::{UuidV4, CountdownAfterPleaConditional};
+use crate::x::CountdownAfterPleaConditional;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VaultName {
@@ -12,8 +12,8 @@ pub enum CreateVaultNameFromStringError {
 }
 
 impl VaultName {
-  pub(super) const MINIMUM_LENGTH: usize = 1;
-  pub(super) const MAXIMUM_LENGTH: usize = 300;
+  pub const MINIMUM_LENGTH: usize = 1;
+  pub const MAXIMUM_LENGTH: usize = 300;
 
   pub fn new(string: String) -> Result<Self, CreateVaultNameFromStringError> {
     if string.len() < Self::MINIMUM_LENGTH {
@@ -43,8 +43,8 @@ pub enum CreateDatumFromStringError {
 }
 
 impl Datum {
-  pub(super) const MINIMUM_LENGTH: usize = 1;
-  pub(super) const MAXIMUM_LENGTH: usize = 10000;
+  pub const MINIMUM_LENGTH: usize = 1;
+  pub const MAXIMUM_LENGTH: usize = 10000;
 
   pub fn new(string: String) -> Result<Self, CreateDatumFromStringError> {
     if string.len() < Self::MINIMUM_LENGTH {
@@ -143,18 +143,21 @@ impl VaultsSingleton {
   pub fn get_vault_number(&self) -> usize {
     self.vault_number
   }
+  
   pub fn get_maximum_vault_number(&self) -> usize {
     self.maximum_vault_number
   }
+  
   pub fn get_data_number(&self) -> usize {
     self.data_number
   }
+
   pub fn get_maximum_data_number(&self) -> usize {
     self.maximum_data_number
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Location {
-  User { user_id: UuidV4 }
-}
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub enum Location {
+//   User { user_id: UuidV4 }
+// }

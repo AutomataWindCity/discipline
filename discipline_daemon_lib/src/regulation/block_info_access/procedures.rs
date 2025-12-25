@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::x::{Daemon, UuidV4, conditionals};
 use crate::x::block_info_access::*;
+use crate::x::database::block_info_access as database;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum VaultProtectorCreator {

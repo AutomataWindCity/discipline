@@ -3,6 +3,7 @@
 use crate::x::{TextualError, UuidV4};
 use crate::x::rules::*;
 use crate::x::database::*;
+use crate::x::database::rules::*;
 
 static USER_ID: Key = Key::new("UserId");
 static RULE_ID: Key = Key::new("RuleId");

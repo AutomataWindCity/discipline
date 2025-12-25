@@ -1,10 +1,9 @@
-use crate::x::TextualError;
-use crate::x::rules::*;
-use crate::x::database::*;
+use crate::x::{TextualError, rules::*, database::*};
+use crate::x::database::rules::*;
 
 pub struct RuleSchema {
-  pub activator: RuleActivatorSchema,
   pub enabler: RuleEnablerSchema,
+  pub activator: RuleActivatorSchema,
 }
 
 impl RuleSchema {
@@ -55,16 +54,16 @@ impl ReadCompoundValue for Rule {
   }
 }
 
-impl WriteUpdates for Rule {
+impl WriteCompoundValueDifferences for Rule {
   type Schema = RuleSchema;
 
-  fn write_updates(
+  fn write_differences(
     original: &Self, 
     modified: &Self,
     schema: &Self::Schema,
     modifications: &mut impl CompoundValueWriteDestination,
   ) {
-    WriteUpdates::write_updates(
+    WriteCompoundValueDifferences::write_differences(
       original.enabler(),
       modified.enabler(),
       &schema.enabler,

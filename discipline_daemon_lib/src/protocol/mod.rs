@@ -5,7 +5,7 @@ mod serialization;
 use serialization::*;
 
 mod client;
-use client::*;
+pub use client::*;
 
 mod server;
 pub use server::*;
