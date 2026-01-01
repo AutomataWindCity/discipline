@@ -1,5 +1,5 @@
-use std::ptr;
-use std::ffi::CStr;
+use std::{fmt::Debug, ptr};
+use std::ffi::{CStr, CString};
 use libc::{c_char, c_int, c_void};
 use discipline_daemon::operating_system::UserName;
 use crate::*;
@@ -105,6 +105,34 @@ unsafe fn get_user_name(pamh: *mut pam_handle_t) -> Result<UserName, ()> {
 //   pam_sys::PAM_IGNORE
 // }
 
+unsafe fn set_login_denial_phrase(
+  pamh: *mut pam::pam_handle_t,
+  phrase: CString,
+) -> Result<(), CString> {
+  // PAM will free this when it's no longer needed.
+  let phrase = phrase.as_ptr() as *const c_void;
+
+  let status_code = unsafe { 
+    pam::pam_set_item(pamh, pam::PAM_TEXT_INFO, phrase)
+  };
+
+  if status_code != pam::PAM_SUCCESS {
+    return Err(unsafe {
+      CString::from_raw(phrase as *mut i8)
+    });
+  }
+
+  Ok(())
+}
+
+// unsafe fn pam_set_item(
+//   pamh: *mut pam::pam_handle_t, 
+
+//   PAM_TEXT_INFO, 
+//                     "Your account is locked. Contact administrator.") {
+
+//                     }
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pam_sm_acct_mgmt(
   pamh: *mut pam_handle_t,
@@ -115,26 +143,24 @@ pub unsafe extern "C" fn pam_sm_acct_mgmt(
   let data = unsafe { get_module_data(pamh) };
 
   let Ok(data) = data else {
-    return declarations::PAM_SUCCESS;
+    return pam::PAM_SUCCESS;
   };
 
   let Ok(user_name) = (unsafe { get_user_name(pamh) }) else {
-    return declarations::PAM_SUCCESS;
+    return pam::PAM_SUCCESS;
   };
 
-  let Ok(is_login_blocked) = unsafe { &*data }.is_login_blocked(&user_name) else {
-    return declarations::PAM_SUCCESS;
-  };
+  let is_login_blocked = unsafe { &*data }.is_login_blocked(&user_name);
 
   if is_login_blocked {
-    return declarations::PAM_PERM_DENIED;
+    return pam::PAM_PERM_DENIED;
   }
 
-  declarations::PAM_SUCCESS
+  pam::PAM_SUCCESS
 }
 
 pub unsafe extern "C" fn pam_sm_open_session(
-  pamh: *mut declarations::pam_handle_t,
+  pamh: *mut pam::pam_handle_t,
   _flags: c_int,
   _argc: c_int,
   _argv: *mut *const c_char,
@@ -142,16 +168,16 @@ pub unsafe extern "C" fn pam_sm_open_session(
   let data = unsafe { get_module_data(pamh) };
 
   let Ok(data) = data else {
-    return declarations::PAM_SUCCESS;
+    return pam::PAM_SUCCESS;
   };
 
   let Ok(user_name) = (unsafe { get_user_name(pamh) }) else {
-    return declarations::PAM_SUCCESS;
+    return pam::PAM_SUCCESS;
   };
 
   unsafe { &*data }.on_session_opened(&user_name);
 
-  declarations::PAM_SUCCESS
+  pam::PAM_SUCCESS
 }
 
 #[unsafe(no_mangle)]

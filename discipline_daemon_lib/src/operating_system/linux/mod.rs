@@ -1,3 +1,5 @@
+mod linux_pam_api;
+
 mod system_users;
 use system_users::{
   AllocationConfig,

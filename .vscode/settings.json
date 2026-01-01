@@ -10,6 +10,7 @@
     // "dependencies/llhttp_rs//llhttp_rs/Cargo.toml",
     // "dependencies/llhttp_rs//llhttp_sys/Cargo.toml",
     "discipline_linux_pam_module/Cargo.toml",
+    "dependencies/pam/Cargo.toml",
     // "dependencies/llhttp_rs_2//llhttp-sys/Cargo.toml",
   ],
   "rust-analyzer.inlayHints.typeHints.enable": false,

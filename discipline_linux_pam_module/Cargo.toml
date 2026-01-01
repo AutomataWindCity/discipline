@@ -10,13 +10,15 @@ crate-type = ["cdylib"]
 [dependencies]
 libc = "0.2"
 tokio = { version = "1.48.0", features = [ "full" ] }
-discipline_daemon = { path = "/workspaces/discipline/discipline_daemon_lib" }
+discipline_daemon = { path = "../discipline_daemon_lib" }
 serde = { version = "1.0.228", features = [ "derive" ] }
 serde_json = "1.0.146"
+pam = { path = "../dependencies/pam" }
+syslog = "7.0.0"
 
 [build-dependencies]
 bindgen = "0.72.1"
-discipline_daemon = { path = "/workspaces/discipline/discipline_daemon_lib" }
+discipline_daemon = { path = "../discipline_daemon_lib" }
 pkg-config = "0.3.32"
 
 # libpam = "0.2"

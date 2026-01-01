@@ -1,11 +1,13 @@
-mod declarations;
+use pam::*;
+
 mod constants;
 mod implementation;
 mod glue;
+mod logger;
 
-use declarations::*;
 use constants::*;
 use implementation::*;
+use logger::Logger;
 
 pub use glue::{
   pam_sm_acct_mgmt,

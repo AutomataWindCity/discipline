@@ -12,3 +12,5 @@ pub use connection::ClientConnection;
 
 mod blocking_connection;
 pub use blocking_connection::BlockingClientConnection;
+
+mod blocking_unix_socket_connection;

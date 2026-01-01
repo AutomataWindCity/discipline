@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Mutex;
 use std::path::PathBuf;
@@ -9,8 +10,9 @@ use discipline_daemon::chronic::duration::Duration;
 use discipline_daemon::operating_system::UserName;
 use discipline_daemon::protocol::BlockingClientConnection;
 
-use crate::discipline_installation_directory;
+use crate::*;
 
+#[derive(Debug)]
 pub enum LoadModuleConfigurationError {
   ErrorWhileReadingConfigurationFile {
     error: std::io::Error,
@@ -45,16 +47,30 @@ impl ToTextualError for LoadModuleConfigurationError {
   }
 }
 
+#[derive(Debug)]
 pub enum CreateModuleError {
   ErrorWhileLoadingConfiguration(LoadModuleConfigurationError),
   ErrorWhileConnectingToDisciplineDaemon(TextualError)
 }
 
+// impl CreateModuleError {
+//   pub fn write_to_textual_error(&self, textual_error: &mut TextualError) {
+//     textual_error.change_context("Creating the initial Discipline Linux Pam Module Data");
+
+//     match self {
+//       Self::ErrorWhileLoadingConfiguration(error) => {
+//         textual_error.add_message("An error occured while loading the configuration");
+//         textual_error.with_attachement_display("Err", value)
+//       }
+//     }
+//   }
+// }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModuleConfiguration {
   pam_call_timeout: Duration,
   pam_login_blocked_message: String,
-  discipline_daemon_unix_domain_server_address: SocketAddr,
+  discipline_daemon_unix_domain_server_path: PathBuf,
 }
 
 fn load_configuration(configuration_file_path: PathBuf) -> Result<ModuleConfiguration, LoadModuleConfigurationError> {
@@ -94,15 +110,17 @@ pub struct Module {
   // discipline_daemon_unix_server_path: PathBuf,
   // discipline_pam_configuration_path: PathBuf,
   discipline_daemon_connection: Mutex<BlockingClientConnection>,
+  logger: Logger
 }
 
 impl Module {
   pub fn create() -> Result<Self, CreateModuleError> {
-    let discipline_installation_directory = discipline_installation_directory();
+    let Ok(logger) = Logger::create() else {
+      panic!();
+    };
 
-    let discipline_pam_configuration_path = discipline_installation_directory.join("pam_module_configuration.json");
-
-    // let discipline_daemon_unix_server_path = discipline_installation_directory.join("unix_domain_server");
+    let discipline_pam_configuration_path = discipline_installation_directory()
+      .join("pam_module_configuration.json");
 
     let configuration = load_configuration(discipline_pam_configuration_path).map_err(|error| {
       CreateModuleError::ErrorWhileLoadingConfiguration(error)
@@ -110,7 +128,7 @@ impl Module {
 
     let discipline_daemon_connection = BlockingClientConnection
       ::connect(
-        configuration.discipline_daemon_unix_domain_server_address,
+        configuration.discipline_daemon_unix_domain_server_path,
         configuration.pam_call_timeout,
       )
       .map_err(|error| {
@@ -133,16 +151,16 @@ impl Module {
   // access their account. If we do otherwise, we might prevent
   // the user from accessing their account forever.
 
-  pub fn is_login_blocked(&self, user_name: &UserName) -> Result<bool, ()> {
+  pub fn is_login_blocked(&self, user_name: &UserName) -> bool {
     let Ok(mut connection) = self.discipline_daemon_connection.lock() else {
-      return Err(());
+      return false;
     };
 
     let Ok(is_login_blocked) = connection.is_user_account_access_blocked(user_name) else {
-      return Err(());
+      return false;
     };
 
-    Ok(is_login_blocked)
+    is_login_blocked
   }
 
   pub fn on_session_opened(&self, user_name: &UserName) {
