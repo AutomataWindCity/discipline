@@ -34,8 +34,11 @@ impl UserName {
   pub fn inner(&self) -> &CString {
     &self.inner
   }
-}
 
+  pub fn as_ref(&self) -> UserNameRef<'_> {
+    UserNameRef { inner: &self.inner }
+  }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UserNameRef<'a> {

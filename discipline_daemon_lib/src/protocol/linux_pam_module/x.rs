@@ -2,22 +2,8 @@ use std::{any::type_name, path::Path};
 use serde::{Serialize, de::DeserializeOwned};
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::UnixStream};
 use crate::TextualError;
-use super::{serialize, deserialize};
 
 const DATAGRAM_CONTENT_LENGTH_SIZE: usize = size_of::<u32>();
-
-pub enum SendErrorCode {
-  ErrorWhileSerializingDatagramContent,
-  DatagramContentLengthLargerThanMaximumLength,
-  IoErrorWhileWritingDatagram(std::io::Error),
-}
-
-pub enum RecvErrorCode {
-  IoErrorWhileReadingDatagramContentLength(std::io::Error),
-  DatagramContentLengthLargerThanMaximumLength(usize),
-  IoErrorWhileReadingDatagramContent(std::io::Error),
-  ErrorWhileDeserializingDatagramContent,
-}
 
 pub struct DatagramConnection {
   connection: UnixStream,

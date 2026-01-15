@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use serde::{Serialize, Deserialize, de::Error};
 use crate::x::TextualError;
-use super::{UserId, UserName};
+use super::{UserId, UserName, UserNameRef};
 
 impl Serialize for UserId {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -56,3 +56,30 @@ impl<'a> Deserialize<'a> for UserName {
       })
   }
 }
+
+impl<'cstr> Serialize for UserNameRef<'cstr> {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: serde::Serializer 
+  {
+    self.inner().serialize(serializer)
+  }
+}
+
+// impl<'de, 'cstr> Deserialize<'de> for UserNameRef<'cstr> {
+//   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//   where
+//     D: serde::Deserializer<'de> 
+//   {
+//     CString::deserialize(deserializer)
+//       .map(UserName::new)
+//       .map_err(|error| {
+//         Error::custom(
+//           TextualError::new("Reading UserName")
+//             .with_message("UserName is a linux user name represented as String")
+//             .with_message("Failed to read a CString value")
+//             .with_attachement_display("Error", error)
+//         )
+//       })
+//   }
+// }

@@ -5,11 +5,11 @@ use crate::x::{Duration, TextualError, protocol::*};
 
 /// Connection established by the client to communicate 
 /// with the server.
-pub struct BlockingClientConnection {
+pub struct ClientConnectionSync {
   connection: TcpStream,
 }
 
-impl BlockingClientConnection {
+impl ClientConnectionSync {
   pub fn connect(
     address: SocketAddr, 
     timeout: Duration,
@@ -209,7 +209,7 @@ impl BlockingClientConnection {
 //   }
 // }
 
-impl BlockingClientConnection {
+impl ClientConnectionSync {
   pub fn is_user_account_access_blocked(
     &mut self, 
     operating_system_user_name: &operating_system::UserName,

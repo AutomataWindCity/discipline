@@ -1,16 +1,13 @@
-mod close_reason;
-pub use close_reason::ClientConnectionCloseReason;
-
-mod connection_configuration;
-pub use connection_configuration::ClientConnectionConfiguration;
-
 mod message;
-pub use message::ClientMessage;
+pub use message::Message as ClientMessage;
 
-mod connection;
-pub use connection::ClientConnection;
+mod connection_async;
+pub use connection_async::ClientConnection;
 
-mod blocking_connection;
-pub use blocking_connection::BlockingClientConnection;
+mod connection_sync;
+pub use connection_sync::ClientConnectionSync;
 
-mod blocking_unix_socket_connection;
+mod role;
+mod connection_unix;
+
+mod poll;

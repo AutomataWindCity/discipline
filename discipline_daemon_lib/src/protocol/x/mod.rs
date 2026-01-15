@@ -2,4 +2,4 @@ mod datagram;
 mod serialization;
 
 pub use serialization::*;
-pub use datagram::DatagramConnection;
+pub use datagram::{DatagramConnection, RecvErrorCode, SendErrorCode};

@@ -6,7 +6,6 @@ use tokio::spawn;
 use tokio::task::JoinHandle;
 use crate::x::procedures::Procedure;
 use crate::x::{Daemon, TextualError, match_procedure, protocol::*};
-
 pub struct ServerConnection {
   connection: TcpStream,
 }
