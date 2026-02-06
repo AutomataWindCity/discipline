@@ -132,7 +132,7 @@ const MESSAGE_LENGTH_SIZE: usize = 4;
 struct Connection {
   buffer: Box<[u8]>,
   connection: UnixStream,
-  is_closed: bool,
+  is_connected: bool,
   path: PathBuf,
 }
 
@@ -179,31 +179,47 @@ enum Error {
   
 }
 
+fn on_remove_filesystem_entry_error(error: std::io::Error, path: &PathBuf) {
+  eprintln!("Discipline Daemon Linux-PAM Client: Connection: Connecting to server: Connecting a UnixStream: Removing previous UnixStream filesystem entry: {error}");
+}
+
+fn on_unix_stream_connect_error(error: std::io::Error, path: &PathBuf) {
+  eprintln!("Discipline Daemon Linux-PAM Client: Connection: Connecting to server: Connecting a UnixStream: {error}");
+}
+
 impl Connection {
   pub fn connect(path: PathBuf) -> Result<Self, ()> {
-    let _ = std::fs::remove_file(&path);
+    if let Err(error) = std::fs::remove_file(&path) {
+      on_remove_filesystem_entry_error(error, &path);
+    }
 
-    match UnixStream::connect(&path) {
+    let connection = match UnixStream::connect(&path) {
       Ok(connection) => {
-        Ok(Self {
+        Self {
+          path,
           buffer: Box::new([0; MESSAGE_LENGTH_SIZE + MAXIMUM_MESSAGE_LENGTH]),
           connection,
-          is_closed: false,
-          path,
-        })
+          is_connected: true,
+        }
       }
       Err(error) => {
-        Err(())
+        on_unix_stream_connect_error(error, &path);
+        return Err(());
       }
-    }
+    };
+
+    todo!()
+
   }
 
   fn ensure_connected(&mut self) -> Result<(), ()> {
-    if !self.is_closed {
+    if self.is_connected {
       return Ok(());
     }
 
-    let _ = std::fs::remove_file(&path);
+    if let Err(error) = std::fs::remove_file(&self.path) {
+      on_remove_filesystem_entry_error(error, &self.path);
+    }
 
     match UnixStream::connect(&self.path) {
       Ok(connection) => {
@@ -211,6 +227,7 @@ impl Connection {
         Ok(())
       }
       Err(error) => {
+        on_unix_stream_connect_error(error, &self.path);
         Err(())
       }
     }
@@ -218,7 +235,7 @@ impl Connection {
 
   fn shutdown(&mut self) {
     self.connection.shutdown(std::net::Shutdown::Both);
-    self.is_closed = true;
+    self.is_connected = true;
   }
 
   fn read<T>(&mut self) -> Result<T, ()> 
@@ -302,6 +319,10 @@ impl Connection {
     }
 
     Ok(())
+  }
+
+  fn write_establish_connection(&mut self, password: &str) {
+    self.write(&Client);
   }
 }
 

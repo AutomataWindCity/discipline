@@ -2,6 +2,10 @@ use std::path::PathBuf;
 
 // mod ui_text;
 
+mod rules_v2;
+
+mod launcher;
+
 pub mod chronic;
 pub mod other;
 pub use other::textual_error::*;
