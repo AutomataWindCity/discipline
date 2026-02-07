@@ -14,6 +14,7 @@ pub use conditionals::countdown_after_plea_conditional::CountdownAfterPleaCondit
 pub use conditionals::countdown_conditional::CountdownConditionalSchema;
 pub use conditionals::time_conditional::TimeConditionalSchema;
 
+mod launcher;
 // pub mod rules;
 // pub use rules::rule_activator::RuleActivatorSchema;
 // pub use rules::rule_enabler::RuleEnablerSchema;

@@ -11,6 +11,8 @@ mod server;
 pub use server::*;
 
 pub mod x;
+
+mod linux_pam_module;
 // #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 // enum ClientMessageType {
 //   ConnectionConfiguration,

@@ -1,6 +1,6 @@
 use std::any::type_name;
 use serde::{Serialize, de::DeserializeOwned};
-use crate::x::TextualError;
+use crate::{IsTextualError, x::TextualError};
 
 type BincodeConfiguration = bincode
   ::config
@@ -16,40 +16,45 @@ static BINCODE_CONFIG: BincodeConfiguration = bincode::config::standard()
   .with_fixed_int_encoding()
   .with_limit();
 
-pub fn serialize<T>(value: &T) -> Result<Vec<u8>, TextualError> 
+pub fn serialize<T>(value: &T, destination: &mut [u8], textual_error: &mut impl IsTextualError) -> Result<usize, ()> 
 where 
   T: Serialize
 {
-  bincode::serde::encode_to_vec(value, BINCODE_CONFIG)
-    .map_err(|error| {
-      TextualError::new(format!("Serializing {} using bincode", type_name::<T>()))
-        .with_attachement_display("Error", error)
-    })
+  match bincode::serde::encode_into_slice(value, destination, BINCODE_CONFIG) {
+    Ok(value) => {
+      Ok(value)
+    }
+    Err(error) => {
+      textual_error.change_context("Serializing a value using bincode");
+      textual_error.add_message("Bincode failed to serialize value");
+      textual_error.add_attachement_display("Value type name", type_name::<T>());
+      textual_error.add_attachement_display("Bincode error", error);
+      return Err(());
+    }
+  }
 }
 
-pub fn deserialize<T>(slice: &[u8]) -> Result<T, TextualError>
+pub fn deserialize<T>(slice: &[u8], textual_error: &mut impl IsTextualError) -> Result<T, ()>
 where 
   T: DeserializeOwned
 {
+  let mut textual_error = textual_error.optional_context(format!("Deserializing byte array as {} using bincode", type_name::<T>()));
+  
   let (value, read_bytes) = match bincode::serde::decode_from_slice(slice, BINCODE_CONFIG) {
     Ok(value) => {
       value
     }
     Err(error) => {
-      return Err(
-        TextualError::new(format!("Deserializing byte array as {} using bincode", type_name::<T>()))
-          .with_attachement_display("Error", error)
-      );
+      textual_error.add_attachement_display("Error", error);
+      return Err(());
     }
   };
 
   if read_bytes != slice.len() {
-    return Err(
-      TextualError::new(format!("Deserializing byte array as {} using bincode", type_name::<T>()))
-        .with_message(format!("Bincode deserialized the byte array successfully, but the number of bytes bincode read is not the same as the byte array length, which shouldn't be possible since the byte array is expected to be the binary repreentation of {}, without additional or missing bytes.", type_name::<T>()))
-        .with_attachement_display("Byte array length", slice.len())
-        .with_attachement_debug("Byte array", slice)
-    )
+    textual_error.with_message(format!("Bincode deserialized the byte array successfully, but the number of bytes bincode read is not the same as the byte array length, which shouldn't be possible since the byte array is expected to be the binary repreentation of {}, without additional or missing bytes.", type_name::<T>()));
+    textual_error.with_attachement_display("Byte array length", slice.len());
+    textual_error.with_attachement_debug("Byte array", slice);
+    return Err(());
   }
   
   Ok(value)

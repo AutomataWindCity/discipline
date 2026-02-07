@@ -64,6 +64,58 @@ impl TextualErrorContext {
   }
 }
 
+
+pub struct OptionalTextualErrorContext<'a> {
+  error: &'a mut TextualError,
+  action: String,
+  messages: Vec<String>,
+  attachements: Vec<TextualErrorAttachement>,
+}
+
+impl<'a> OptionalTextualErrorContext<'a> {
+  pub fn new(action: impl Into<String>) -> Self {
+    Self {
+      error: todo!(),
+      action: action.into(),
+      messages: Vec::new(),
+      attachements: Vec::new(),
+    }
+  }
+
+  pub fn add_message(&mut self, new_error_message: impl Into<String>) {
+    self.messages.push(new_error_message.into());
+  }
+
+  pub fn add_attachement_debug(&mut self, name: impl Into<String>, value: impl Debug) {
+    self.attachements.push(TextualErrorAttachement {
+      name: name.into(),
+      value: format!("{value:?}"),
+    });
+  }
+
+  pub fn add_attachement_display(&mut self, name: impl Into<String>, value: impl Display) {
+    self.attachements.push(TextualErrorAttachement {
+      name: name.into(),
+      value: format!("{value}"),
+    });
+  }
+
+  pub fn with_message(mut self, message: impl Into<String>) -> Self {
+    self.add_message(message);
+    self
+  }
+
+  pub fn with_attachement_debug(mut self, name: impl Into<String>, value: impl Debug) -> Self {
+    self.add_attachement_debug(name, value);
+    self
+  }
+
+  pub fn with_attachement_display(mut self, name: impl Into<String>, value: impl Display) -> Self {
+    self.add_attachement_display(name, value);
+    self
+  }
+}
+
 pub struct TextualError {
   context: TextualErrorContext,
   eariler_contexts: Vec<TextualErrorContext>,
@@ -100,6 +152,22 @@ impl TextualError {
   }
 
   pub fn change_context(&mut self, new_context_action: impl Into<String>) {
+    self.eariler_contexts.push(replace(
+      &mut self.context,
+      TextualErrorContext {
+        action: new_context_action.into(),
+        messages: Vec::new(),
+        attachements: Vec::new(),
+      },
+    ));
+  }
+
+  pub fn optional_context(&mut self, new_context_action: impl Into<String>) -> OptionalTextualErrorContext<'_> {
+    todo!()
+  }
+
+  pub fn change_context_optional(&mut self, new_context_action: impl Into<String>) {
+    // TODO
     self.eariler_contexts.push(replace(
       &mut self.context,
       TextualErrorContext {
@@ -204,8 +272,42 @@ pub trait IsTextualError {
   fn add_attachement_debug(&mut self, name: impl Into<String>, value: impl Debug);
   fn add_attachement_display(&mut self, name: impl Into<String>, value: impl Display);
   fn change_context(&mut self, new_context_action: impl Into<String>);
+  fn optional_context(&mut self, new_context_action: impl Into<String>) -> OptionalTextualErrorContext<'_>;
   fn with_message(self, message: impl Into<String>) -> Self;
   fn with_attachement_debug(self, name: impl Into<String>, value: impl Debug) -> TextualError;
   fn with_attachement_display(self, name: impl Into<String>, value: impl Display) -> TextualError;
   fn with_context(self, action: impl Into<String>) -> TextualError;
+}
+
+impl<'a> IsTextualError for OptionalTextualErrorContext<'a> {
+  fn add_attachement_debug(&mut self, name: impl Into<String>, value: impl Debug) {
+      
+  }
+  fn add_attachement_display(&mut self, name: impl Into<String>, value: impl Display) {
+      
+  }
+  fn add_message(&mut self, new_error_message: impl Into<String>) {
+      
+  }
+  fn change_context(&mut self, new_context_action: impl Into<String>) {
+      
+  }
+  fn new(action: impl Into<String>) -> Self {
+    todo!()
+  }
+  fn optional_context(&mut self, new_context_action: impl Into<String>) -> OptionalTextualErrorContext<'_> {
+    todo!()
+  }
+  fn with_attachement_debug(self, name: impl Into<String>, value: impl Debug) -> TextualError {
+    todo!()
+  }
+  fn with_attachement_display(self, name: impl Into<String>, value: impl Display) -> TextualError {
+    todo!()
+  }
+  fn with_context(self, action: impl Into<String>) -> TextualError {
+    todo!()
+  }
+  fn with_message(self, message: impl Into<String>) -> Self {
+    todo!()
+  }
 }

@@ -1,8 +1,12 @@
 use std::collections::HashMap;
 use crate::x::{TimeRange, UuidV4};
 
+enum Protector {
+
+}
+
 struct TimeRangeRule {
-  enabler: (),
+  protector: Protector,
   activator: TimeRange,
 }
 

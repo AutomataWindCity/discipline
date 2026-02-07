@@ -1,6 +1,7 @@
-use crate::x::TextualError;
+use std::path::PathBuf;
+use crate::x::{TextualError, TextualErrorV2};
 use crate::x::database::*;
-use super::{PerUserInfo, UserId, UserName};
+use super::{UserId, UserName, State};
 
 impl WriteScalarValue for UserId {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
@@ -26,15 +27,13 @@ impl ReadScalarValue for UserName {
   }
 }
 
-pub struct PerUserInfoSchema {
+pub struct UserProfileSchema {
   user_id: Key,
-  user_name: Key,
 }
 
-impl PerUserInfoSchema {
+impl UserProfileSchema {
   pub fn new(
     user_id: Key,
-    user_name: Key,
   ) -> Self {
     Self {
       user_id,
@@ -44,7 +43,7 @@ impl PerUserInfoSchema {
 }
 
 impl WriteCompoundValue for PerUserInfo {
-  type Schema = PerUserInfoSchema;
+  type Schema = UserProfileSchema;
 
   fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination) {
     writer.write_scalar_value(schema.user_id, &value.user_id);
@@ -53,12 +52,29 @@ impl WriteCompoundValue for PerUserInfo {
 }
 
 impl ReadCompoundValue for PerUserInfo {
-  type Schema = PerUserInfoSchema;
+  type Schema = UserProfileSchema;
 
   fn deserialize(source: &mut impl CompoundValueReadSource, schema: &Self::Schema) -> Result<Self, TextualError> {
     Ok(PerUserInfo {
       user_id: source.read_scalar_value(schema.user_id)?,
       user_name: source.read_scalar_value(schema.user_name)?,
     })
+  }
+}
+
+pub struct Database {
+
+}
+
+impl Database {
+  pub fn open(
+    textual_error: &mut impl TextualErrorV2,
+    database_directory: PathBuf, 
+  ) -> Result<Self, ()> {
+    todo!()
+  }
+
+  pub fn load_state(&self, textual_error: &mut impl TextualErrorV2) -> Result<State, ()> {
+    todo!()
   }
 }

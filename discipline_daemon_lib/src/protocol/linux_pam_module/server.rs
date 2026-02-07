@@ -5,6 +5,9 @@ use crate::x::protocol::x::DatagramConnection;
 use crate::x::Daemon;
 use super::*;
 
+// pub struct Stream {
+//   stream: mio::
+// }
 
 // TODO: 
 pub const MAXIMUM_MESSAGE_LENGTH: usize = 0;

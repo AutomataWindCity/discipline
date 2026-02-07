@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use serde::{Serialize, Deserialize, de::Error};
-use crate::x::TextualError;
-use super::{UserId, UserName, UserNameRef};
+use crate::x::{TextualError, ToTextualError};
+use super::{UserId, UserName, UserNameRef, UserProfileName};
 
 impl Serialize for UserId {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -83,3 +83,35 @@ impl<'cstr> Serialize for UserNameRef<'cstr> {
 //       })
 //   }
 // }
+
+impl Serialize for UserProfileName {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: serde::Serializer 
+  {
+    self.as_str().serialize(serializer)
+  }
+}
+
+impl<'a> Deserialize<'a> for UserProfileName {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'a> 
+  {
+    let string = String::deserialize(deserializer).map_err(|error| {
+      Error::custom(
+        TextualError::new("Deserializing String")
+          .with_attachement_display("Error", error)
+          .with_context("Deserializing UserProfileName which is serialized as String")
+      )
+    })?;
+
+    UserProfileName::new(string).map_err(|error| {
+      Error::custom(
+        error
+          .to_textual_error()
+          .with_context("Deserializing UserProfileName which is serialized as String")
+      )
+    })
+  }
+}
