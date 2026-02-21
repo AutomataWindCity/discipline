@@ -1,6 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::operating_system::{UserName, UserNameRef};
-use crate::x::protocol::x::{SendErrorCode, RecvErrorCode};
+use super::{UserName, UserNameRef};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EstablishConnection {
@@ -13,11 +12,9 @@ pub struct EstablishConnectionRef<'a> {
 }
 
 pub enum EstablishConnectionError {
-  DatagramConnect(std::io::Error),
-  SendEstablishConnectionMessage(SendErrorCode),
-  RecvEstablishConnectionMessage(RecvErrorCode),
   ServerBusy,
   IncorrectPassword,
+  Other,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -60,11 +57,6 @@ pub struct IsUserSessionOpenPermittedRef<'a> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IsUserSessionOpenPermittedReply {
   pub is_user_session_open_permitted: bool,
-}
-
-pub enum IsUserSessionOpenPermittedError {
-  SendMessage(SendErrorCode),
-  RecvReply(RecvErrorCode),
 }
 
 #[derive(Debug, Serialize, Deserialize)]

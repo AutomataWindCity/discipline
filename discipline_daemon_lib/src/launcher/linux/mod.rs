@@ -1,3 +1,5 @@
+mod pam;
+
 mod system;
 use system::*;
 
