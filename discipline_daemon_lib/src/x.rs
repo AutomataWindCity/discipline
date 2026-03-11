@@ -1,4 +1,4 @@
-pub use crate::other::textual_error::{TextualError, TextualErrorAttachement, TextualErrorContext, ToTextualError, IsTextualError};
+pub use crate::other::textual_error::{TextualError, TextualErrorAttachement, TextualErrorContext, ToTextualError, IsTextualError, OptionalTextualErrorContext};
 pub use crate::other::textual_error_v2::{TextualErrorContextV2, TextualErrorV2};
 pub use crate::other::uuid_v4::UuidV4;
 

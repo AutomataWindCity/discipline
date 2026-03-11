@@ -1,26 +1,26 @@
 use serde::{Serialize, Deserialize};
-use super::{UserName, UserNameRef};
+use super::{UserName, UserNameRef, AuthenticationToken};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EstablishConnection {
-  pub password: String,
+  pub authentication_token: AuthenticationToken,
 }
 
 #[derive(Debug, Serialize)]
 pub struct EstablishConnectionRef<'a> {
-  pub password: &'a str,
+  pub authentication_token: &'a AuthenticationToken,
 }
 
 pub enum EstablishConnectionError {
   ServerBusy,
-  IncorrectPassword,
+  UnrecognizedAuthenticationToken,
   Other,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum EstablishConnectionReply {
   ServerBusy,
-  IncorrectPassword,
+  UnrecognizedAuthenticationToken,
   ConnectionEstablished,
 }
 
@@ -45,35 +45,35 @@ pub struct UserSessionClosedNotificationRef<'a> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct IsUserSessionOpenPermitted {
+pub struct IsUserSessionOpenBlocked {
   pub user_name: UserName,
 }
 
 #[derive(Debug, Serialize)]
-pub struct IsUserSessionOpenPermittedRef<'a> {
+pub struct IsUserSessionOpenBlockedRef<'a> {
   pub user_name: UserNameRef<'a>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct IsUserSessionOpenPermittedReply {
-  pub is_user_session_open_permitted: bool,
+pub struct IsUserSessionOpenBlockedReply {
+  pub is_user_session_open_blocked: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ClientMessage {
   UserSessionOpenedNotification(UserSessionOpenedNotification),
   UserSessionClosedNotification(UserSessionClosedNotification),
-  IsUserSessionOpenPermitted(IsUserSessionOpenPermitted),
+  IsUserSessionOpenBlocked(IsUserSessionOpenBlocked),
 }
 
 #[derive(Debug, Serialize)]
 pub enum ClientMessageRef<'a> {
   UserSessionOpenedNotification(UserSessionOpenedNotificationRef<'a>),
   UserSessionClosedNotification(UserSessionClosedNotificationRef<'a>),
-  IsUserSessionOpenPermitted(IsUserSessionOpenPermittedRef<'a>),
+  IsUserSessionOpenBlocked(IsUserSessionOpenBlockedRef<'a>),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ServerMessage {
-  IsUserSessionOpenPermittedReply(IsUserSessionOpenPermittedReply),
+  IsUserSessionOpenBlockedReply(IsUserSessionOpenBlockedReply),
 }

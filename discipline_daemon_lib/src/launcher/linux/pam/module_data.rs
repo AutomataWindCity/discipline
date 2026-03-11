@@ -1,147 +1,159 @@
 use std::fmt::Debug;
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 use std::path::{Path, PathBuf};
-
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Runtime;
-// use tokio::sync::Mutex;
-
-use crate::x::{TextualError, Duration};
-use crate::x::operating_system::{UserName, UserNameRef};
-use super::{Logger, ClientConnection};
-
-use mio::{Events, Poll, Interest, Token};
-
+use crate::x::{Duration, IsTextualError, OptionalTextualErrorContext};
+use super::{Logger, ClientConnection, AuthenticationToken, EstablishConnectionError, UserName, UserNameRef};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModuleConfiguration {
-  password: String,
+  authentication_token: AuthenticationToken,
   pam_call_timeout: Duration,
   pam_login_blocked_message: String,
   discipline_daemon_unix_domain_server_path: PathBuf,
 }
 
-fn load_configuration_or_textual_error(configuration_file_path: impl AsRef<Path>) -> Result<ModuleConfiguration, TextualError> {
-  let configuration_file_content = std::fs::read(&configuration_file_path)
-    .map_err(|error| {
-      TextualError::new("Reading the json confiugration file for Discipline Linux-PAM Module")
-        .with_message("A filesystem error occured while reading the file")
-        .with_attachement_display("Filesystem error", error)
-        .with_attachement_display("Configuration file path", configuration_file_path.as_ref().display())
-    })?;
+fn load_configuration(
+  configuration_file_path: impl AsRef<Path>,
+  textual_error: &mut impl IsTextualError,
+) -> Result<ModuleConfiguration, ()> {
+  let mut textual_error = textual_error.optional_context("Loading Discpline Linux-PAM Module Configuration from file");
 
-  let configuration = serde_json::from_slice(&configuration_file_content)
-    .map_err(|error| {
-      TextualError::new("Reading the json configuration file for Discipline Linux-PAM Module")
-        .with_message("An error occured while deserializing the file content")
-        .with_attachement_display("Deserializing error", error)
-        .with_attachement_display("Configuration file path", configuration_file_path.as_ref().display())
-        // .with_attachement_display("Configuration file content", configuration_file_content)
-    })?;
+  let configuration_file_content = match std::fs::read(&configuration_file_path) {
+    Ok(value) => {
+      value
+    }
+    Err(error) => {
+      textual_error.add_message("A filesystem error occured");
+      textual_error.add_attachement_display("Filesystem error", error);
+      textual_error.add_attachement_display("Configuration file path", configuration_file_path.as_ref().display());
+      return Err(());
+    }
+  };
+
+  let configuration = match serde_json::from_slice(&configuration_file_content) {
+    Ok(value) => {
+      value
+    }
+    Err(error) => {
+      textual_error.change_context("Deserializing the configuration file content, which is in JSON format");
+      textual_error.add_message("Deserialization failed");
+      textual_error.add_attachement_display("Deserializing error", error);
+      textual_error.add_attachement_display("Configuration file path", configuration_file_path.as_ref().display());
+      // TODO: Add a flag fo whether to log the file content, too, or not.
+      return Err(());
+    }
+  };
 
   Ok(configuration)
 }
 
 pub struct ModuleData {
   logger: Logger,
-  runtime: Runtime,
-  connection: ClientConnection,
-  
+  configuration: ModuleConfiguration,
+  connection: ClientConnection,  
 }
 
 // TODO: Add a field containing magic bytes that we check
 // when we get the Module from "pam_get_data" to verify that
 // the data is our data.
 pub struct ModuleDataMutex {
-  logger: Logger,
-  runtime: Runtime,
-  discipline_daemon_connection: Mutex<ClientConnection>,
   mutex: Mutex<ModuleData>,
-  connection: Mutex<ClientConnection>,
-  poll: Poll,
-  events: Events,
 }
-
 
 // discipline_installation_directory().join("linux_pam_module.log")
 // discipline_installation_directory().join("linux_pam_module_configuration.json");
 
 impl ModuleDataMutex {
-  pub async fn create(
+  pub fn create(
     custom_log_file_path: PathBuf,
-    discipline_pam_module_configuration_file_path: impl AsRef<Path>,
-  ) -> Result<Self, TextualError> {
+    configuration_file_path: impl AsRef<Path>,
+    textual_error: &mut impl IsTextualError,
+  ) -> Result<Self, EstablishConnectionError> {
+    let mut textual_error = textual_error.optional_context("Creating Discipline Linux-PAM Module Data");
+
     let logger = Logger::create(custom_log_file_path);
 
-    let runtime = Runtime::new().map_err(|error| {
-      TextualError::new("Creating Discipline Linux-PAM Module Data")
-        .with_message("An error occured while creating a tokio async runtime.")
-        .with_attachement_display("Tokio error", error)
-    })?;
+    let configuration = match load_configuration(configuration_file_path, &mut textual_error) {
+      Ok(value) => {
+        value
+      }
+      Err(()) => {
+        return Err(EstablishConnectionError::Other);
+      }
+    };
 
-    let configuration = load_configuration_or_textual_error(discipline_pam_module_configuration_file_path).map_err(|error| {
-      error.with_context("Creating Discipline Linux-PAM Module Data")
-    })?;
-
-    let discipline_daemon_connection = ClientConnection::connect_or_textual_error(
+    // TODO: Add more context to the textual error
+    let connection = ClientConnection::connect(
       &configuration.discipline_daemon_unix_domain_server_path, 
-      &configuration.password,
-    )
-      .await
-      .map_err(|error| {
-        error.with_context("Creating Discipline Linux-PAM Module Data")
-      })?;
+      &configuration.authentication_token,
+      &mut textual_error,
+    )?;
 
     Ok(Self {
-      logger,
-      runtime,
-      discipline_daemon_connection: Mutex::new(discipline_daemon_connection),
+      mutex: Mutex::new(ModuleData {
+        logger,
+        configuration,
+        connection,
+      }),
     })
   }
 
-  
-  pub async fn is_session_open_permitted(&self, user_name: UserNameRef<'_>) -> bool {
+  fn lock(&self) -> Result<MutexGuard<'_, ModuleData>, ()> {
+    todo!()
+  }
+
+  pub fn is_user_session_open_blocked(&self, user_name: UserNameRef<'_>) -> bool {
+    let mut data = match self.lock() {
+      Ok(value) => {
+        value
+      }
+      Err(()) => {
+        return false;
+      }
+    };
+
+    let mut textual_error = OptionalTextualErrorContext::new("action");
+
+    let is_user_session_open_blocked = match data.connection.is_user_session_open_blocked(user_name, &mut textual_error) {
+      Ok(value) => {
+        value
+      }
+      Err(()) => {
+        return false;
+      }
+    };
+
+    is_user_session_open_blocked
+  }
+
+  pub fn on_session_opened(&self, user_name: UserNameRef<'_>) {
+    let mut textual_error = OptionalTextualErrorContext::new("");
+
     let mut data = match self.mutex.lock() {
       Ok(value) => {
         value
       }
       Err(error) => {
-        return false;
-      }
-    };
-
-    let mut connection = match self.connection.lock() {
-      Ok(value) => {
-        value
-      }
-      Err(error) => {
-        return false;
-      }
-    };
-
-    let is_login_blocked = match data.runtime.block_on(connection.is_user_session_open_permitted_or_textual_error(user_name)) {
-      Ok(value) => {
-        value
-      }
-      Err(error) => {
-        return false;
-      }
-    };
-
-    is_login_blocked
-  }
-
-  pub fn on_session_opened(&self, user_name: &UserName) {
-    let data = match self.mutex.lock() {
-      Ok(value) => {
-        value
-      }
-      Err(error) => {
         return;
       }
     };
+    
+    match data.connection.send_user_session_opened_notification(user_name, &mut textual_error) {
+      Ok(value) => {
+        value
+      }
+      Err(error) => {
+        // TODO: Log the error.
+        return;
+      }
+    };
+  }
 
-    let mut connection = match self.connection.lock() {
+  pub fn on_session_closed(&self, user_name: UserNameRef<'_>) {
+    let mut textual_error = OptionalTextualErrorContext::new("");
+
+    let mut data = match self.mutex.lock() {
       Ok(value) => {
         value
       }
@@ -151,23 +163,7 @@ impl ModuleDataMutex {
       }
     };
 
-    if let Err(error) = data.runtime.block_on(future)connection.notify_that_user_session_opened(user_name) {
-      // TODO: Log the error.
-    }
-  }
-
-  pub fn on_session_closed(&self, user_name: &UserName) {
-    let mut connection = match self.discipline_daemon_connection.lock() {
-      Ok(value) => {
-        value
-      }
-      Err(error) => {
-        // TODO: Log the error.
-        return;
-      }
-    };
-
-    if let Err(error) = connection.notify_that_user_session_closed(user_name) {
+    if let Err(error) = data.connection.send_user_session_closed_notification(user_name, &mut textual_error) {
       // TODO: Log the error.
     }
   }

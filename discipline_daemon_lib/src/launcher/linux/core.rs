@@ -1,6 +1,6 @@
 use std::path::PathBuf;
-use crate::x::TextualErrorV2;
-use super::{State, Database, Api};
+use crate::x::{TextualErrorV2, user_name};
+use super::{State, Database, Api, UserNameRef};
 
 pub struct LaunchConfiguration {
   pub api_server_port: u16,
@@ -42,6 +42,15 @@ impl Daemon {
     })
   }
 
+  pub fn is_user_session_open_blocked(&self, user_name: UserNameRef<'_>) -> bool {
+    todo!()
+  }
+  pub fn on_user_session_opened(&self, user_name: UserNameRef<'_>) {
+    
+  }
+  pub fn on_user_session_closed(&self, user_name: UserNameRef<'_>) {
+    
+  }
   // pub async fn start(self: Arc<Self>) {
   //   _ = self.clone().api_server.start_auto_serving(self).await;
   // }

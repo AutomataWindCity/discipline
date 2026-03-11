@@ -1,45 +1,52 @@
 use std::sync::Arc;
 use crate::{IsTextualError, OptionalTextualErrorContext};
-use crate::x::Daemon;
 use super::*;
 
 pub struct ServerStream {
-  stream: Stream,
+  stream: AsyncStream,
 }
 
 impl ServerStream {
-  pub fn construct(stream: Stream) -> Self {
+  pub fn construct(stream: AsyncStream) -> Self {
     Self { stream }
   }
 
-  pub fn recv_establish_connection(
+  pub async fn recv_establish_connection(
     &mut self,
     textual_error: &mut impl IsTextualError,
   ) -> Result<EstablishConnection, ()> {
-    self.stream.recv(textual_error)
+    self.stream.recv(textual_error).await
   }
 
-  pub fn send_establish_connection_reply(
+  pub async fn send_establish_connection_reply(
     &mut self,
     reply: EstablishConnectionReply,
     textual_error: &mut impl IsTextualError,
   ) -> Result<(), ()> {
-    self.stream.send(&reply, textual_error)
+    self.stream.send(&reply, textual_error).await
   }
 
-  pub fn recv_client_message(
+  pub async fn recv_client_message(
     &mut self,
     textual_error: &mut impl IsTextualError,
   ) -> Result<ClientMessage, ()> {
-    self.stream.recv(textual_error)
+    self.stream.recv(textual_error).await
   }
 
-  pub fn send_client_message(
+  // pub fn send_client_message(
+  //   &mut self,
+  //   client_message: &ClientMessage,
+  //   textual_error: &mut impl IsTextualError,
+  // ) -> Result<(), ()> {
+  //   self.stream.send(client_message, textual_error)
+  // }
+
+  pub async fn send_is_user_session_open_blocked_reply(
     &mut self,
-    client_message: &ClientMessage,
+    client_message: &IsUserSessionOpenBlockedReply,
     textual_error: &mut impl IsTextualError,
   ) -> Result<(), ()> {
-    self.stream.send(client_message, textual_error)
+    self.stream.send(client_message, textual_error).await
   }
 }
 
@@ -50,12 +57,12 @@ pub struct ServerConnection {
 impl ServerConnection {
   pub async fn establish(
     mut stream: ServerStream,
-    password: &String,
+    authentication_token: &AuthenticationToken,
     textual_error: &mut impl IsTextualError,
   ) -> Result<Self, ()> {
     let mut textual_error = textual_error.optional_context("Discipline Linux-PAM Module Server establishing a connection with client");
 
-    let establish_connection = match stream.recv_establish_connection(&mut textual_error) {
+    let establish_connection = match stream.recv_establish_connection(&mut textual_error).await {
       Ok(value) => {
         value
       }
@@ -65,12 +72,12 @@ impl ServerConnection {
       }
     };
 
-    if establish_connection.password != *password {
+    if establish_connection.authentication_token != *authentication_token {
       textual_error.add_message("The client's password was incorrect");
 
-      let reply = EstablishConnectionReply::IncorrectPassword;
+      let reply = EstablishConnectionReply::UnrecognizedAuthenticationToken;
       let mut textual_error = textual_error.optional_context("Sending EstablishConnectionReply::IncorrectPassword message to client");
-      if let Err(()) = stream.send_establish_connection_reply(reply, &mut textual_error) {
+      if let Err(()) = stream.send_establish_connection_reply(reply, &mut textual_error).await {
         textual_error.add_message("Failed to send an ")
       }
 
@@ -79,7 +86,7 @@ impl ServerConnection {
 
     let reply = EstablishConnectionReply::ConnectionEstablished;
     let mut textual_error = textual_error.optional_context("Sending EstablishConnectionReply::ConnectionEstablished");
-    if let Err(()) = stream.send_establish_connection_reply(reply, &mut textual_error) {
+    if let Err(()) = stream.send_establish_connection_reply(reply, &mut textual_error).await {
       return Err(());
     }
 
@@ -122,7 +129,7 @@ impl ServerConnection {
     loop {
       let mut textual_error = OptionalTextualErrorContext::new("Discipline Daemon Linux-PAM Server Connection processing incoming messages");
 
-      let client_message: ClientMessage = match self.stream.recv_client_message(&mut textual_error) {
+      let client_message: ClientMessage = match self.stream.recv_client_message(&mut textual_error).await {
         Ok(value) => {
           value
         }
@@ -134,26 +141,28 @@ impl ServerConnection {
       };
 
       match client_message {
-        ClientMessage::IsUserSessionOpenPermitted(message) => {
-          let message = IsUserSessionOpenPermittedReply { 
-            is_user_session_open_permitted: daemon.is_user_permitted_to_open_session(message.user_name.as_ref()).await,
+        ClientMessage::IsUserSessionOpenBlocked(message) => {
+          let is_user_session_open_blocked = daemon.is_user_session_open_blocked(message.user_name.as_ref());
+
+          let message = IsUserSessionOpenBlockedReply { 
+            is_user_session_open_blocked,
           };
           
-          if let Err(mut error) = self
+          if let Err(()) = self
             .stream
-            .send_or_textual_error(&message)
+            .send_is_user_session_open_blocked_reply(&message, &mut textual_error)
             .await
           {
-            error.change_context("Discipline Daemon Linux-PAM Server Connection processing incoming messages ");
-            error.add_message("Failed to send IsUserSessionOpenPermittedReply");
-            eprintln!("{error:?}");
+            eprintln!("{textual_error}");
+            // TODO: Send connection closed.
+            return;
           }
         }
         ClientMessage::UserSessionOpenedNotification(notification) => {
-          daemon.on_user_session_opened(notification.user_name.as_ref()).await;
+          daemon.on_user_session_opened(notification.user_name.as_ref());
         }
         ClientMessage::UserSessionClosedNotification(notification) => {
-          daemon.on_user_session_closed(notification.user_name.as_ref()).await;
+          daemon.on_user_session_closed(notification.user_name.as_ref());
         }
       }
     }

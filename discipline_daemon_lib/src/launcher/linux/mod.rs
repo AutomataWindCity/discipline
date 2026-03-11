@@ -4,6 +4,7 @@ mod system;
 use system::*;
 
 mod core;
+use core::Daemon;
 
 mod serialization;
 mod database;

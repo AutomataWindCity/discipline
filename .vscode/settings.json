@@ -1,7 +1,7 @@
 {
   "files.autoSave": "afterDelay",
   "editor.fontSize": 25,
-  "editor.fontFamily": "Yomogi",
+  "editor.fontFamily": "Eirian",
   "rust-analyzer.linkedProjects": [
     // "dependencies/pam/Cargo.toml",
     "dependencies/install/Cargo.toml",

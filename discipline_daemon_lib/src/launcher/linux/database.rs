@@ -34,6 +34,7 @@ pub struct UserProfileSchema {
 impl UserProfileSchema {
   pub fn new(
     user_id: Key,
+    user_name: Key,
   ) -> Self {
     Self {
       user_id,

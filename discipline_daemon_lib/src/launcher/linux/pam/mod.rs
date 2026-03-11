@@ -6,6 +6,13 @@ use serialization::{serialize, deserialize};
 mod unix_stream;
 use unix_stream::Stream;
 
+mod unix_stream_async;
+use unix_stream_async::AsyncStream;
+
+mod authentication_token;
+use authentication_token::AuthenticationToken;
+
+
 mod messages;
 mod server;
 mod server_connection;
