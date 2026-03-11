@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::x::{Duration, MonotonicInstant};
 
+// TODO: Consider implementing as 'from' and 'till' fields.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Countdown {
   pub from: MonotonicInstant,

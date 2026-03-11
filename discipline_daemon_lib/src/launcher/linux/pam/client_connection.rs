@@ -1,8 +1,7 @@
 use std::path::PathBuf;
-
 use crate::IsTextualError;
 use super::super::UserNameRef;
-use super::{Stream, EstablishConnectionRef, EstablishConnectionError, IsUserSessionOpenPermittedRef, IsUserSessionOpenPermittedReply, UserSessionClosedNotification, UserSessionClosedNotificationRef, UserSessionOpenedNotificationRef};
+use super::{Stream, EstablishConnectionRef, EstablishConnectionReply, EstablishConnectionError, IsUserSessionOpenPermittedRef, IsUserSessionOpenPermittedReply, UserSessionClosedNotificationRef, UserSessionOpenedNotificationRef};
 
 pub struct ClientStream {
   stream: Stream,
@@ -24,6 +23,13 @@ impl ClientStream {
       }, 
       textual_error,
     )
+  }
+
+  pub fn recv_establish_connection_repl(
+    &mut self,
+    textual_error: &mut impl IsTextualError
+  ) -> Result<EstablishConnectionReply, ()> {
+    self.stream.recv(textual_error)
   }
 
   pub fn is_user_session_open_permitted(
@@ -70,6 +76,9 @@ impl ClientStream {
   }
 }
 
+// TODO
+const MAXIMUM_MESSAGE_CONTENT_LENGTH: usize = 876868686876;
+
 pub struct ClientConnection {
   stream: ClientStream,
 }
@@ -80,13 +89,40 @@ impl ClientConnection {
     password: &str, 
     textual_error: &mut impl IsTextualError,
   ) -> Result<Self, EstablishConnectionError> {
-    let stream = Stream::connect(
-      path, 
-      // Some random-butt number for
-      765765765675, 
-      textual_error,
-    );
+    let stream = match Stream::connect(path, MAXIMUM_MESSAGE_CONTENT_LENGTH, textual_error) {
+      Ok(value) => {
+        value
+      }
+      Err(()) => {
+        return Err(EstablishConnectionError::Other);
+      }
+    };
+
+    let mut stream = ClientStream::construct(stream);
     
-    let stream = ClientStream::construct();
+    if let Err(()) = stream.send_establish_connection(password, textual_error) {
+      return Err(EstablishConnectionError::Other);
+    }
+
+    let reply = match stream.recv_establish_connection_repl(textual_error) {
+      Ok(value) => {
+        value
+      }
+      Err(()) => {
+        return Err(EstablishConnectionError::Other);
+      }
+    };
+
+    match reply {
+      EstablishConnectionReply::ServerBusy => {
+        Err(EstablishConnectionError::ServerBusy)
+      }
+      EstablishConnectionReply::IncorrectPassword => {
+        Err(EstablishConnectionError::IncorrectPassword)
+      }
+      EstablishConnectionReply::ConnectionEstablished => {
+        Ok(ClientConnection { stream })
+      }
+    }
   }
 }

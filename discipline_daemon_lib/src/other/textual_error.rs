@@ -116,6 +116,12 @@ impl<'a> OptionalTextualErrorContext<'a> {
   }
 }
 
+impl<'a> Display for OptionalTextualErrorContext<'a> {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+      todo!()
+  }
+}
+
 pub struct TextualError {
   context: TextualErrorContext,
   eariler_contexts: Vec<TextualErrorContext>,

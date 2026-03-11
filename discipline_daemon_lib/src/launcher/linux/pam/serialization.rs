@@ -51,9 +51,9 @@ where
   };
 
   if read_bytes != slice.len() {
-    textual_error.with_message(format!("Bincode deserialized the byte array successfully, but the number of bytes bincode read is not the same as the byte array length, which shouldn't be possible since the byte array is expected to be the binary repreentation of {}, without additional or missing bytes.", type_name::<T>()));
-    textual_error.with_attachement_display("Byte array length", slice.len());
-    textual_error.with_attachement_debug("Byte array", slice);
+    textual_error.add_message(format!("Bincode deserialized the byte array successfully, but the number of bytes bincode read is not the same as the byte array length, which shouldn't be possible since the byte array is expected to be the binary repreentation of {}, without additional or missing bytes.", type_name::<T>()));
+    textual_error.add_attachement_display("Byte array length", slice.len());
+    textual_error.add_attachement_debug("Byte array", slice);
     return Err(());
   }
   

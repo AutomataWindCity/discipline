@@ -6,8 +6,6 @@ use serialization::{serialize, deserialize};
 mod unix_stream;
 use unix_stream::Stream;
 
-mod client_connection;
-
 mod messages;
 mod server;
 mod server_connection;

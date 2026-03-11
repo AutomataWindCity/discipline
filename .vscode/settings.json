@@ -1,10 +1,11 @@
 {
   "files.autoSave": "afterDelay",
   "editor.fontSize": 25,
-  "editor.fontFamily": "Purisa",
-  "deno.enable": true,
+  "editor.fontFamily": "Yomogi",
   "rust-analyzer.linkedProjects": [
     // "dependencies/pam/Cargo.toml",
+    "dependencies/install/Cargo.toml",
+    // "discipline_daemon_primitive_rs/Cargo.toml",
     "discipline_daemon_lib/Cargo.toml",
     // "discipline_linux_pam_module/Cargo.toml",
     // "discipline_daemon/Cargo.toml",
@@ -15,4 +16,5 @@
   ],
   "rust-analyzer.inlayHints.typeHints.enable": false,
   // "rust-analyzer.inlayHints.parameterHints.enable": false,
+  "deno.enable": true,
 }
