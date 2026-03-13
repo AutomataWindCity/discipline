@@ -26,7 +26,7 @@ impl WriteCompoundValue for CountdownAfterPleaConditional {
   type Schema = CountdownAfterPleaConditionalSchema;
 
   fn write(value: &Self, schema: &Self::Schema, writer: &mut impl CompoundValueWriteDestination) {
-    writer.write_scalar_value(schema.is_activated, &value.is_activated());
+    writer.write_scalar_value(schema.is_activated, &value.is_active());
     writer.write_compound_value(&schema.countdown, value.countdown());
   }
 }
@@ -51,8 +51,8 @@ impl WriteCompoundValueDifferences for CountdownAfterPleaConditional {
     schema: &Self::Schema,
     modifications: &mut impl CompoundValueWriteDestination,
   ) {
-    if modified.is_activated() != original.is_activated() {
-      modifications.write_scalar_value(schema.is_activated, &modified.is_activated());
+    if modified.is_active() != original.is_active() {
+      modifications.write_scalar_value(schema.is_activated, &modified.is_active());
     }
     
     WriteCompoundValueDifferences::write_differences(

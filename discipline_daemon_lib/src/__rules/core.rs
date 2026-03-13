@@ -47,7 +47,7 @@ impl RuleEnabler {
         inner.is_activated(now)
       }
       RuleEnabler::CountdownAfterPlea(inner) => {
-        inner.is_activated_or_deactivating(now)
+        inner.is_activat_or_deactivating(now)
       }
     }
   }

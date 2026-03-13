@@ -1,32 +1,43 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Countdown, Duration, countdown, MonotonicInstant};
+use crate::x::{Countdown, Duration, MonotonicInstant};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CountdownConditional {
-  pub countdown: countdown::Countdown,
+  pub duration: Duration,
+  pub countdown: Option<Countdown>,
 }
 
 impl CountdownConditional {
-  pub fn new(duration: Duration) -> Self {
+  pub fn create(duration: Duration, countdown: Option<Countdown>) -> Self {
     Self {
-      countdown: Countdown::new(duration),
+      duration,
+      countdown,
     }
   }
 
-  pub fn construct(countdown: Countdown) -> Self {
-    Self { countdown }
-  }
-
-  pub fn countdown(&self) -> &Countdown {
-    &self.countdown
+  pub fn construct(duration: Duration, countdown: Option<Countdown>) -> Self {
+    Self {
+      duration,
+      countdown,
+    }
   }
 
   pub fn is_activated(&self, now: MonotonicInstant) -> bool {
-    self.countdown.is_running(now)
+    match &self.countdown {
+      Some(countdown) if countdown.is_running(now) => {
+        true
+      }
+      _ => {
+        false
+      }
+    }
   }
 
   pub fn activate(&mut self, now: MonotonicInstant) {
-    self.countdown.begin(now);
+    self.countdown = Some(Countdown::construct(
+      now, 
+      self.duration,
+    ));
   }
 }
 
@@ -37,7 +48,10 @@ pub struct Creator {
 
 impl Creator {
   pub fn create(self) -> CountdownConditional {
-    CountdownConditional::new(self.duration)
+    CountdownConditional::create(
+      self.duration, 
+      None,
+    )
   }
 }
 

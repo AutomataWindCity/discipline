@@ -26,6 +26,22 @@ impl Duration {
     self.milliseconds == 0
   }
 
+  pub fn is_shorter(self, other: Duration) -> bool {
+    self < other
+  }
+  pub fn is_shorter_than_or_equal_to(self, other: Duration) -> bool {
+    self <= other
+  }
+  pub fn is_or_equal_to(self, other: Duration) -> bool {
+    self == other
+  }
+  pub fn is_longer_than(self, other: Duration) -> bool {
+    self > other
+  }
+  pub fn is_longer_than_or_equal_to(self, other: Duration) -> bool {
+    self >= other
+  }
+  
   pub fn minus_or_zero(self, rhs: Self) -> Duration {
     match self
       .milliseconds
@@ -47,6 +63,7 @@ impl Duration {
   pub fn to_std_duration(self) -> std::time::Duration {
     std::time::Duration::from_millis(self.milliseconds)
   }
+
 }
 
 mod serialization {

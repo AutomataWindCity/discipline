@@ -1,6 +1,6 @@
 mod core;
 pub use core::*;
 
-pub mod procedures;
+// pub mod procedures;
 
 mod serialization;

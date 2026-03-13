@@ -1,6 +1,6 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::Error};
 use crate::x::TextualError;
-use super::{CreateDatumFromStringError, CreateVaultNameFromStringError, Datum, VaultName};
+use super::{CreateVaultDatumFromStringError, CreateVaultNameFromStringError, VaultDatum, VaultName};
 
 impl Serialize for VaultName {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -39,7 +39,7 @@ impl<'a> Deserialize<'a> for VaultName {
   }
 }
 
-impl Serialize for Datum {
+impl Serialize for VaultDatum {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
   where
     S: Serializer,
@@ -48,7 +48,7 @@ impl Serialize for Datum {
   }
 }
 
-impl<'a> Deserialize<'a> for Datum {
+impl<'a> Deserialize<'a> for VaultDatum {
   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
   where
     D: Deserializer<'a>,
@@ -64,11 +64,11 @@ impl<'a> Deserialize<'a> for Datum {
 
     Self::new(string).map_err(|error| {
       Error::custom(match error {
-        CreateDatumFromStringError::LengthViolation { .. } => {
+        CreateVaultDatumFromStringError::LengthViolation { .. } => {
           TextualError::new("Creating VaultDatum from String")
             .with_message("String length is invalid")
-            .with_attachement_display("Minimum length", Datum::MINIMUM_LENGTH)
-            .with_attachement_display("Maximum length", Datum::MAXIMUM_LENGTH)
+            .with_attachement_display("Minimum length", VaultDatum::MINIMUM_LENGTH)
+            .with_attachement_display("Maximum length", VaultDatum::MAXIMUM_LENGTH)
             .with_context("Deserializing VaultDatum")
         }
       })

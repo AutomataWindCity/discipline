@@ -33,20 +33,20 @@ impl AsRef<str> for VaultName {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Datum {
+pub struct VaultDatum {
   pub(super) string: String,
 }
 
 #[derive(Debug, Clone)]
-pub enum CreateDatumFromStringError {
+pub enum CreateVaultDatumFromStringError {
   LengthViolation { string: String }
 }
 
-impl Datum {
+impl VaultDatum {
   pub const MINIMUM_LENGTH: usize = 1;
   pub const MAXIMUM_LENGTH: usize = 10000;
 
-  pub fn new(string: String) -> Result<Self, CreateDatumFromStringError> {
+  pub fn new(string: String) -> Result<Self, CreateVaultDatumFromStringError> {
     if string.len() < Self::MINIMUM_LENGTH {
       return Ok(Self { string });
     }
@@ -57,7 +57,7 @@ impl Datum {
   }
 }
 
-impl AsRef<str> for Datum {
+impl AsRef<str> for VaultDatum {
   fn as_ref(&self) -> &str {
     &self.string
   }
@@ -76,14 +76,14 @@ pub struct Vault {
 
 // TODO: Rename to CommonInfo or Singleton
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct VaultsSingleton {
+pub struct VaultsStats {
   vault_number: usize,
   maximum_vault_number: usize,
   data_number: usize,
   maximum_data_number: usize,
 }
 
-impl Default for VaultsSingleton {
+impl Default for VaultsStats {
   fn default() -> Self {
     Self {
       data_number: 0,
@@ -94,7 +94,7 @@ impl Default for VaultsSingleton {
   }
 }
 
-impl VaultsSingleton {
+impl VaultsStats {
   pub fn construct(
     vault_number: usize,
     maximum_vault_number: usize,
@@ -108,6 +108,7 @@ impl VaultsSingleton {
       maximum_data_number,
     }
   }
+
   pub fn try_decrement_vault_number(&mut self) {
     if let None = self.vault_number.checked_sub(1) {
       // TODO: Log this case
@@ -156,8 +157,3 @@ impl VaultsSingleton {
     self.maximum_data_number
   }
 }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub enum Location {
-//   User { user_id: UuidV4 }
-// }

@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use crate::x::{TextualErrorV2, user_name};
+use crate::x::{TextualErrorV2};
 use super::{State, Database, Api, UserNameRef};
 
 pub struct LaunchConfiguration {

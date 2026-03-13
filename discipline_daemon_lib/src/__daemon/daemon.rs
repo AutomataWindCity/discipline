@@ -7,6 +7,9 @@ pub struct DaemonLaunchConfiguration {
   pub database_directory: PathBuf,
 }
 
+unsafe impl Send for Daemon {
+  
+}
 pub struct Daemon {
   _configuration: DaemonLaunchConfiguration,
   pub state: State,

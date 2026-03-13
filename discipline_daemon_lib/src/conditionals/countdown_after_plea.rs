@@ -1,52 +1,77 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Countdown, MonotonicInstant, Duration};
+use crate::x::{Countdown, CountdownStatus, MonotonicInstant, Duration};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CountdownAfterPleaConditionalStatus {
+  Active,
+  Deactivating,
+  Deactivated,
+}
+
+impl CountdownAfterPleaConditionalStatus {
+  pub fn is_active(&self) -> bool {
+    matches!(self, Self::Active)
+  }
+  
+  pub fn is_deactivaing(&self) -> bool {
+    matches!(self, Self::Deactivating)
+  }
+  
+  pub fn is_deactivated(&self) -> bool {
+    matches!(self, Self::Deactivated)
+  }
+}
+
+/// A conditional that is always 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CountdownAfterPleaConditional {
-  is_activated: bool,
-  countdown: Countdown,
+  duration: Duration,
+  countdown: Option<Countdown>,
 }
 
 impl CountdownAfterPleaConditional {
   pub fn new(duration: Duration) -> Self {
     Self {
-      is_activated: false,
-      countdown: Countdown::new(duration)
+      duration,
+      countdown: None,
     }
   }
 
-  pub fn construct(is_activated: bool, countdown: Countdown) -> Self {
-    Self { is_activated, countdown }
+  pub fn construct(duration: Duration, countdown: Option<Countdown>) -> Self {
+    Self { 
+      duration,
+      countdown,
+    }
   }
 
-  pub fn countdown(&self) -> &Countdown {
+  pub fn countdown(&self) -> &Option<Countdown> {
     &self.countdown
   }
   
-  pub fn is_activated(&self) -> bool {
-    self.is_activated
-  }
+  pub fn status(&self, now: MonotonicInstant) -> CountdownAfterPleaConditionalStatus {
+    let Some(countdown) = &self.countdown else {
+      return CountdownAfterPleaConditionalStatus::Active;
+    };
 
-  pub fn is_activated_or_deactivating(&self, now: MonotonicInstant) -> bool {
-    self.is_activated || self.countdown.is_running(now)
-  }
-
-  pub fn is_deactivaing(&self, now: MonotonicInstant) -> bool {
-    !self.is_activated && self.countdown.is_running(now)
-  }
-
-  pub fn is_deactivated(&self, now: MonotonicInstant) -> bool {
-    !self.is_activated && self.countdown.is_finished(now)
+    match countdown.status(now) {
+      CountdownStatus::Pending => {
+        CountdownAfterPleaConditionalStatus::Active
+      }
+      CountdownStatus::Running => {
+        CountdownAfterPleaConditionalStatus::Deactivating
+      }
+      CountdownStatus::Finished => {
+        CountdownAfterPleaConditionalStatus::Deactivated
+      }
+    }
   }
 
   pub fn activate(&mut self) {
-    self.is_activated = true;
-    self.countdown.cancel();
+    self.countdown = None;
   }
 
   pub fn deactivate(&mut self, now: MonotonicInstant) {
-    self.is_activated = true;
-    self.countdown.begin(now);
+    self.countdown = Some(Countdown::construct(now, self.duration))
   }
 }
 

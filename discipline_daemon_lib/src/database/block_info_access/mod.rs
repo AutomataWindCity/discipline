@@ -18,7 +18,7 @@ mod vault_protector;
 use vault_protector::*;
 
 use crate::x::{Database, TextualError, UuidV4, conditionals, database::*};
-use crate::x::block_info_access::*;
+use crate::x::vaults::*;
 
 mod singleton;
 pub use singleton::SingletonSchema;

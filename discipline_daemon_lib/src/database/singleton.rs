@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use crate::x::{Database, MonotonicClock, RuleGroup, State, TextualError, User, UserGroup, UuidV4, block_info_access, regulation, rules, users};
+use crate::x::{Database, MonotonicClock, RuleGroup, State, TextualError, User, UserGroup, UuidV4, vaults, regulation, rules, users};
 use crate::x::database::*;
 use crate::x::database;
 
@@ -74,7 +74,7 @@ pub struct Singleton {
   clock_singleton: MonotonicClock,
   rules_singleton: rules::RulesSingleton,
   users_singleton: users::UsersSingleton,
-  vaults_singleton: block_info_access::VaultsSingleton,
+  vaults_singleton: vaults::VaultsSingleton,
 }
 
 impl Default for Singleton {

@@ -1,11 +1,10 @@
-use std::path::Path;
 use std::any::type_name;
+use std::path::Path;
 use serde::{Serialize, de::DeserializeOwned};
-use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::UnixStream};
+use tokio::net::UnixStream;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use crate::x::IsTextualError;
-use super::{deserialize, serialize};
-
-const MESSAGE_CONTENT_LENGTH_SIZE: usize = size_of::<u32>();
+use super::{deserialize, serialize, MaximumMessageLength, MESSAGE_LENGTH_SIZE};
 
 pub struct AsyncStream {
   stream: UnixStream,
@@ -13,10 +12,13 @@ pub struct AsyncStream {
 }
 
 impl AsyncStream {
-  pub fn construct(stream: UnixStream, maximum_message_content_length: usize) -> Self {
+  pub fn construct(
+    stream: UnixStream, 
+    maximum_message_length: MaximumMessageLength,
+  ) -> Self {
     Self {
       stream,
-      message_buffer: vec![0; MESSAGE_CONTENT_LENGTH_SIZE + maximum_message_content_length],
+      message_buffer: vec![0; maximum_message_length.get()],
     }
   }
   
@@ -43,7 +45,7 @@ impl AsyncStream {
   }
 
   fn maximum_message_content_length(&self) -> usize {
-    self.message_buffer.len() - MESSAGE_CONTENT_LENGTH_SIZE
+    self.message_buffer.len() - MESSAGE_LENGTH_SIZE
   }
 
   pub async fn recv<T>(
@@ -55,7 +57,7 @@ impl AsyncStream {
   {
     let mut textual_error = textual_error.optional_context("Receiving a message over a UnixStream");
 
-    let mut message_content_length = [0; MESSAGE_CONTENT_LENGTH_SIZE];
+    let mut message_content_length = [0; MESSAGE_LENGTH_SIZE];
 
     if let Err(error) = self.stream.read_exact(&mut message_content_length).await {
       textual_error.add_message("An io error occured while reading the message length");
@@ -97,7 +99,7 @@ impl AsyncStream {
   {
     let mut textual_error = textual_error.optional_context("Sending a message over a UnixStream");
 
-    let message_content_buffer = &mut self.message_buffer[MESSAGE_CONTENT_LENGTH_SIZE..];
+    let message_content_buffer = &mut self.message_buffer[MESSAGE_LENGTH_SIZE..];
 
     let Ok(message_content_length) = serialize(
       content, 
@@ -126,12 +128,12 @@ impl AsyncStream {
       return Err(());
     };
 
-    let message_content_length_buffer = &mut self.message_buffer[0..MESSAGE_CONTENT_LENGTH_SIZE];
+    let message_content_length_buffer = &mut self.message_buffer[0..MESSAGE_LENGTH_SIZE];
     message_content_length_buffer.copy_from_slice(&message_content_length_as_u32.to_be_bytes());
 
     let message = &self.message_buffer[
       ..
-      MESSAGE_CONTENT_LENGTH_SIZE + message_content_length
+      MESSAGE_LENGTH_SIZE + message_content_length
     ];
 
     if let Err(error) = self.stream.write_all(&message).await {
