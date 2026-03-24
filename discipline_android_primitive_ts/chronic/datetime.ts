@@ -1,4 +1,4 @@
-import { Date, Time, Duration, Branded, Tried, TextualError } from "../x.ts";
+import { Date, Time, Duration, Branded, Tried, TextualError, Nominal } from "../x.ts";
 
 const formatter = new Intl.DateTimeFormat("ar-SA", {
   year: "numeric",
@@ -14,13 +14,17 @@ const formatter = new Intl.DateTimeFormat("ar-SA", {
 
 const BRAND = Symbol();
 
-export type DateTime = Branded<typeof BRAND, globalThis.Date>;
+export type DateTime = Nominal<typeof BRAND, globalThis.Date>;
 
 export const MINIMUM_TIMESTAMP = -8.64e15;
 export const MAXIMUM_TIMESTAMP = 8.64e15;
 
+const isTimestampWithBounds = (timestamp: number) => {
+  return timestamp >= MINIMUM_TIMESTAMP && timestamp <= MAXIMUM_TIMESTAMP;
+}
+
 export const construct = (date: globalThis.Date): DateTime => {
-  return Branded(BRAND, date);
+  return Nominal.create(BRAND, date);
 };
 
 export const now = (): DateTime => {
@@ -63,19 +67,23 @@ export const fromTimestamp = (timestamp: number): Tried<DateTime, TextualError> 
   return Tried.Success(construct(date));
 };
 
+const getJsDate = (it: DateTime): globalThis.Date => {
+  return Nominal.get(it);
+};
+
 export const getTime = (it: DateTime): Time => {
-  const hour = it.getUTCHours();
-  const minute = it.getUTCMinutes();
+  const hour = getJsDate(it).getUTCHours();
+  const minute = getJsDate(it).getUTCMinutes();
   return Tried.unwrap(Time.fromHourAndMinute(hour, minute));
 };
 
 export const toTimestamp = (it: DateTime): number => {
-  return it.getTime();
+  return getJsDate(it).getTime();
 };
 
-export const tillOrZero = (it: DateTime, rhs: DateTime): Duration => {
-  const lhsTimestamp = it.getTime();
-  const rhsTimestamp = rhs.getTime();
+export const tillOrZero = (lhs: DateTime, rhs: DateTime): Duration => {
+  const lhsTimestamp = toTimestamp(lhs);
+  const rhsTimestamp = toTimestamp(rhs);
 
   if (lhsTimestamp < rhsTimestamp) {
     return Duration.fromMillisecondsOrThrow(rhsTimestamp - lhsTimestamp);
@@ -85,8 +93,8 @@ export const tillOrZero = (it: DateTime, rhs: DateTime): Duration => {
 };
 
 export const sinceOrZero = (lhs: DateTime, rhs: DateTime): Duration => {
-  const lhsTimestamp = lhs.getTime();
-  const rhsTimestamp = rhs.getTime();
+  const lhsTimestamp = toTimestamp(lhs);
+  const rhsTimestamp = toTimestamp(rhs);
 
   if (lhsTimestamp > rhsTimestamp) {
     return Duration.fromMillisecondsOrThrow(lhsTimestamp - rhsTimestamp);
@@ -96,11 +104,11 @@ export const sinceOrZero = (lhs: DateTime, rhs: DateTime): Duration => {
 };
 
 export const toString = (it: DateTime): string => {
-  return it.toISOString();
+  return getJsDate(it).toISOString();
 };
 
 export const getDate = (it: DateTime): Date => {
-  const clone = new globalThis.Date(it);
+  const clone = new globalThis.Date(getJsDate(it));
   clone.setUTCHours(0, 0, 0, 0);
   return Date.construct(clone);
 };
@@ -125,6 +133,42 @@ export const isLaterThanOrAt = (lhs: DateTime, rhs: DateTime): boolean => {
   return toTimestamp(lhs) >= toTimestamp(rhs);
 };
 
+export const isLaterThanBy = (lhs: DateTime, rhs: DateTime, duration: Duration): boolean => {
+  return Duration.isEqualTo(sinceOrZero(lhs, rhs), duration);
+};
+
+export const isLaterThanByOrLess = (lhs: DateTime, rhs: DateTime, duration: Duration): boolean => {
+  return Duration.isShorterThanOrEqualTo(sinceOrZero(lhs, rhs), duration);
+};
+
+export const isLaterThanByOrMore = (lhs: DateTime, rhs: DateTime, duration: Duration): boolean => {
+  return Duration.isLongerThanOrEqualTo(sinceOrZero(lhs, rhs), duration);
+};
+
+export const isEarilerThanBy = (lhs: DateTime, rhs: DateTime, duration: Duration): boolean => {
+  return Duration.isEqualTo(tillOrZero(lhs, rhs), duration);
+};
+
+export const isEarilerThanByOrLess = (lhs: DateTime, rhs: DateTime, duration: Duration): boolean => {
+  return Duration.isShorterThanOrEqualTo(tillOrZero(lhs, rhs), duration);
+};
+
+export const isEarilerThanByOrMore = (lhs: DateTime, rhs: DateTime, duration: Duration): boolean => {
+  return Duration.isLongerThanOrEqualTo(tillOrZero(lhs, rhs), duration);
+};
+
+export const plusOrMax = (it: DateTime, duration: Duration) => {
+  const timestamp = toTimestamp(it) + Duration.toTotalMilliseconds(duration);
+  if (timestamp >= MAXIMUM_TIMESTAMP) {
+    // TODO: This will NEVER produce an invalid date. But, just in case, 
+    // do panic or somehow log an error if it does,
+    const jsDate = new globalThis.Date(MAXIMUM_TIMESTAMP);
+    return construct(jsDate);
+  }
+  
+  return construct(new globalThis.Date(timestamp));
+};
+
 export const toString2 = (it: DateTime): string => {
   return formatter.format(toTimestamp(it));
 };
@@ -145,5 +189,12 @@ export const DateTime = {
   isEarilerThanOrAt,
   isLaterThan,
   isLaterThanOrAt,
+  plusOrMax,
   toString2,
+  isEarilerThanBy,
+  isEarilerThanByOrLess,
+  isEarilerThanByOrMore,
+  isLaterThanBy,
+  isLaterThanByOrLess,
+  isLaterThanByOrMore,
 };

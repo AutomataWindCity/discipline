@@ -1,5 +1,5 @@
 import { Branded, TextualError, Tried } from "../x.ts";
-import {} from "node:sqlite";
+import { DatabaseSync } from "node:sqlite";
 
 const BRAND = Symbol();
 

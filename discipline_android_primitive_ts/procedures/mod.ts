@@ -4,7 +4,6 @@ const createScreenCountdownRule = (
   app: App,
   duration: Duration,
 ) => {
-  
   const countdown = Countdown.create(
     MonotonicClock.getNow(app.state.monotonicClock),
     duration,

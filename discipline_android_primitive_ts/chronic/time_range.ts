@@ -27,14 +27,14 @@ export const fromTimestamps = (from: number, till: number): Tried<TimeRange, Tex
   }
   if (from < MINIMUM_FROM_TIMESTAMP) {
     const it = TextualError.create("Creating a TimeRange from timestamps");
-    TextualError.addMessage(it, "Argument 'from' is less than minimum valid value");
+    TextualError.addMessage(it, "Argument 'from' is less than the minimum valid value");
     TextualError.addNumberAttachment(it, "Argument 'from'", from);
     TextualError.addNumberAttachment(it, "Minimum valid value", MINIMUM_FROM_TIMESTAMP);
     return Tried.Failure(it);
   }
   if (from > MAXIMUM_FROM_TIMESTAMP) {
     const it = TextualError.create("Creating a TimeRange from timestamps");
-    TextualError.addMessage(it, "Argument 'from' is less than maximum valid value");
+    TextualError.addMessage(it, "Argument 'from' is less than the maximum valid value");
     TextualError.addNumberAttachment(it, "Argument 'from'", from);
     TextualError.addNumberAttachment(it, "Maximum valid value", MAXIMUM_FROM_TIMESTAMP);
     return Tried.Failure(it);
@@ -48,14 +48,14 @@ export const fromTimestamps = (from: number, till: number): Tried<TimeRange, Tex
   }
   if (till < MINIMUM_TILL_TIMESTAMP) {
     const it = TextualError.create("Creating a TimeRange till timestamps");
-    TextualError.addMessage(it, "Argument 'till' is less than minimum valid value");
+    TextualError.addMessage(it, "Argument 'till' is less than the minimum valid value");
     TextualError.addNumberAttachment(it, "Argument 'till'", till);
     TextualError.addNumberAttachment(it, "Minimum valid value", MINIMUM_TILL_TIMESTAMP);
     return Tried.Failure(it);
   }
   if (till > MAXIMUM_TILL_TIMESTAMP) {
     const it = TextualError.create("Creating a TimeRange till timestamps");
-    TextualError.addMessage(it, "Argument 'till' is less than maximum valid value");
+    TextualError.addMessage(it, "Argument 'till' is less than the maximum valid value");
     TextualError.addNumberAttachment(it, "Argument 'till'", till);
     TextualError.addNumberAttachment(it, "Maximum valid value", MAXIMUM_TILL_TIMESTAMP);
     return Tried.Failure(it);

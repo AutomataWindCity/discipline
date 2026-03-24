@@ -219,6 +219,10 @@ export const plusOrMax = (it: Duration, rhs: Duration): Duration => {
   }
 };
 
+export const isEqualTo = (lhs: Duration, rhs: Duration): boolean => {
+  return toTotalMilliseconds(lhs) === toTotalMilliseconds(rhs);
+};
+
 export const isLongerThan = (it: Duration, rhs: Duration): boolean => {
   return toTotalMilliseconds(it) > toTotalMilliseconds(rhs);
 };
@@ -320,6 +324,7 @@ export const Duration = {
   isZero,
   minusOrZero,
   plusOrMax,
+  isEqualTo,
   isLongerThan,
   isLongerThanOrEqualTo,
   isShorterThan,
