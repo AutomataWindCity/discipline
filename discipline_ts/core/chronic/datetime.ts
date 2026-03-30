@@ -1,4 +1,4 @@
-import { Date, Time, Duration, Branded, Tried, TextualError, Nominal } from "../x.ts";
+import { Date, Time, Duration, Branded, Tried, TextualError, Nominal, FailureCode } from "../x.ts";
 
 const formatter = new Intl.DateTimeFormat("ar-SA", {
   year: "numeric",
@@ -65,6 +65,13 @@ export const fromTimestamp = (timestamp: number): Tried<DateTime, TextualError> 
   }
 
   return Tried.Success(construct(date));
+};
+
+export const fromTimestampOrErrorCode = (
+  timestamp: number,
+  textualError: TextualError,
+): DateTime | FailureCode => {
+
 };
 
 const getJsDate = (it: DateTime): globalThis.Date => {
@@ -182,6 +189,7 @@ export const DateTime = {
   tillOrZero,
   sinceOrZero,
   fromTimestamp,
+  fromTimestampOrErrorCode,
   toString,
   getDate,
   isAt,

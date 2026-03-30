@@ -1,4 +1,4 @@
-import { Duration, TextualError, Nominal, Tried } from "../x.ts";
+import { Duration, TextualError, Nominal, Tried, FailureCode } from "../x.ts";
 
 const brand = Symbol();
 
@@ -36,6 +36,13 @@ export const fromTimestamp = (timestamp: number): Tried<Time, TextualError> => {
   }
 
   return Tried.Success(construct(timestamp));
+};
+
+export const fromTimestampOrError = (
+  timestamp: number,
+  textualError: TextualError,
+): Time | FailureCode => {
+
 };
 
 export const fromHourAndMinuteAm = (hour: number, minute: number): Tried<Time, TextualError> => {
@@ -224,6 +231,7 @@ export const Time = {
   MINIMUM_TIMESTAMP,
   MAXIMUM_TIMESTAMP,
   fromTimestamp,
+  fromTimestampOrError,
   fromHourAndMinute,
   fromHourAndMinuteAm,
   fromHourAndMinutePm,

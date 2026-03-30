@@ -1,56 +1,155 @@
-import { Duration, DateTime, Branded } from "../mod.ts";
+import { Duration, Instant, Branded, Serialization } from "../x.ts";
+
+export const enum CountdownStatus {
+  Pending,
+  Running,
+  Finished,
+}
 
 const BRAND = Symbol();
+const STATUS = Symbol();
 
-export type TCountdown = Branded<typeof BRAND, {
-  remainingDuration: Duration.TDuration,
-  previousSynchronizationTime: DateTime.DateTimeT,
+export type Countdown = Branded<typeof BRAND, {
+  from: Instant,
+  duration: Duration,
 }>;
 
-export const construct = (
-  remainingDuration: Duration.TDuration,
-  previousSynchronizationTime: DateTime.DateTimeT,
-): TCountdown => {
+export type CountdownPending = Countdown & { 
+  [STATUS]: CountdownStatus.Pending 
+};
+
+export type CountdownRunning = Countdown & { 
+  [STATUS]: CountdownStatus.Running 
+};
+
+export type CountdownFinished = Countdown & { 
+  [STATUS]: CountdownStatus.Finished 
+};
+
+export const construct = (from: Instant, duration: Duration): Countdown => {
   return Branded(BRAND, {
-    remainingDuration,
-    previousSynchronizationTime,
+    from,
+    duration,
   });
 };
 
-export const create = (duration: Duration.TDuration, now: DateTime.DateTimeT): TCountdown => {
-  return construct(duration, now);
-}
+export const create = (from: Instant, duration: Duration): Countdown => {
+  return construct(from, duration);
+};
 
-export const synchronize = (me: TCountdown, now: DateTime.DateTimeT) => {
-  const interval = DateTime.tillOrZero(
-    me.previousSynchronizationTime, 
-    now,
+export const getFrom = (it: Countdown): Instant => {
+  return it.from;
+};
+
+export const getTill = (it: Countdown): Instant => {
+  return Instant.plusOrMax(it.from, it.duration);
+};
+
+export const getTotalDuration = (it: Countdown): Duration => {
+  return it.duration;
+};
+
+export const setTotalDuration = (it: Countdown, duration: Duration): void => {
+  it.duration = duration;
+};
+
+export const getTimeTillStartOrZero = (it: Countdown, now: Instant): Duration => {
+  return Instant.tillOrZero(now, it.from);
+};
+
+export const getTimeSinceStartOrZero = (it: Countdown, now: Instant): Duration => {
+  return Instant.sinceOrZero(now, it.from);
+};
+
+export const getElapsedTimeOrZero = (it: Countdown, now: Instant): Duration => {
+  return Duration.min(
+    getTimeSinceStartOrZero(it, now),
+    it.duration
   );
+};
 
-  me.remainingDuration = Duration.minusOrZero(
-    me.remainingDuration,
-    interval,
+export const getRemainingTimeOrZero = (it: Countdown, now: Instant): Duration => {
+  return Duration.minusOrZero(
+    getTotalDuration(it),
+    getElapsedTimeOrZero(it, now)
   );
-
-  me.previousSynchronizationTime = now;
-}
-
-export const isFinished = (me: TCountdown): boolean => {
-  return Duration.isZero(me.remainingDuration);
 };
 
-export const isRunning = (me: TCountdown): boolean => {
-  return !Duration.isZero(me.remainingDuration);
+export const getTimeTillFinishOrZero = (it: Countdown, now: Instant): Duration => {
+  return Instant.tillOrZero(now, getTill(it));
 };
 
-export const getRemainingDuration = (me: TCountdown): Duration.TDuration => {
-  return me.remainingDuration;
+export const getStatus = (it: Countdown, now: Instant): CountdownStatus => {
+  if (Instant.isEarilerThan(now, it.from)) {
+    return CountdownStatus.Pending;
+  }
+
+  const elapsedTime = Instant.tillOrZero(it.from, now);
+  if (Duration.isShorterThanOrEqualTo(elapsedTime, it.duration)) {
+    return CountdownStatus.Running;
+  }
+
+  return CountdownStatus.Finished;
 };
 
-export const setRemaniningDuration = (me: TCountdown, newValue: Duration.TDuration) => {
-  me.remainingDuration = newValue;
+export const isPending = (it: Countdown, now: Instant): boolean => {
+  return getStatus(it, now) === CountdownStatus.Pending;
 };
 
-export const getPreviousSynchronizationTime = (me: TCountdown): DateTime.DateTimeT => {
-  return me.previousSynchronizationTime;
+export const isRunning = (it: Countdown, now: Instant): boolean => {
+  return getStatus(it, now) === CountdownStatus.Running;
+};
+
+export const isFinished = (it: Countdown, now: Instant): boolean => {
+  return getStatus(it, now) === CountdownStatus.Finished;
+};
+
+export const extendByOrSetToMax = (it: Countdown, factor: Duration): void => {
+  it.duration = Duration.plusOrMax(it.duration, factor);
+};
+
+export const match = <A, B, C>(
+  it: Countdown,
+  now: Instant,
+  cases: {
+    Pending: (it: CountdownPending) => A,
+    Running: (it: CountdownRunning) => B,
+    Finished: (it: CountdownFinished) => C,
+  }
+): A | B | C => {
+  switch (getStatus(it, now)) {
+    case CountdownStatus.Pending: return cases.Pending(it as CountdownPending);
+    case CountdownStatus.Running: return cases.Running(it as CountdownRunning);
+    case CountdownStatus.Finished: return cases.Finished(it as CountdownFinished);
+  }
+};
+
+Serialization.Object.createFinal<Countdown>({
+  properties: [
+    Serialization.ObjectProperty.create({
+      name: "",
+      getter: it => Duration.toTotalMilliseconds(Instant.toElapsedTime(it.from)),
+      description: Serialization.Number.create(),
+    })
+  ]
+})
+
+export const Countdown = {
+  construct,
+  create,
+  getFrom,
+  getTill,
+  getTotalDuration,
+  setTotalDuration,
+  getTimeTillStartOrZero,
+  getTimeSinceStartOrZero,
+  getElapsedTimeOrZero,
+  getRemainingTimeOrZero,
+  getTimeTillFinishOrZero,
+  getStatus,
+  isPending,
+  isRunning,
+  isFinished,
+  extendByOrSetToMax,
+  match,
 };

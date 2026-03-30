@@ -1,4 +1,4 @@
-import { Branded, TextualError, Tried } from "../x.ts";
+import { Branded, FailureCode, TextualError, Tried } from "../x.ts";
 
 const brand = Symbol();
 
@@ -45,6 +45,13 @@ export const fromMilliseconds = (milliseconds: number): Tried<Duration, TextualE
   }
 
   return Tried.Success(construct(milliseconds));
+};
+
+export const fromMillisecondsOrErrorCode = (
+  milliseconds: number,
+  textualError: TextualError,
+): Duration | FailureCode => {
+
 };
 
 export const fromSeconds = (seconds: number): Tried<Duration, TextualError> => {
@@ -313,6 +320,7 @@ export const Duration = {
   MILLISECONDS_PER_DAY,
   MILLISECONDS_PER_WEEK,
   fromMilliseconds,
+  fromMillisecondsOrErrorCode,
   fromMinutes,
   fromSeconds,
   fromHours,
