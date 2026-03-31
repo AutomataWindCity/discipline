@@ -18,5 +18,5 @@
   // "rust-analyzer.inlayHints.parameterHints.enable": false,
   "deno.enable": true,
   "java.compile.nullAnalysis.mode": "automatic",
-
-}
+  "java.configuration.updateBuildConfiguration": "automatic",
+} 
