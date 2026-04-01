@@ -10,12 +10,16 @@ import com.example.app.TextualErrorContext
 public class TextualError private constructor(
     var context: TextualErrorContext,
     val earlierContexts: MutableList<TextualErrorContext> = mutableListOf()
-) {
+) : Throwable() {
     companion object {
         fun create(action: String): TextualError {
             return TextualError(TextualErrorContext.create(action))
         }
         
+        fun createEmpty(): TextualError {
+           return TextualError(TextualErrorContext.create(""))
+        }
+
         fun fromContext(context: TextualErrorContext): TextualError {
             return TextualError(context)
         }
@@ -70,6 +74,24 @@ public class TextualError private constructor(
     }
     
     fun addNumberAttachment(name: String, value: Number): TextualError {
+        context.attachments.add(
+            TextualErrorAttachment.create(name, value.toString())
+        )
+        return this
+    }
+    fun addLongAttachment(name: String, value: Long): TextualError {
+        context.attachments.add(
+            TextualErrorAttachment.create(name, value.toString())
+        )
+        return this
+    }
+    fun addIntAttachment(name: String, value: Int): TextualError {
+        context.attachments.add(
+            TextualErrorAttachment.create(name, value.toString())
+        )
+        return this
+    }
+    fun addUIntAttachment(name: String, value: UInt): TextualError {
         context.attachments.add(
             TextualErrorAttachment.create(name, value.toString())
         )

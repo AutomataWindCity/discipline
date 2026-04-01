@@ -1,29 +1,61 @@
-package com.yourpackage.discipline
+package com.example.app
+
+import androidx.room.Entity
 
 /**
  * Statistics about vaults
  */
-data class VaultsStats private constructor(
-    val vaultsNumber: Int,
-    val maximumVaultsNumber: Int
+@Entity
+public data class VaultsStats private constructor(
+  var vaultsNumber: Int,
+  var maximumVaultsNumber: Int
 ) {
-    companion object {
-        fun create(maximumVaultsNumber: Int): VaultsStats = VaultsStats(0, maximumVaultsNumber)
-        fun construct(vaultsNumber: Int, maximumVaultsNumber: Int): VaultsStats = 
-            VaultsStats(vaultsNumber, maximumVaultsNumber)
+  companion object {
+    fun create(maximumVaultsNumber: Int): VaultsStats {
+      return VaultsStats(0, maximumVaultsNumber)
     }
-    
-    fun isFull(): Boolean = vaultsNumber >= maximumVaultsNumber
-    
-    fun hasSpace(): Boolean = vaultsNumber < maximumVaultsNumber
-    
-    fun remainingCapacity(): Int = maximumVaultsNumber - vaultsNumber
-    
-    fun withVaultAdded(): VaultsStats = copy(vaultsNumber = vaultsNumber + 1)
-    
-    fun withVaultRemoved(): VaultsStats = copy(vaultsNumber = (vaultsNumber - 1).coerceAtLeast(0))
-    
-    fun canAddVaults(count: Int): Boolean = vaultsNumber + count <= maximumVaultsNumber
-    
-    override fun toString(): String = "VaultsStats($vaultsNumber/$maximumVaultsNumber)"
+
+    fun construct(vaultsNumber: Int, maximumVaultsNumber: Int): Tried<VaultsStats, TextualError> {
+      if (vaultsNumber > maximumVaultsNumber) {
+        return Tried.failure(
+          TextualError.create("Constructing VaultsStats")
+            .addMessage("Argument 'vaultsNumber' is greater than argument 'maximumVaultsNumber'")
+            .addIntAttachment("Vaults number", vaultsNumber)
+            .addIntAttachment("Maximum vaults number", maximumVaultsNumber)
+        )
+      }
+
+      return Tried.success(VaultsStats(vaultsNumber, maximumVaultsNumber))
+    }
+  }
+  
+  fun isFull(): Boolean {
+    return vaultsNumber >= maximumVaultsNumber
+  }
+  
+  fun hasSpaceForOneMore(): Boolean {
+    return vaultsNumber < maximumVaultsNumber
+  }
+
+  fun hasSpaceForNMore(count: Int): Boolean {
+    return vaultsNumber + count <= maximumVaultsNumber
+  }
+  
+  fun remainingSpace(): Int {
+    return maximumVaultsNumber - vaultsNumber
+  }
+  
+  // TODO: 
+  fun updateAfterVaultAdded() {
+    vaultsNumber += 1
+  }
+  
+  // TODO:
+  fun updateAfterVaultDeleted() {
+    vaultsNumber = (vaultsNumber - 1).coerceAtLeast(0)
+  }
+  
+  override fun toString(): String {
+    return "VaultsStats($vaultsNumber/$maximumVaultsNumber)"
+  }
 }

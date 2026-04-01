@@ -1,45 +1,57 @@
-package com.yourpackage.discipline
+package com.example.app
+
+import com.example.app.Instant
+import com.example.app.Duration
+import androidx.room.Entity
 
 /**
  * Tracks daily uptime, resetting at midnight
  */
-class UptimeClock(
-    var dailyUptime: Duration = Duration.zero(),
-    var previousSynchronizationTime: DateTime = DateTime.now()
+@Entity
+public data class UptimeClock(
+  var totalDailyUptime: Duration,
+  var totalWeeklyUptime: Duration,
+  var previousSynchronizationTime: Instant,
 ) {
-    companion object {
-        fun create(now: DateTime): UptimeClock = UptimeClock(Duration.zero(), now)
+  companion object {
+    fun create(now: Instant): UptimeClock {
+      return UptimeClock(
+        Duration.zero(),
+        Duration.zero(),
+        now,
+      )
     }
+  }
+  
+  // /**
+  //  * Synchronizes the clock with the current time
+  //  */
+  // fun synchronize(
+  //   now: Instant,
+  //   synchronizationInterval: Duration,
+  //   didSynchronizeSinceDevicePowerUp: Boolean
+  // ) {
+  //   // Check if we've crossed midnight
+  //   if (now.tillOrZero(previousSynchronizationTime).isLongerThan(Duration.DAY)) {
+  //     totalDailyUptime = Duration.zero()
+  //     previousSynchronizationTime = now
+  //     return
+  //   }
     
-    /**
-     * Synchronizes the clock with the current time
-     */
-    fun synchronize(
-        now: DateTime,
-        synchronizationInterval: Duration,
-        didSynchronizeSinceDevicePowerUp: Boolean
-    ) {
-        // Check if we've crossed midnight
-        if (now.getDate().isLaterThan(previousSynchronizationTime.getDate())) {
-            dailyUptime = Duration.zero()
-            previousSynchronizationTime = now
-            return
-        }
-        
-        if (!didSynchronizeSinceDevicePowerUp) {
-            previousSynchronizationTime = now
-            return
-        }
-        
-        val timeSincePreviousSynchronization = max(
-            previousSynchronizationTime.tillOrZero(now),
-            synchronizationInterval
-        )
-        
-        dailyUptime = dailyUptime.plusOrMax(timeSincePreviousSynchronization)
-        previousSynchronizationTime = now
-    }
+  //   if (!didSynchronizeSinceDevicePowerUp) {
+  //     previousSynchronizationTime = now
+  //     return
+  //   }
     
-    fun getDailyUptime(): Duration = dailyUptime
-    fun getPreviousSynchronizationTime(): DateTime = previousSynchronizationTime
+  //   val timeSincePreviousSynchronization = max(
+  //     previousSynchronizationTime.tillOrZero(now),
+  //     synchronizationInterval
+  //   )
+    
+  //   totalDailyUptime = totalDailyUptime.plusOrMax(timeSincePreviousSynchronization)
+  //   previousSynchronizationTime = now
+  // }
+  
+  // fun getDailyUptime(): Duration = totalDailyUptime
+  // fun getPreviousSynchronizationTime(): DateTime = previousSynchronizationTime
 }

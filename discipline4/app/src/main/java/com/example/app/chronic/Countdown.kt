@@ -1,31 +1,41 @@
 package com.example.app
 
-import com.example.app.chronic.Instant
-import com.example.app.chronic.Duration
+import com.example.app.Instant
+import com.example.app.Duration
 
-/**
- * Represents the status of a countdown
- */
-enum class CountdownStatus {
-  Pending,   // Hasn't started yet
-  Running,   // Currently in progress
-  Finished   // Completed
-}
 
 /**
  * Represents a countdown from a start instant over a duration
  */
-data class Countdown(
+public data class Countdown(
   val from: Instant,
   var duration: Duration
 ) {
+  /**
+   * Represents the status of a countdown
+   */
+  public enum class Status {
+    Pending,   // Hasn't started yet
+    Running,   // Currently in progress
+    Finished   // Completed
+  }
+
   companion object {
     fun create(from: Instant, duration: Duration): Countdown = Countdown(from, duration)
   }
   
-  fun getFrom(): Instant = from
-  fun getTill(): Instant = from.plusOrMax(duration)
-  fun getTotalDuration(): Duration = duration
+  fun getFrom(): Instant {
+    return from
+  }
+
+  fun getTill(): Instant {
+    return from.plusOrMax(duration)
+  }
+
+  fun getTotalDuration(): Duration {
+    return duration
+  }
+
   fun setTotalDuration(newDuration: Duration) { 
     duration = newDuration 
   }
@@ -38,26 +48,43 @@ data class Countdown(
     return now.sinceOrZero(from)
   }
   
-  fun getElapsedTimeOrZero(now: Instant): Duration = 
-    min(getTimeSinceStartOrZero(now), duration)
+  fun getElapsedTimeOrZero(now: Instant): Duration {
+    return getTimeSinceStartOrZero(now).min(duration)
+  }
   
-  fun getRemainingTimeOrZero(now: Instant): Duration = 
-    duration.minusOrZero(getElapsedTimeOrZero(now))
+  fun getRemainingTimeOrZero(now: Instant): Duration {
+    return duration.minusOrZero(getElapsedTimeOrZero(now))
+  }
   
-  fun getTimeTillFinishOrZero(now: Instant): Duration = 
-    now.tillOrZero(getTill())
+  fun getTimeTillFinishOrZero(now: Instant): Duration {
+    return now.tillOrZero(getTill())
+  }
   
-  fun getStatus(now: Instant): CountdownStatus {
+  fun getStatus(now: Instant): Status {
     return when {
-      now.isEarlierThan(from) -> CountdownStatus.Pending
-      getElapsedTimeOrZero(now).isShorterThanOrEqualTo(duration) -> CountdownStatus.Running
-      else -> CountdownStatus.Finished
+      now.isEarlierThan(from) -> {
+        Status.Pending
+      }
+      getElapsedTimeOrZero(now).isShorterThanOrEqualTo(duration) -> {
+        Status.Running
+      }
+      else -> {
+        Status.Finished
+      }
     }
   }
   
-  fun isPending(now: Instant): Boolean = getStatus(now) == CountdownStatus.Pending
-  fun isRunning(now: Instant): Boolean = getStatus(now) == CountdownStatus.Running
-  fun isFinished(now: Instant): Boolean = getStatus(now) == CountdownStatus.Finished
+  fun isPending(now: Instant): Boolean {
+    return getStatus(now) == Status.Pending
+  }
+
+  fun isRunning(now: Instant): Boolean {
+    return getStatus(now) == Status.Running
+  }
+
+  fun isFinished(now: Instant): Boolean {
+    return getStatus(now) == Status.Finished
+  }
   
   fun extendByOrSetToMax(factor: Duration) {
     duration = duration.plusOrMax(factor)
@@ -70,9 +97,9 @@ data class Countdown(
     onFinished: (Countdown) -> R
   ): R {
     return when (getStatus(now)) {
-      CountdownStatus.Pending -> onPending(this)
-      CountdownStatus.Running -> onRunning(this)
-      CountdownStatus.Finished -> onFinished(this)
+      Status.Pending -> onPending(this)
+      Status.Running -> onRunning(this)
+      Status.Finished -> onFinished(this)
     }
   }
 }

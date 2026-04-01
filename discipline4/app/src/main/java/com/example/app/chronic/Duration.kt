@@ -1,13 +1,9 @@
 package com.example.app
 
-import arrow.core.Either
-import arrow.core.raise.either
-import arrow.core.right
-import kotlin.math.floor
-import kotlin.math.min
-import kotlin.math.max
-import com.example.app.TextualError
+import com.example.app.*
+import androidx.room.Entity
 
+@Entity
 @JvmInline
 public value class Duration private constructor(val milliseconds: Long) {
   companion object {
@@ -24,186 +20,208 @@ public value class Duration private constructor(val milliseconds: Long) {
     const val MAXIMUM_DAYS = MAXIMUM_HOURS / 24
     const val MAXIMUM_WEEKS = MAXIMUM_DAYS / 7
 
+    val DAY = Duration(MILLISECONDS_PER_DAY)
+
     /**
      * Creates a Duration from milliseconds
      */
-    fun fromMilliseconds(milliseconds: Long): Either<TextualError, Duration> = either {
+    fun fromMilliseconds(
+      milliseconds: Long,
+    ): Tried<Duration, TextualError> {
       if (milliseconds < 0) {
-        TextualError.create("Creating a Duration from milliseconds")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from milliseconds")
           .addMessage("Argument 'milliseconds' is negative: This Duration type only supports representing positive durations")
-          .addNumberAttachment("Argument 'milliseconds'", milliseconds.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'milliseconds'", milliseconds)
+        )
       }
       
       if (milliseconds > MAXIMUM_MILLISECONDS) {
-        TextualError.create("Creating a Duration from milliseconds")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from milliseconds")
           .addMessage("Argument 'milliseconds' is greater than maximum value")
-          .addNumberAttachment("Argument 'milliseconds'", milliseconds.toDouble())
-          .addNumberAttachment("Maximum value", MAXIMUM_MILLISECONDS.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'milliseconds'", milliseconds)
+          .addLongAttachment("Maximum value", MAXIMUM_MILLISECONDS)
+        )
       }
 
-      Duration(milliseconds).right().bind()
+      return Tried.success(Duration(milliseconds))
     }
 
     /**
      * Creates a Duration from seconds
      */
-    fun fromSeconds(seconds: Long): Either<TextualError, Duration> = either {
+    fun fromSeconds(
+      seconds: Long,
+    ): Tried<Duration, TextualError> {
       if (seconds < 0) {
-        TextualError.create("Creating a Duration from seconds")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from seconds")
           .addMessage("Argument 'seconds' is negative: This Duration type only supports representing positive durations")
-          .addNumberAttachment("Argument 'seconds'", seconds.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'seconds'", seconds)
+        )
       }
       
       if (seconds > MAXIMUM_SECONDS) {
-        TextualError.create("Creating a Duration from seconds")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from seconds")
           .addMessage("Argument 'seconds' is greater than maximum value")
-          .addNumberAttachment("Argument 'seconds'", seconds.toDouble())
-          .addNumberAttachment("Maximum value", MAXIMUM_SECONDS.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'seconds'", seconds)
+          .addLongAttachment("Maximum value", MAXIMUM_SECONDS)
+        )
       }
 
-      Duration(seconds * MILLISECONDS_PER_SECOND).right().bind()
+      return Tried.success(Duration(seconds * MILLISECONDS_PER_SECOND))
     }
 
     /**
      * Creates a Duration from minutes
      */
-    fun fromMinutes(minutes: Long): Either<TextualError, Duration> = either {
+    fun fromMinutes(
+      minutes: Long,
+    ): Tried<Duration, TextualError> {
       if (minutes < 0) {
-        TextualError.create("Creating a Duration from minutes")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from minutes")
           .addMessage("Argument 'minutes' is negative: This Duration type only supports representing positive durations")
-          .addNumberAttachment("Argument 'minutes'", minutes.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'minutes'", minutes)
+        )
       }
       
       if (minutes > MAXIMUM_MINUTES) {
-        TextualError.create("Creating a Duration from minutes")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from minutes")
           .addMessage("Argument 'minutes' is greater than maximum value")
-          .addNumberAttachment("Argument 'minutes'", minutes.toDouble())
-          .addNumberAttachment("Maximum value", MAXIMUM_MINUTES.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'minutes'", minutes)
+          .addLongAttachment("Maximum value", MAXIMUM_MINUTES)
+        )
       }
 
-      Duration(minutes * MILLISECONDS_PER_MINUTE).right().bind()
+      return Tried.success(Duration(minutes * MILLISECONDS_PER_MINUTE))
     }
 
     /**
      * Creates a Duration from hours
      */
-    fun fromHours(hours: Long): Either<TextualError, Duration> = either {
+    fun fromHours(
+      hours: Long,
+    ): Tried<Duration, TextualError> {
       if (hours < 0) {
-        TextualError.create("Creating a Duration from hours")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from hours")
           .addMessage("Argument 'hours' is negative: This Duration type only supports representing positive durations")
-          .addNumberAttachment("Argument 'hours'", hours.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'hours'", hours)
+        )
       }
       
       if (hours > MAXIMUM_HOURS) {
-        TextualError.create("Creating a Duration from hours")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from hours")
           .addMessage("Argument 'hours' is greater than maximum value")
-          .addNumberAttachment("Argument 'hours'", hours.toDouble())
-          .addNumberAttachment("Maximum value", MAXIMUM_HOURS.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'hours'", hours)
+          .addLongAttachment("Maximum value", MAXIMUM_HOURS)
+        )
       }
 
-      Duration(hours * MILLISECONDS_PER_HOUR).right().bind()
+      return Tried.success(Duration(hours * MILLISECONDS_PER_HOUR))
     }
 
     /**
      * Creates a Duration from days
      */
-    fun fromDays(days: Long): Either<TextualError, Duration> = either {
+    fun fromDays(
+      days: Long,
+    ): Tried<Duration, TextualError> {
       if (days < 0) {
-        TextualError.create("Creating a Duration from days")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from days")
           .addMessage("Argument 'days' is negative: This Duration type only supports representing positive durations")
-          .addNumberAttachment("Argument 'days'", days.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'days'", days)
+        )
       }
       
       if (days > MAXIMUM_DAYS) {
-        TextualError.create("Creating a Duration from days")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from days")
           .addMessage("Argument 'days' is greater than maximum value")
-          .addNumberAttachment("Argument 'days'", days.toDouble())
-          .addNumberAttachment("Maximum value", MAXIMUM_DAYS.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'days'", days)
+          .addLongAttachment("Maximum value", MAXIMUM_DAYS)
+        )
       }
 
-      Duration(days * MILLISECONDS_PER_DAY).right().bind()
+      return Tried.success(Duration(days * MILLISECONDS_PER_DAY))
     }
 
     /**
      * Creates a Duration from weeks
      */
-    fun fromWeeks(weeks: Long): Either<TextualError, Duration> = either {
+    fun fromWeeks(
+      weeks: Long,
+    ): Tried<Duration, TextualError> {
       if (weeks < 0) {
-        TextualError.create("Creating a Duration from weeks")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from weeks")
           .addMessage("Argument 'weeks' is negative: This Duration type only supports representing positive durations")
-          .addNumberAttachment("Argument 'weeks'", weeks.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'weeks'", weeks)
+        )
       }
       
       if (weeks > MAXIMUM_WEEKS) {
-        TextualError.create("Creating a Duration from weeks")
+        return Tried.failure(
+          TextualError.create("Creating a Duration from weeks")
           .addMessage("Argument 'weeks' is greater than maximum value")
-          .addNumberAttachment("Argument 'weeks'", weeks.toDouble())
-          .addNumberAttachment("Maximum value", MAXIMUM_WEEKS.toDouble())
-          .left()
-          .bind()
+          .addLongAttachment("Argument 'weeks'", weeks)
+          .addLongAttachment("Maximum value", MAXIMUM_WEEKS)
+        )
       }
 
-      Duration(weeks * MILLISECONDS_PER_WEEK).right().bind()
+      return Tried.success(Duration(weeks * MILLISECONDS_PER_WEEK))
     }
 
     /**
      * Creates a Duration from milliseconds or throws an exception
      */
     fun fromMillisecondsOrThrow(milliseconds: Long): Duration {
-      return fromMilliseconds(milliseconds).fold(
-        ifLeft = { error -> throw IllegalStateException(error.prettyPrint()) },
-        ifRight = { it }
-      )
+      return fromMilliseconds(milliseconds).getOrThrow()
     }
 
     /**
      * Returns a zero duration
      */
-    fun zero(): Duration = Duration(0)
-
-    private fun construct(milliseconds: Long): Duration = Duration(milliseconds)
+    fun zero(): Duration {
+      return Duration(0)
+    }
   }
 
-  /**
-   * Returns the total milliseconds of this duration
-   */
-  fun toTotalMilliseconds(): Long = milliseconds
+  fun toTotalMilliseconds(): Long {
+    return milliseconds
+  }
 
-  /**
-   * Returns the total minutes (floor) of this duration
-   */
-  fun toTotalMinutes(): Long = milliseconds / MILLISECONDS_PER_MINUTE
+  fun toTotalSeconds(): Long {
+    return milliseconds / MILLISECONDS_PER_SECOND
+  }
 
-  /**
-   * Returns true if this duration is zero
-   */
-  fun isZero(): Boolean = milliseconds == 0L
+  fun toTotalMinutes(): Long {
+    return this.milliseconds / MILLISECONDS_PER_MINUTE
+  }
 
-  /**
-   * Subtracts another duration, returns zero if result would be negative
-   */
+  fun toTotalHours(): Long {
+    return this.milliseconds / MILLISECONDS_PER_HOUR
+  }
+
+  fun toTotalDays(): Long {
+    return this.milliseconds / MILLISECONDS_PER_DAY
+  }
+
+  fun toTotalWeeks(): Long {
+    return this.milliseconds / MILLISECONDS_PER_WEEK
+  }
+
+
+  fun isZero(): Boolean {
+    return milliseconds == 0L
+  }
+
   fun minusOrZero(rhs: Duration): Duration {
     return if (milliseconds > rhs.milliseconds) {
       Duration(milliseconds - rhs.milliseconds)
@@ -212,42 +230,48 @@ public value class Duration private constructor(val milliseconds: Long) {
     }
   }
 
-  /**
-   * Adds another duration, caps at maximum value
-   */
   fun plusOrMax(rhs: Duration): Duration {
-    val result = milliseconds + rhs.milliseconds
-    return if (result <= MAXIMUM_MILLISECONDS) {
-      Duration(result)
-    } else {
+    return if (milliseconds >= MAXIMUM_MILLISECONDS - rhs.milliseconds) {
       Duration(MAXIMUM_MILLISECONDS)
+    } else {
+      Duration(milliseconds + rhs.milliseconds)
     }
   }
 
   /**
    * Returns true if this duration is equal to another
    */
-  fun isEqualTo(rhs: Duration): Boolean = milliseconds == rhs.milliseconds
+  fun isEqualTo(rhs: Duration): Boolean {
+    return milliseconds == rhs.milliseconds
+  }
 
   /**
    * Returns true if this duration is longer than another
    */
-  fun isLongerThan(rhs: Duration): Boolean = milliseconds > rhs.milliseconds
+  fun isLongerThan(rhs: Duration): Boolean {
+    return milliseconds > rhs.milliseconds
+  }
 
   /**
    * Returns true if this duration is longer than or equal to another
    */
-  fun isLongerThanOrEqualTo(rhs: Duration): Boolean = milliseconds >= rhs.milliseconds
+  fun isLongerThanOrEqualTo(rhs: Duration): Boolean {
+    return milliseconds >= rhs.milliseconds
+  }
 
   /**
    * Returns true if this duration is shorter than another
    */
-  fun isShorterThan(rhs: Duration): Boolean = milliseconds < rhs.milliseconds
+  fun isShorterThan(rhs: Duration): Boolean {
+    return milliseconds < rhs.milliseconds
+  }
 
   /**
    * Returns true if this duration is shorter than or equal to another
    */
-  fun isShorterThanOrEqualTo(rhs: Duration): Boolean = milliseconds <= rhs.milliseconds
+  fun isShorterThanOrEqualTo(rhs: Duration): Boolean {
+    return milliseconds <= rhs.milliseconds
+  }
 
   /**
    * Returns a human-readable string representation (e.g., "5d 3h 2m")
@@ -296,32 +320,25 @@ public value class Duration private constructor(val milliseconds: Long) {
     return parts.joinToString(" ")
   }
 
-  operator fun plus(other: Duration): Duration = plusOrMax(other)
-  operator fun minus(other: Duration): Duration = minusOrZero(other)
-  operator fun compareTo(other: Duration): Int = milliseconds.compareTo(other.milliseconds)
+  fun min(rhs: Duration): Duration {
+    return if (this.isShorterThan(rhs)) {
+      this 
+    } else {
+      rhs
+    }
+  }
+
+  fun max(rhs: Duration): Duration {
+    return if (this.isLongerThan(rhs)) {
+      this
+    } else {
+      rhs
+    }
+  }
+
+  // operator fun plus(other: Duration): Duration {
+  //   return plusOrMax(other)
+  // }
+  // operator fun minus(other: Duration): Duration = minusOrZero(other)
+  // operator fun compareTo(other: Duration): Int = milliseconds.compareTo(other.milliseconds)
 }
-
-// Extension functions for easier usage
-fun Duration.totalSeconds(): Long = this.milliseconds / Duration.MILLISECONDS_PER_SECOND
-fun Duration.totalMinutes(): Long = this.milliseconds / Duration.MILLISECONDS_PER_MINUTE
-fun Duration.totalHours(): Long = this.milliseconds / Duration.MILLISECONDS_PER_HOUR
-fun Duration.totalDays(): Long = this.milliseconds / Duration.MILLISECONDS_PER_DAY
-fun Duration.totalWeeks(): Long = this.milliseconds / Duration.MILLISECONDS_PER_WEEK
-
-// Convenience functions for creating durations
-fun milliseconds(value: Long): Either<TextualError, Duration> = Duration.fromMilliseconds(value)
-fun seconds(value: Long): Either<TextualError, Duration> = Duration.fromSeconds(value)
-fun minutes(value: Long): Either<TextualError, Duration> = Duration.fromMinutes(value)
-fun hours(value: Long): Either<TextualError, Duration> = Duration.fromHours(value)
-fun days(value: Long): Either<TextualError, Duration> = Duration.fromDays(value)
-fun weeks(value: Long): Either<TextualError, Duration> = Duration.fromWeeks(value)
-
-// Infix functions for natural language operations
-infix fun Duration.plusOrMax(other: Duration): Duration = this.plusOrMax(other)
-infix fun Duration.minusOrZero(other: Duration): Duration = this.minusOrZero(other)
-infix fun Duration.isLongerThan(other: Duration): Boolean = this.isLongerThan(other)
-infix fun Duration.isShorterThan(other: Duration): Boolean = this.isShorterThan(other)
-
-// Top-level functions for min/max
-fun min(lhs: Duration, rhs: Duration): Duration = if (lhs.isShorterThan(rhs)) lhs else rhs
-fun max(lhs: Duration, rhs: Duration): Duration = if (lhs.isLongerThan(rhs)) lhs else rhs

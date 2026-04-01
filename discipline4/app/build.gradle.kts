@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp") version "2.0.0-1.0.21"
 }
 
 android {
@@ -42,4 +43,11 @@ dependencies {
     // implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.0")
 
     testImplementation("junit:junit:4.13.2")
+
+
+    val room_version = "2.6.1" // Use the latest stable version
+    implementation("androidx.room:room-runtime:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+    // Optional - Kotlin Extensions and Coroutines support for Room
+    implementation("androidx.room:room-ktx:$room_version")
 }

@@ -1,35 +1,33 @@
 package com.example.app
 
 import com.example.app.*
-import androidx.room.Entity
 
 /**
- * Represents regulations for a single application
+ * Screen time regulations for device usage
  */
-@Entity
-public data class ApplicationRule private constructor(
+public data class ScreenRule private constructor(
   val countdownRules: CountdownRules,
   val timeRangeRules: TimeRangeRules,
-  val dailyTimeAllowanceRules: TimeAllowanceRules,
+  val timeAllowanceRules: TimeAllowanceRules
 ) {
   companion object {
     fun create(
       countdownRules: CountdownRules,
       timeRangeRules: TimeRangeRules,
-      dailyTimeAllowanceRules: TimeAllowanceRules
-    ): ApplicationRule {
-      return ApplicationRule(
-        countdownRules, 
-        timeRangeRules, 
-        dailyTimeAllowanceRules,
+      timeAllowanceRules: TimeAllowanceRules
+    ): ScreenRule {
+      return ScreenRule(
+        countdownRules,
+        timeRangeRules,
+        timeAllowanceRules
       )
     }
     
-    fun createDefault(): ApplicationRule {
-      return ApplicationRule(
+    fun createDefault(): ScreenRule {
+      return ScreenRule(
         countdownRules = CountdownRules.createDefault(),
         timeRangeRules = TimeRangeRules.createDefault(),
-        dailyTimeAllowanceRules = TimeAllowanceRules.createDefault()
+        timeAllowanceRules = TimeAllowanceRules.createDefault()
       )
     }
   }
@@ -43,20 +41,23 @@ public data class ApplicationRule private constructor(
   }
 
   fun getTimeAllowanceRules(): TimeAllowanceRules {
-    return dailyTimeAllowanceRules
+    return timeAllowanceRules
   }
   
-  fun isRestricted(
+  /**
+   * Checks if screen is restricted at the given time
+   */
+  fun isScreenRestricted(
     instant: Instant,
     time: Time,
-    dailyUsage: Duration,
+    screenUsageTime: Duration
   ): Boolean {
     return (
       countdownRules.isActive(instant) 
       ||
       timeRangeRules.isActiveAt(instant, time) 
       ||
-      dailyTimeAllowanceRules.isBlocking(instant, dailyUsage)
+      timeAllowanceRules.isBlocking(instant, screenUsageTime)
     )
-  }
+  }  
 }
