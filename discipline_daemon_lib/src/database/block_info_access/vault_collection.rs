@@ -1,12 +1,12 @@
 use super::*;
 
-static USER_ID: Key = Key::new("UserId");
-static VAULT_ID: Key = Key::new("VaultId");
-static VAULT_NAME: Key = Key::new("VaultName");
-static VAULT_PROTECTOR_ENUM_TYPE: Key = Key::new("VaultProtectorEnumType");
-static VAULT_PROTECTOR_ENUM_DATA_1: Key = Key::new("VaultProtectorEnumData1");
-static VAULT_PROTECTOR_ENUM_DATA_2: Key = Key::new("VaultProtectorEnumData2");
-static VAULT_PROTECTOR_ENUM_DATA_3: Key = Key::new("VaultProtectorEnumData3");
+static USER_ID: ColumnName = ColumnName::new("UserId");
+static VAULT_ID: ColumnName = ColumnName::new("VaultId");
+static VAULT_NAME: ColumnName = ColumnName::new("VaultName");
+static VAULT_PROTECTOR_ENUM_TYPE: ColumnName = ColumnName::new("VaultProtectorEnumType");
+static VAULT_PROTECTOR_ENUM_DATA_1: ColumnName = ColumnName::new("VaultProtectorEnumData1");
+static VAULT_PROTECTOR_ENUM_DATA_2: ColumnName = ColumnName::new("VaultProtectorEnumData2");
+static VAULT_PROTECTOR_ENUM_DATA_3: ColumnName = ColumnName::new("VaultProtectorEnumData3");
 
 pub struct VaultTable {
   name: String,

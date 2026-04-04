@@ -1,10 +1,10 @@
 use std::sync::{Mutex, MutexGuard};
 use std::path::{Path, PathBuf};
 use crate::x::{IsTextualError, OptionalTextualErrorContext};
-use super::{Logger, ClientConnection, EstablishConnectionError, UserNameRef, ModuleConfiguration};
+use super::{SystemLogger, ClientConnection, EstablishConnectionError, UserNameRef, ModuleConfiguration};
 
 struct ModuleData {
-  logger: Logger,
+  logger: SystemLogger,
   configuration: ModuleConfiguration,
   connection: ClientConnection,  
 }
@@ -41,7 +41,7 @@ impl ModuleDataMutex {
 
     // TODO: Add more context to the textual error
     let connection = ClientConnection::connect(
-      &configuration.discipline_daemon_unix_domain_server_path, 
+      configuration.discipline_daemon_unix_domain_server_path.clone(), 
       &configuration.authentication_token,
       &mut textual_error,
     )?;
@@ -56,7 +56,7 @@ impl ModuleDataMutex {
   }
 
   fn lock(&self) -> Result<MutexGuard<'_, ModuleData>, ()> {
-    todo!()
+    self.mutex.lock().map_err(|_| ())
   }
 
   pub fn is_user_session_open_blocked(&self, user_name: UserNameRef<'_>) -> bool {

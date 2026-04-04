@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Countdown, CountdownStatus, MonotonicInstant, Duration};
+use crate::x::{Countdown, CountdownStatus, Instant, Duration};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CountdownAfterPleaConditionalStatus {
@@ -25,8 +25,8 @@ impl CountdownAfterPleaConditionalStatus {
 /// A conditional that is always 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CountdownAfterPleaConditional {
-  duration: Duration,
-  countdown: Option<Countdown>,
+  pub duration: Duration,
+  pub countdown: Option<Countdown>,
 }
 
 impl CountdownAfterPleaConditional {
@@ -48,7 +48,7 @@ impl CountdownAfterPleaConditional {
     &self.countdown
   }
   
-  pub fn status(&self, now: MonotonicInstant) -> CountdownAfterPleaConditionalStatus {
+  pub fn status(&self, now: Instant) -> CountdownAfterPleaConditionalStatus {
     let Some(countdown) = &self.countdown else {
       return CountdownAfterPleaConditionalStatus::Active;
     };
@@ -70,7 +70,7 @@ impl CountdownAfterPleaConditional {
     self.countdown = None;
   }
 
-  pub fn deactivate(&mut self, now: MonotonicInstant) {
+  pub fn deactivate(&mut self, now: Instant) {
     self.countdown = Some(Countdown::construct(now, self.duration))
   }
 }
@@ -88,7 +88,7 @@ impl Creator {
 
 // pub mod procedures {
 //   use serde::{Serialize, Deserialize};
-//   use crate::x::{MonotonicInstant, CountdownAfterPleaConditionalX};
+//   use crate::x::{Instant, CountdownAfterPleaConditionalX};
 
 //   #[derive(Debug, Clone, Serialize, Deserialize)]
 //   pub struct Activate;
@@ -102,7 +102,7 @@ impl Creator {
 //   impl Activate {
 //     pub fn execute(
 //       self,
-//       instant: MonotonicInstant,
+//       instant: Instant,
 //       conditional: &mut CountdownAfterPleaConditionalX,
 //     ) -> ActivateReturn {
 //       if conditional.is_activated_or_deactivating(instant) {
@@ -127,7 +127,7 @@ impl Creator {
 //   impl Deactivate {
 //     pub fn execute(
 //       self, 
-//       instant: MonotonicInstant,
+//       instant: Instant,
 //       conditional: &mut CountdownAfterPleaConditionalX,
 //     ) -> DeactivateReturn {
 //       if conditional.is_deactivated(instant) {
@@ -157,7 +157,7 @@ impl Creator {
 //   impl Procedure {
 //     pub fn execute(
 //       self, 
-//       instant: MonotonicInstant,
+//       instant: Instant,
 //       conditional: &mut CountdownAfterPleaConditionalX,
 //     ) -> Return {
 //       match self {

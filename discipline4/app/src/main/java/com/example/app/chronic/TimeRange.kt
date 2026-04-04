@@ -22,59 +22,53 @@ public data class TimeRange private constructor(
     /**
      * Creates a TimeRange from timestamps
      */
-    fun fromTimestamps(from: Int, till: Int, textualError: TextualError): TimeRange? {
+    fun fromTimestampsOrThrow(from: Int, till: Int): TimeRange {
       if (from < MINIMUM_FROM_TIMESTAMP) {
-        textualError 
-          .changeContext("Creating a TimeRange from timestamps")
+        throw TextualError 
+          .create("Creating a TimeRange from timestamps")
           .addMessage("Argument 'from' is less than the minimum valid value")
           .addIntAttachment("Argument 'from'", from)
           .addIntAttachment("Minimum valid value", MINIMUM_FROM_TIMESTAMP)
-        return null
       }
       
       if (from > MAXIMUM_FROM_TIMESTAMP) {
-        textualError 
-          .changeContext("Creating a TimeRange from timestamps")
+        throw TextualError 
+          .create("Creating a TimeRange from timestamps")
           .addMessage("Argument 'from' is greater than the maximum valid value")
           .addIntAttachment("Argument 'from'", from)
           .addIntAttachment("Maximum valid value", MAXIMUM_FROM_TIMESTAMP)
-        return null
       }
       
       if (till < MINIMUM_TILL_TIMESTAMP) {
-        textualError 
-          .changeContext("Creating a TimeRange from timestamps")
+        throw TextualError 
+          .create("Creating a TimeRange from timestamps")
           .addMessage("Argument 'till' is less than the minimum valid value")
           .addIntAttachment("Argument 'till'", till)
           .addIntAttachment("Minimum valid value", MINIMUM_TILL_TIMESTAMP)
-        return null
       }
       
       if (till > MAXIMUM_TILL_TIMESTAMP) {
-        textualError 
-          .changeContext("Creating a TimeRange from timestamps")
+        throw TextualError 
+          .create("Creating a TimeRange from timestamps")
           .addMessage("Argument 'till' is greater than the maximum valid value")
           .addIntAttachment("Argument 'till'", till)
           .addIntAttachment("Maximum valid value", MAXIMUM_TILL_TIMESTAMP)
-        return null
       }
       
       if (from > till) {
-        textualError 
-          .changeContext("Creating a TimeRange from timestamps")
+        throw TextualError 
+          .create("Creating a TimeRange from timestamps")
           .addMessage("Argument 'from' is greater than 'till', thereby referring to a later time")
           .addIntAttachment("Argument 'from'", from)
           .addIntAttachment("Argument 'till'", till)
-        return null
       }
       
       if (till - from >= Duration.MILLISECONDS_PER_DAY) {
-        textualError 
-          .changeContext("Creating a TimeRange from timestamps")
+        throw TextualError 
+          .create("Creating a TimeRange from timestamps")
           .addMessage("Arguments 'from' and 'till' specify a time range that is longer than 24 hours")
           .addIntAttachment("Argument 'from'", from)
           .addIntAttachment("Argument 'till'", till)
-        return null
       }
       
       return TimeRange(from, till)
@@ -107,24 +101,20 @@ public data class TimeRange private constructor(
    * Returns the start time of this range (normalized to a 24-hour clock)
    */
   fun getFrom(): Time {
-    val textualError = TextualError.createEmpty()
-
-    return Time.fromTimestamp(fromTimestamp, textualError) ?: throw textualError
+    return Time.fromTimestampOrThrow(fromTimestamp)
   }
   
   /**
    * Returns the end time of this range (normalized to a 24-hour clock)
    */
   fun getTill(): Time {
-    val textualError = TextualError.createEmpty()
-
     val timestamp = if (tillTimestamp <= MAXIMUM_FROM_TIMESTAMP) {
       tillTimestamp
     } else {
       tillTimestamp - Time.MAXIMUM_TIMESTAMP
     }
     
-    return Time.fromTimestamp(timestamp, textualError) ?: throw textualError
+    return Time.fromTimestampOrThrow(timestamp)
   }
   
   /**

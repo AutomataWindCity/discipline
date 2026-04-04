@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Countdown, Duration, MonotonicInstant};
+use crate::x::{Countdown, Duration, Instant};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CountdownConditional {
   pub duration: Duration,
-  pub countdown: Option<Countdown>,
+  pub countdown: Countdown,
 }
 
 impl CountdownConditional {
@@ -22,7 +22,7 @@ impl CountdownConditional {
     }
   }
 
-  pub fn is_activated(&self, now: MonotonicInstant) -> bool {
+  pub fn is_activated(&self, now: Instant) -> bool {
     match &self.countdown {
       Some(countdown) if countdown.is_running(now) => {
         true
@@ -33,7 +33,7 @@ impl CountdownConditional {
     }
   }
 
-  pub fn activate(&mut self, now: MonotonicInstant) {
+  pub fn activate(&mut self, now: Instant) {
     self.countdown = Some(Countdown::construct(
       now, 
       self.duration,
@@ -57,7 +57,7 @@ impl Creator {
 
 // pub mod procedures {
 //   use serde::{Serialize, Deserialize};
-//   use crate::x::{MonotonicInstant, CountdownConditional};
+//   use crate::x::{Instant, CountdownConditional};
 
 //   #[derive(Debug, Clone, Serialize, Deserialize)]
 //   pub struct Activate;
@@ -71,7 +71,7 @@ impl Creator {
 //   impl Activate {
 //     pub fn execute(
 //       self, 
-//       now: MonotonicInstant, 
+//       now: Instant, 
 //       conditional: &mut CountdownConditional,
 //     ) -> ActivateSuccess {
 //       if conditional.is_activated(now) {
@@ -94,7 +94,7 @@ impl Creator {
 //   impl Procedure {
 //     pub fn execute(
 //       self, 
-//       now: MonotonicInstant, 
+//       now: Instant, 
 //       conditional: &mut CountdownConditional,
 //     ) -> ProcedureSuccess {
 //       match self {

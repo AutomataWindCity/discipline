@@ -1,5 +1,4 @@
 use core::fmt;
-
 use crate::x::{TextualErrorContext, ToTextualError};
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]

@@ -1,22 +1,141 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use crate::x::{CountdownAfterPleaConditional, CountdownConditional, MonotonicInstant, Time, TimeRange, UuidV4};
+use crate::x::{Countdown, CountdownState, Duration, Instant, Time, TimeRange, UuidV4, TextualError};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RuleProtector {
-  Countdown(CountdownConditional),
-  CountdownAfterPlea(CountdownAfterPleaConditional),
+pub enum RuleEnablerType {
+  Countdown = 0,
+  CountdownAfterPlea = 1,
 }
 
-impl RuleProtector {
-  pub fn is_active(&self, now: MonotonicInstant) -> bool {
-    match self {
-      Self::Countdown(conditional) => {
-        conditional.is_activated(now)
+impl RuleEnablerType {
+  pub fn from_number(number: u8) -> Result<Self, TextualError> {
+    match number {
+      0 => {
+        Ok(Self::Countdown)
       }
-      Self::CountdownAfterPlea(conditional) => {
-        let status = conditional.status(now);
-        status.is_active() || status.is_deactivaing()
+      1 => {
+        Ok(Self::CountdownAfterPlea)
+      }
+      _ => {
+        Err(TextualError::new("action"))
+      }
+    }
+  }
+
+  pub fn to_number(self) -> u8 {
+    self as u8
+  }
+}
+
+pub struct CountdownEnabler {
+  pub duration: Duration,
+  pub countdown: Option<Countdown>,
+}
+
+impl CountdownEnabler {
+  pub fn is_rule_enabled(&self, time: Instant) -> bool {
+    matches!(self.countdown, Some(countdown) if countdown.is_running(time))
+  }
+
+  pub fn enable_rule(&mut self, time: Instant) {
+    self.countdown = Some(Countdown::construct(time, self.duration));
+  }
+}
+
+pub struct CountdownAfterPleaEnabler {
+  pub duration: Duration,
+  pub countdown: Option<Countdown>,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CountdownAfterPleaEnablerState {
+  Active,
+  Deactivating,
+  Deactivated,
+}
+
+impl CountdownAfterPleaEnablerState {
+  pub fn is_active(&self) -> bool {
+    matches!(self, Self::Active)
+  }
+  
+  pub fn is_deactivaing(&self) -> bool {
+    matches!(self, Self::Deactivating)
+  }
+  
+  pub fn is_deactivated(&self) -> bool {
+    matches!(self, Self::Deactivated)
+  }
+}
+
+impl CountdownAfterPleaEnabler {
+  pub fn create(duration: Duration) -> Self {
+    Self {
+      duration,
+      countdown: None,
+    }
+  }
+
+  pub fn construct(duration: Duration, countdown: Option<Countdown>) -> Self {
+    Self { 
+      duration,
+      countdown,
+    }
+  }
+  
+  pub fn get_state(&self, now: Instant) -> CountdownAfterPleaEnablerState {
+    let Some(countdown) = &self.countdown else {
+      return CountdownAfterPleaEnablerState::Active;
+    };
+
+    match countdown.get_state(now) {
+      CountdownState::Pending => {
+        CountdownAfterPleaEnablerState::Active
+      }
+      CountdownState::Running => {
+        CountdownAfterPleaEnablerState::Deactivating
+      }
+      CountdownState::Finished => {
+        CountdownAfterPleaEnablerState::Deactivated
+      }
+    }
+  }
+
+  pub fn is_rule_enabled(&self, time: Instant) -> bool {
+    matches!(
+      self.get_state(time), 
+      CountdownAfterPleaEnablerState::Active 
+      | 
+      CountdownAfterPleaEnablerState::Deactivating,
+    )
+  }
+
+  pub fn enable_rule(&mut self) {
+    self.countdown = None;
+  }
+
+  pub fn disable_rule(&mut self, now: Instant) {
+    self.countdown = Some(Countdown::construct(now, self.duration))
+  }
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RuleEnabler {
+  Countdown(CountdownEnabler),
+  CountdownAfterPlea(CountdownAfterPleaEnabler),
+}
+
+impl RuleEnabler {
+  pub fn is_rule_enabled(&self, time: Instant) -> bool {
+    match self {
+      Self::Countdown(enabler) => {
+        enabler.is_rule_enabled(time)
+      }
+      Self::CountdownAfterPlea(enabler) => {
+        enabler.is_rule_enabled(time)
       }
     }
   }
@@ -24,23 +143,27 @@ impl RuleProtector {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeRangeRule {
-  protector: RuleProtector,
-  activator: TimeRange,
+  pub enabler: RuleEnabler,
+  pub condition: TimeRange,
 }
 
 impl TimeRangeRule {
-  pub fn is_active(
+  pub fn is_enabled(&self, time: Instant) -> bool {
+    self.enabler.is_rule_enabled(time)
+  }
+
+  pub fn is_activated(
     &self, 
     time: Time,
-    instant: MonotonicInstant,
+    instant: Instant,
   ) -> bool {
-    self.protector.is_active(instant)
+    self.enabler.is_rule_enabled(instant)
     &&
-    self.activator.contains(time)
+    self.condition.contains(time)
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TimeRangeRules {
   rules: HashMap<UuidV4, TimeRangeRule>,
 }
@@ -55,29 +178,30 @@ impl TimeRangeRules {
   pub fn are_some_active(
     &self,
     time: Time,
-    instant: MonotonicInstant,
+    instant: Instant,
   ) -> bool {
     self.rules.values().any(|rule| {
-      rule.is_active(time, instant)
+      rule.is_activated(time, instant)
     })
   }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlwaysRule {
-  enabled: bool,
-  protector: RuleProtector,
+  pub enabler: RuleEnabler,
 }
 
 impl AlwaysRule {
-  pub fn is_active(&self, now: MonotonicInstant) -> bool {
-    self.enabled 
-    &&
-    self.protector.is_active(now)
+  pub fn is_enabled(&self, now: Instant) -> bool {
+    self.enabler.is_rule_enabled(now)
+  }
+
+  pub fn is_active(&self, now: Instant) -> bool {
+    self.enabler.is_rule_enabled(now)
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AlwaysRules {
   rules: HashMap<UuidV4, AlwaysRule>,
 }
@@ -89,12 +213,45 @@ impl AlwaysRules {
     }
   }
 
-  pub fn are_some_active(&self, now: MonotonicInstant) -> bool {
+  pub fn are_some_active(&self, now: Instant) -> bool {
     self.rules.values().any(|rule| {
       rule.is_active(now)
     })
   }
 }
+
+pub struct TimeAllowanceRule {
+  pub enabler: RuleEnabler,
+  pub allowance: Duration,
+}
+
+impl TimeAllowanceRule {
+  pub fn construct(
+    enabler: RuleEnabler,
+    allowance: Duration,
+  ) -> Self {
+    Self {
+      enabler,
+      allowance,
+    }
+  }
+
+  pub fn is_enabled(&self, now: Instant) -> bool {
+    self.enabler.is_rule_enabled(now)
+  }
+
+  pub fn is_active(&self, now: Instant, used_allowance: Duration) -> bool {
+    self.is_enabled(now)
+    &&
+    used_allowance.is_longer_than_or_equal_to(self.allowance)
+  }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct TimeAllowanceRules {
+  rules: HashMap<UuidV4, TimeAllowanceRules>,
+}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RulesStats {
@@ -110,236 +267,3 @@ impl RulesStats {
     }
   }
 }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub enum RuleEnabler {
-//   Countdown(CountdownConditional),
-//   CountdownAfterPlea(CountdownAfterPleaConditional),
-// }
-
-// impl RuleEnabler {
-//   pub fn evaluate(&self, now: MonotonicInstant) -> bool {
-//     match self {
-//       RuleEnabler::Countdown(inner) => {
-//         inner.is_activated(now)
-//       }
-//       RuleEnabler::CountdownAfterPlea(inner) => {
-//         inner.is_activat_or_deactivating(now)
-//       }
-//     }
-//   }
-
-//   pub fn activate(&mut self, now: MonotonicInstant) {
-//     match self {
-//       RuleEnabler::Countdown(inner) => {
-//         inner.activate(now);
-//       }
-//       RuleEnabler::CountdownAfterPlea(inner) => {
-//         inner.activate()
-//       }
-//     }
-//   }
-
-//   pub fn deactivate(&mut self, now: MonotonicInstant) {
-//     match self {
-//       RuleEnabler::Countdown(_inner) => {
-//         // noop
-//       }
-//       RuleEnabler::CountdownAfterPlea(inner) => {
-//         inner.deactivate(now);
-//       }
-//     }
-//   }
-// }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub struct Rule {
-//   activator: RuleActivator,
-//   pub(super) enabler: RuleEnabler,  
-// }
-
-// impl Rule {
-//     pub fn new(
-//     activator: RuleActivator,
-//     enabler: RuleEnabler,
-//   ) -> Self {
-//     Self {
-//       activator,
-//       enabler,
-//     }
-//   }
-
-//   pub fn construct(
-//     activator: RuleActivator,
-//     enabler: RuleEnabler,
-//   ) -> Self {
-//     Self {
-//       activator,
-//       enabler,
-//     }
-//   }
-  
-//   pub fn activator(&self) -> &RuleActivator {
-//     &self.activator
-//   }
-
-//   pub fn enabler(&self) -> &RuleEnabler {
-//     &self.enabler
-//   }
-
-//   pub fn enabler_mut(&mut self) -> &mut RuleEnabler {
-//     &mut self.enabler
-//   }
-
-//   pub fn set_enabler(&mut self, new_value: RuleEnabler) {
-//     self.enabler = new_value;
-//   }
-
-//   pub fn is_activated(&self, time: Time, weekday: Weekday) -> bool {
-//     self.activator.evaluate(time, weekday)
-//   }
-
-//   pub fn is_effective(
-//     &self, 
-//     now: MonotonicInstant,
-//     time: Time, 
-//     weekday: Weekday,
-//   ) -> bool {
-//     self.enabler.evaluate(now)
-//     &&
-//     self.activator.evaluate(time, weekday)
-//   }
-
-//   pub fn is_enabled(&self, now: MonotonicInstant) -> bool {
-//     self.enabler.evaluate(now)
-//   }
-
-//   pub fn activate(&mut self, now: MonotonicInstant) {
-//     self.enabler.activate(now);
-//   }
-
-//   pub fn deactivate(&mut self, now: MonotonicInstant) {
-//     self.enabler.deactivate(now);
-//   }
-// }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub enum RuleOwnerLocator {
-//   UserDeviceAccessRegulation {
-//     user_id: UuidV4,
-//   },
-//   UserInternetAccessRegulation {
-//     user_id: UuidV4,
-//   },
-//   UserAccountAccessRegulation {
-//     user_id: UuidV4,
-//   },
-// }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub struct RuleGroup {
-//   pub rules: HashMap<UuidV4, Rule>,
-// }
-
-// impl RuleGroup {
-//   pub fn new() -> Self {
-//     Self {
-//       rules: HashMap::new(),
-//     }
-//   }
-
-//   pub fn construct(rules: HashMap<UuidV4, Rule>) -> Self {
-//     Self { 
-//       rules,
-//     }
-//   }
-
-//   pub fn are_some_rules_enabled(&self, now: MonotonicInstant) -> bool {
-//     self.rules.values().any(|it| it.is_enabled(now))
-//   }
-
-//   pub fn add_rule(&mut self, rule_id: UuidV4, rule: Rule) {
-//     self.rules.insert(rule_id, rule);
-//   }
-
-//   pub fn get_rule_mut(&mut self, rule_id: &UuidV4) -> Option<&mut Rule> {
-//     self.rules.get_mut(rule_id)
-//   }
-
-//   pub fn delete_rule(&mut self, rule_id: &UuidV4) {
-//     self.rules.remove(rule_id);
-//   }
-// }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub struct RulesSingleton {
-//   pub rule_number: usize,
-//   pub maximum_rule_number: usize,
-// }
-
-// impl Default for RulesSingleton {
-//   fn default() -> Self {
-//     Self {
-//       rule_number: 0,
-//       maximum_rule_number: 500,
-//     }
-//   }
-// }
-
-// impl RulesSingleton {
-//   pub fn new(maximum_rule_number: usize) -> Self {
-//     Self {
-//       rule_number: 0,
-//       maximum_rule_number,
-//     }
-//   }
-
-//   pub fn reached_maximum_rule_number(&self) -> bool {
-//     self.rule_number >= self.maximum_rule_number
-//   }
-
-//   pub fn increment_rule_number(&mut self) {
-//     // TODO: Do better error handling and logging
-    
-//     self.rule_number = self.rule_number.saturating_add(1);
-//   }
-
-//   pub fn decrement_rule_number(&mut self) {
-//     // TODO: Do better error handling and logging
-
-//     self.rule_number = self.rule_number.saturating_sub(1);
-//   }
-// }
-
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub enum Location {
-//   UserDeviceAccessRegulation { user_id: UuidV4 },
-//   UserAccountAccessRegulation { user_id: UuidV4 },
-//   UserInternetAccessRegulation { user_id: UuidV4 },
-// }
-
-// pub enum LocationRef<'a> {
-//   UserDeviceAccessRegulation { user_id: &'a UuidV4 },
-//   UserAccountAccessRegulation { user_id: &'a UuidV4 },
-//   UserInternetAccessRegulation { user_id: &'a UuidV4 },
-// }
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub enum RuleActivator {
-//   Time(TimeConditional),
-//   Always(AlwaysConditional),
-// }
-
-// impl RuleActivator {
-//   pub fn evaluate(&self, time: Time, weekday: Weekday) -> bool {
-//     match self {
-//       RuleActivator::Time(inner) => {
-//         inner.evaulate(time, weekday)
-//       }
-//       RuleActivator::Always(inner) => {
-//         inner.evaulate()
-//       }
-//     }
-//   }
-// }

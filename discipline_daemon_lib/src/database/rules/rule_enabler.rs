@@ -35,13 +35,13 @@ impl RuleEnablerType {
   }
 }
 
-impl WriteScalarValue for RuleEnablerType {
+impl ScalarWrite for RuleEnablerType {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(&value.to_number());
   }
 }
 
-impl ReadScalarValue for RuleEnablerType {
+impl ScalarRead for RuleEnablerType {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     reader
       .read_scalar_value()
@@ -50,17 +50,17 @@ impl ReadScalarValue for RuleEnablerType {
 }
 
 pub struct RuleEnablerSchema {
-  enum_type: Key,
+  enum_type: ColumnName,
   enum_countdown: conditionals::countdown::database::Schema,
   enum_countdown_after_plea: conditionals::countdown_after_plea::database::Schema,
 }
 
 impl RuleEnablerSchema {
   pub fn new(
-    enum_type: Key,
-    enum_data_1: Key,
-    enum_data_2: Key,
-    enum_data_3: Key,
+    enum_type: ColumnName,
+    enum_data_1: ColumnName,
+    enum_data_2: ColumnName,
+    enum_data_3: ColumnName,
   ) -> Self {
     Self {
       enum_type,

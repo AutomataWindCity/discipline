@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{MonotonicInstant, User, UserGroup, UserName, UuidV4, Database, operating_system, Daemon};
+use crate::x::{Instant, User, UserGroup, UserName, UuidV4, Database, operating_system, Daemon};
 use super::{database, UsersSingleton};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,7 +76,7 @@ pub async fn delete_user(
   database: &Database,
   user_group: &mut UserGroup,
   user_id: &UuidV4,
-  now: MonotonicInstant,
+  now: Instant,
 ) -> DeleteUserReturn {
   let Some(user) = user_group.get_user(user_id) else {
     return DeleteUserReturn::NoSuchUser;

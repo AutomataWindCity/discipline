@@ -5,25 +5,25 @@ use crate::x::{Database, MonotonicClock, RuleGroup, State, TextualError, User, U
 use crate::x::database::*;
 use crate::x::database;
 
-static ID: Key = Key::new("ID");
+static ID: ColumnName = ColumnName::new("ID");
 
-static CLOCK_MILLISECONDS: Key = Key::new("ClockMilliseconds");
-static CLOCK_PREVIOUS_SYNCHRONIZATION_TIME: Key = Key::new("ClockPreviousSynchronizationTime");
-static CLOCK_SYNCHRONIZATION_INTERVAL: Key = Key::new("ClockSynchronizationInterval");
+static CLOCK_MILLISECONDS: ColumnName = ColumnName::new("ClockMilliseconds");
+static CLOCK_PREVIOUS_SYNCHRONIZATION_TIME: ColumnName = ColumnName::new("ClockPreviousSynchronizationTime");
+static CLOCK_SYNCHRONIZATION_INTERVAL: ColumnName = ColumnName::new("ClockSynchronizationInterval");
 
-static RULES_RULE_NUMBER: Key = Key::new("RulesNumber");
-static RULES_MAXIMUM_RULE_NUMBER: Key = Key::new("RulesMaximumNumber");
+static RULES_RULE_NUMBER: ColumnName = ColumnName::new("RulesNumber");
+static RULES_MAXIMUM_RULE_NUMBER: ColumnName = ColumnName::new("RulesMaximumNumber");
 
-static BLOCK_INFO_ACCESS_VAULT_NUMBER: Key = Key::new("BlockInfoAccessVaultNumber");
-static BLOCK_INFO_ACCESS_VAULT_MAXIMUM_NUMBER: Key = Key::new("BlockInfoAccessMaximumVaultNumber");
-static BLOCK_INFO_ACCESS_DATA_NUMBER: Key = Key::new("BlockInfoAccessDatumNumber");
-static BLOCK_INFO_ACCESS_DATA_MAXIMUM_NUMBER: Key = Key::new("BlockInfoAccessMaximumDatumNumber");
+static BLOCK_INFO_ACCESS_VAULT_NUMBER: ColumnName = ColumnName::new("BlockInfoAccessVaultNumber");
+static BLOCK_INFO_ACCESS_VAULT_MAXIMUM_NUMBER: ColumnName = ColumnName::new("BlockInfoAccessMaximumVaultNumber");
+static BLOCK_INFO_ACCESS_DATA_NUMBER: ColumnName = ColumnName::new("BlockInfoAccessDatumNumber");
+static BLOCK_INFO_ACCESS_DATA_MAXIMUM_NUMBER: ColumnName = ColumnName::new("BlockInfoAccessMaximumDatumNumber");
 
-static USERS_MAXIMUM_USER_NUMBER: Key = Key::new("MaximumUserNumber");
+static USERS_MAXIMUM_USER_NUMBER: ColumnName = ColumnName::new("MaximumUserNumber");
 
 pub struct SingletonSchema {
-  id: Key,
-  clock_singleton: MonotonicClockSchema,
+  id: ColumnName,
+  clock_singleton: MonotonicClockColumnNames,
   users_singleton: database::users::SingletonSchema,
   rules_singleton: database::rules::CrossRuleGroupInfoSchema,
   vaults_singleton: database::block_info_access::SingletonSchema,
@@ -33,7 +33,7 @@ impl SingletonSchema {
   pub fn new() -> Self {
     Self {
       id: ID,
-      clock_singleton: MonotonicClockSchema::new(
+      clock_singleton: MonotonicClockColumnNames::new(
         CLOCK_MILLISECONDS,
         CLOCK_PREVIOUS_SYNCHRONIZATION_TIME,
         CLOCK_SYNCHRONIZATION_INTERVAL,

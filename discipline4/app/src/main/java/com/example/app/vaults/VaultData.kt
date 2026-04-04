@@ -31,6 +31,19 @@ public value class VaultData private constructor(val value: String) {
       
       return Tried.success(VaultData(string))
     }
+
+    fun createOrThrow(string: String): VaultData {
+      if (string.length < MINIMUM_LENGTH || string.length > MAXIMUM_LENGTH) {
+        throw TextualError.create("Creating VaultData from string")
+          .addMessage("String violates length invariants")
+          .addNumberAttachment("Minimum length", MINIMUM_LENGTH.toDouble())
+          .addNumberAttachment("Maximum length", MAXIMUM_LENGTH.toDouble())
+          .addNumberAttachment("Provided string length", string.length.toDouble())
+          .addStringAttachment("Provided string", string)
+      }
+
+      return VaultData(string)
+    }
     
     /**
      * Creates VaultData without validation (use with caution)

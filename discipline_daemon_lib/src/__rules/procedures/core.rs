@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use crate::x::{Database, MonotonicInstant, UuidV4};
+use crate::x::{Database, Instant, UuidV4};
 use crate::x::rules::{Rule, RuleGroup, RuleActivatorCreator, RuleEnablerCreator, RulesSingleton, Location, database};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,7 +69,7 @@ pub async fn delete_rule(
   rule_group: &mut RuleGroup,
   cross_group_info: &mut RulesSingleton,
   rule_id: &UuidV4,
-  now: MonotonicInstant,
+  now: Instant,
 ) -> DeleteRuleReturn {
   let Some(rule) = rule_group.get_rule_mut(rule_id) else {
     return DeleteRuleReturn::NoSuchRule;
@@ -108,7 +108,7 @@ pub async fn activate_rule(
   location: &Location,
   rule_group: &mut RuleGroup,
   rule_id: &UuidV4,
-  now: MonotonicInstant,
+  now: Instant,
 ) -> ActivateRuleReturn {
   let Some(rule) = rule_group.get_rule_mut(rule_id) else {
     return ActivateRuleReturn::NoSuchRule;
@@ -146,7 +146,7 @@ pub async fn deactivate_rule(
   location: &Location,
   rule_group: &mut RuleGroup,
   rule_id: &UuidV4,
-  now: MonotonicInstant,
+  now: Instant,
 ) -> DeactivateRuleReturn {
   let Some(rule) = rule_group.get_rule_mut(rule_id) else {
     return DeactivateRuleReturn::NoSuchRule;

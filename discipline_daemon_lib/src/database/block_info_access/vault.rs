@@ -1,21 +1,21 @@
 use super::*;
 
 pub struct VaultSchema {
-  pub user_id: Key,
-  pub vault_id: Key,
-  pub vault_name: Key,
+  pub user_id: ColumnName,
+  pub vault_id: ColumnName,
+  pub vault_name: ColumnName,
   pub vault_protector: ProtectorSchema,
 }
 
 impl VaultSchema {
   pub fn new(
-    user_id: Key,
-    vault_id: Key,
-    vault_name: Key,
-    vault_protector_enum_type: Key,
-    vault_protector_enum_data_1: Key,
-    vault_protector_enum_data_2: Key,
-    vault_protector_enum_data_3: Key,
+    user_id: ColumnName,
+    vault_id: ColumnName,
+    vault_name: ColumnName,
+    vault_protector_enum_type: ColumnName,
+    vault_protector_enum_data_1: ColumnName,
+    vault_protector_enum_data_2: ColumnName,
+    vault_protector_enum_data_3: ColumnName,
   ) -> Self {
     Self {
       user_id,

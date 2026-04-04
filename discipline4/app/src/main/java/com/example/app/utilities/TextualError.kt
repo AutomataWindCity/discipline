@@ -70,6 +70,12 @@ public class TextualError private constructor(
         context.attachments.add(
             TextualErrorAttachment.create(name, sw.toString())
         )
+
+    //     return buildString {
+    //     appendLine(throwable::class.java.name)
+    //     appendLine(throwable.message ?: "No message")
+    //     appendLine(throwable.stackTrace.joinToString("\n") { it.toString() })
+    // }
         return this
     }
     

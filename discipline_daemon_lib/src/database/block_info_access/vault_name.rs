@@ -1,12 +1,12 @@
 use super::*;
 
-impl WriteScalarValue for VaultName {
+impl ScalarWrite for VaultName {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(&value.as_ref());
   }
 }
 
-impl ReadScalarValue for VaultName {
+impl ScalarRead for VaultName {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     reader
       .read_scalar_value()

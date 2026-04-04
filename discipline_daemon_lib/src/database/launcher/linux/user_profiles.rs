@@ -7,13 +7,13 @@ enum ReadScalarValueError {
   CreateValueError(String),
 }
 
-impl WriteScalarValue for UserName {
+impl ScalarWrite for UserName {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(value.as_string());
   }
 }
 
-impl ReadScalarValue for UserName {
+impl ScalarRead for UserName {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, crate::x::TextualError> {
     let user_name = reader.read_scalar_value()?;
     UserName::new(user_name).map_err(|error| {
@@ -22,8 +22,8 @@ impl ReadScalarValue for UserName {
   }
 }
 
-static NAME: Key = Key::new("name");
-static USER_ID: Key = Key::new("user_id");
+static NAME: ColumnName = ColumnName::new("name");
+static USER_ID: ColumnName = ColumnName::new("user_id");
 
 pub struct CollectionItem {
   pub id: UuidV4,
@@ -42,8 +42,8 @@ impl ReadCompoundValue for CollectionItem {
 }
 
 pub struct CollectionItemSchema {
-  id: Key,
-  name: Key,
+  id: ColumnName,
+  name: ColumnName,
   operating_system_info: operating_system::database::PerUserInfoSchema,
 }
 
@@ -322,11 +322,11 @@ where
 }
 
 pub struct SingletonSchema {
-  maximum_user_number: Key,
+  maximum_user_number: ColumnName,
 }
 
 impl SingletonSchema {
-  pub fn new(maximum_user_number: Key) -> Self {
+  pub fn new(maximum_user_number: ColumnName) -> Self {
     Self {
       maximum_user_number,
     }

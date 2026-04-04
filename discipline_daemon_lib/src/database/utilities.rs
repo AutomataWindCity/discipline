@@ -6,8 +6,46 @@ use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
 use crate::x::TextualError;
 
+pub struct SqlNull;
+
+impl SqlWritable for SqlNull {
+  
+}
 pub struct SqlCode {
   value: String
+}
+
+trait SqlWritable {
+  
+}
+
+impl<'a> SqlWritable for &'a TableName {
+  
+}
+impl<'a> SqlWritable for &'a ColumnName {
+  
+}
+impl<'a> SqlWritable for &'a ColumnIndex {
+  
+}
+// impl<'a> SqlWritable for &'a str {
+  
+// }
+
+impl<'a> SqlWritable for TableName {
+  
+}
+impl<'a> SqlWritable for ColumnName {
+  
+}
+impl<'a> SqlWritable for ColumnIndex {
+  
+}
+impl<T> SqlWritable for T 
+where 
+  T: ScalarWrite
+{
+
 }
 
 impl SqlCode {
@@ -21,16 +59,20 @@ impl SqlCode {
     self.value.push_str(str);
   }
 
-  pub fn write_column_equal_value<T>(&mut self, key: Key, value: &T)
+  pub fn write2(&mut self, str: impl SqlWritable) {
+    // self.value.push_str(str);
+  }
+
+  pub fn write_column_equal_value<T>(&mut self, key: ColumnName, value: &T)
   where 
-    T: WriteScalarValue 
+    T: ScalarWrite 
   {
     self.value.push_str(key.as_str());
     self.value.push_str(" = ");
     write_scalar_value(self, value);
   }
   
-  pub fn write_key(&mut self, key: Key) {
+  pub fn write_key(&mut self, key: ColumnName) {
     self.value.push_str(key.as_str());
   }
   
@@ -38,8 +80,8 @@ impl SqlCode {
     self.value.push(character);
   }
 
-  pub fn write_scalar_value(&mut self, value: &impl WriteScalarValue) {
-    WriteScalarValue::write(value, &mut ScalarValueWriteDestination { code: self });
+  pub fn write_scalar_value(&mut self, value: &impl ScalarWrite) {
+    ScalarWrite::write(value, &mut ScalarValueWriteDestination { code: self });
   }
 
   pub fn write_compound_value_for_insert<T>(&mut self, schema: &T::Schema, value: &T)
@@ -108,7 +150,7 @@ impl<'a> ScalarValueReadSource<'a> {
 
   pub fn read_scalar_value<T>(&mut self) -> Result<T, TextualError>
   where 
-    T: ReadScalarValue
+    T: ScalarRead
   {
     T::read(self)
   }
@@ -116,16 +158,16 @@ impl<'a> ScalarValueReadSource<'a> {
 
 fn read_scalar_value<T>(value_ref: ValueRef) -> Result<T, TextualError> 
 where 
-  T: ReadScalarValue
+  T: ScalarRead
 {
   T::read(&mut ScalarValueReadSource { value_ref })
 }
 
-pub trait ReadScalarValue: Sized {
+pub trait ScalarRead: Sized {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError>;
 }
 
-impl ReadScalarValue for u8 {
+impl ScalarRead for u8 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -149,7 +191,7 @@ impl ReadScalarValue for u8 {
   }
 }
 
-impl ReadScalarValue for u16 {
+impl ScalarRead for u16 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -173,7 +215,7 @@ impl ReadScalarValue for u16 {
   }
 }
 
-impl ReadScalarValue for u32 {
+impl ScalarRead for u32 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -197,7 +239,7 @@ impl ReadScalarValue for u32 {
   }
 }
 
-impl ReadScalarValue for u64 {
+impl ScalarRead for u64 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -221,7 +263,7 @@ impl ReadScalarValue for u64 {
   }
 }
 
-impl ReadScalarValue for usize {
+impl ScalarRead for usize {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -245,7 +287,7 @@ impl ReadScalarValue for usize {
   }
 }
 
-impl ReadScalarValue for i8 {
+impl ScalarRead for i8 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -269,7 +311,7 @@ impl ReadScalarValue for i8 {
   }
 }
 
-impl ReadScalarValue for i16 {
+impl ScalarRead for i16 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -293,7 +335,7 @@ impl ReadScalarValue for i16 {
   }
 }
 
-impl ReadScalarValue for i32 {
+impl ScalarRead for i32 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -317,7 +359,7 @@ impl ReadScalarValue for i32 {
   }
 }
 
-impl ReadScalarValue for i64 {
+impl ScalarRead for i64 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -341,7 +383,7 @@ impl ReadScalarValue for i64 {
   }
 }
 
-impl ReadScalarValue for isize {
+impl ScalarRead for isize {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let number = match reader.value_ref {
       ValueRef::Integer(number) => {
@@ -365,7 +407,7 @@ impl ReadScalarValue for isize {
   }
 }
 
-impl ReadScalarValue for bool {
+impl ScalarRead for bool {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     match reader.value_ref {
       ValueRef::Integer(0) => {
@@ -385,7 +427,7 @@ impl ReadScalarValue for bool {
   }
 }
 
-impl ReadScalarValue for String {
+impl ScalarRead for String {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let bytes = match reader.value_ref {
       ValueRef::Text(bytes) => {
@@ -409,7 +451,7 @@ impl ReadScalarValue for String {
   }
 }
 
-impl ReadScalarValue for CString {
+impl ScalarRead for CString {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     let bytes = match reader.value_ref {
       ValueRef::Text(bytes) => {
@@ -433,9 +475,9 @@ impl ReadScalarValue for CString {
   }
 }
 
-impl<T> ReadScalarValue for Option<T>
+impl<T> ScalarRead for Option<T>
 where 
-  T: ReadScalarValue
+  T: ScalarRead
 {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     if reader.value_ref == ValueRef::Null {
@@ -465,7 +507,7 @@ impl<'a> ScalarValueWriteDestination<'a> {
 
   pub fn write_scalar_value<T>(&mut self, value: &T)
   where 
-    T: WriteScalarValue 
+    T: ScalarWrite 
   {
     T::write(value, self);
   }
@@ -473,12 +515,12 @@ impl<'a> ScalarValueWriteDestination<'a> {
 
 fn write_scalar_value<T>(code: &mut SqlCode, value: &T)
 where
-  T: WriteScalarValue
+  T: ScalarWrite
 {
   T::write(value, &mut ScalarValueWriteDestination::new(code));
 }
 
-pub trait WriteScalarValue {
+pub trait ScalarWrite {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination);
   fn to_sqlite_repr(&self) -> String {
     let mut code = SqlCode::new();
@@ -487,67 +529,67 @@ pub trait WriteScalarValue {
   }
 }
 
-impl WriteScalarValue for u8 {
+impl ScalarWrite for u8 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for u16 {
+impl ScalarWrite for u16 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for u32 {
+impl ScalarWrite for u32 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for u64 {
+impl ScalarWrite for u64 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for usize {
+impl ScalarWrite for usize {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for i8 {
+impl ScalarWrite for i8 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for i16 {
+impl ScalarWrite for i16 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for i32 {
+impl ScalarWrite for i32 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for i64 {
+impl ScalarWrite for i64 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for isize {
+impl ScalarWrite for isize {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(value.to_string().as_str());
   }
 }
 
-impl WriteScalarValue for bool {
+impl ScalarWrite for bool {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write(if *value {
       "TRUE"
@@ -557,7 +599,7 @@ impl WriteScalarValue for bool {
   }
 }
 
-impl WriteScalarValue for String {
+impl ScalarWrite for String {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write_char('\'');
     for char in value.chars() {
@@ -571,7 +613,7 @@ impl WriteScalarValue for String {
   }
 }
 
-impl<'a> WriteScalarValue for &'a str {
+impl<'a> ScalarWrite for &'a str {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write_char('\'');
     for char in value.chars() {
@@ -585,7 +627,7 @@ impl<'a> WriteScalarValue for &'a str {
   }
 }
 
-impl WriteScalarValue for CString {
+impl ScalarWrite for CString {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.code.write_char('\'');
 
@@ -603,9 +645,9 @@ impl WriteScalarValue for CString {
   }
 }
 
-impl<T> WriteScalarValue for Option<T>
+impl<T> ScalarWrite for Option<T>
 where 
-  T: WriteScalarValue
+  T: ScalarWrite
 {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     match value {
@@ -620,11 +662,20 @@ where
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Key {
+pub struct ColumnIndex {
+
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TableName {
+
+}
+#[derive(Debug, Clone, Copy)]
+pub struct ColumnName {
   value: &'static str,
 }
 
-impl Key {
+impl ColumnName {
   pub const fn new(value: &'static str) -> Self {
     Self {
       value
@@ -636,16 +687,20 @@ impl Key {
   }
 }
 
-impl Into<Key> for &'static str {
-  fn into(self) -> Key {
-    Key::new(self)
+impl Into<ColumnName> for &'static str {
+  fn into(self) -> ColumnName {
+    ColumnName::new(self)
   }
 }
 
 pub trait CompoundValueReadSource {
-  fn read_scalar_value<T>(&mut self, key: Key) -> Result<T, TextualError>
+  fn read_scalar_value<T>(&mut self, key: ColumnName) -> Result<T, TextualError>
   where 
-    T: ReadScalarValue;
+    T: ScalarRead;
+
+  fn read_scalar_value_with_index<T>(&mut self, index: ColumnIndex) -> Result<T, TextualError>
+  where 
+    T: ScalarRead;
 
   fn read_compound_value<T>(&mut self, schema: &T::Schema) -> Result<T, TextualError>
   where 
@@ -663,9 +718,9 @@ pub struct CompoundValueReadSourceForSelect<'a> {
 }
 
 impl<'a> CompoundValueReadSource for CompoundValueReadSourceForSelect<'a> {
-  fn read_scalar_value<T>(&mut self, key: Key) -> Result<T, TextualError>
+  fn read_scalar_value<T>(&mut self, key: ColumnName) -> Result<T, TextualError>
   where 
-    T: ReadScalarValue 
+    T: ScalarRead 
   {
     self
       .inner
@@ -685,6 +740,12 @@ impl<'a> CompoundValueReadSource for CompoundValueReadSourceForSelect<'a> {
       })
   }
 
+  fn read_scalar_value_with_index<T>(&mut self, index: ColumnIndex) -> Result<T, TextualError>
+  where 
+    T: ScalarRead {
+      todo!()
+  }
+  
   fn read_compound_value<T>(&mut self, schema: &T::Schema) -> Result<T, TextualError>
   where 
     T: ReadCompoundValue 
@@ -713,12 +774,12 @@ where
 }
 
 pub trait CompoundValueWriteDestination {
-  fn write_null(&mut self, key: Key);
+  fn write_null(&mut self, key: ColumnName);
 
   // TODO: Panic, in debug mode, if a column was written twice
-  fn write_scalar_value<T>(&mut self, key: Key, value: &T)
+  fn write_scalar_value<T>(&mut self, key: ColumnName, value: &T)
   where 
-    T: WriteScalarValue;
+    T: ScalarWrite;
 
   fn write_compound_value<T>(&mut self, schema: &T::Schema, value: &T)
   where 
@@ -759,7 +820,7 @@ impl CompoundValueWriteDestinationForInsert {
 }
 
 impl CompoundValueWriteDestination for CompoundValueWriteDestinationForInsert {
-  fn write_null(&mut self, key: Key) {
+  fn write_null(&mut self, key: ColumnName) {
     if self.did_write_some_values {
       self.keys.write(", ");
       self.values.write(", ");
@@ -771,9 +832,9 @@ impl CompoundValueWriteDestination for CompoundValueWriteDestinationForInsert {
     self.values.write("NULL");
   }
 
-  fn write_scalar_value<T>(&mut self, key: Key, value: &T)
+  fn write_scalar_value<T>(&mut self, key: ColumnName, value: &T)
   where 
-    T: WriteScalarValue 
+    T: ScalarWrite 
   {
     if self.did_write_some_values {
       self.keys.write(", ");
@@ -845,7 +906,7 @@ impl CompoundValueWriteDestinationForUpdate {
 }
 
 impl CompoundValueWriteDestination for CompoundValueWriteDestinationForUpdate {
-  fn write_null(&mut self, key: Key) {
+  fn write_null(&mut self, key: ColumnName) {
     if self.did_write_some_updates {
       self.code.write(", ");
     } else {
@@ -857,9 +918,9 @@ impl CompoundValueWriteDestination for CompoundValueWriteDestinationForUpdate {
     self.code.write("NULL");
   }
 
-  fn write_scalar_value<T>(&mut self, key: Key, value: &T)
+  fn write_scalar_value<T>(&mut self, key: ColumnName, value: &T)
   where 
-    T: WriteScalarValue 
+    T: ScalarWrite 
   {
     if self.did_write_some_updates {
       self.code.write(", ");
@@ -1216,3 +1277,5 @@ impl Connection {
     self.connection.lock().await
   }
 }
+
+pub trait OrderedWrite {}

@@ -1,13 +1,13 @@
 use crate::x::{Database, TextualError, ToTextualError, UserName, UsersSingleton, UuidV4, operating_system};
 use crate::x::database::*;
 
-impl WriteScalarValue for UserName {
+impl ScalarWrite for UserName {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(value.as_string());
   }
 }
 
-impl ReadScalarValue for UserName {
+impl ScalarRead for UserName {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, crate::x::TextualError> {
     let user_name = reader.read_scalar_value()?;
     UserName::new(user_name).map_err(|error| {
@@ -16,10 +16,10 @@ impl ReadScalarValue for UserName {
   }
 }
 
-static ID: Key = Key::new("UserId");
-static NAME: Key = Key::new("UserName");
-static OPERATING_SYSTEM_INFO_USER_ID: Key = Key::new("OperatingSystemUserId");
-static OPERATING_SYSTEM_INFO_USER_NAME: Key = Key::new("OperationgSystemUserName");
+static ID: ColumnName = ColumnName::new("UserId");
+static NAME: ColumnName = ColumnName::new("UserName");
+static OPERATING_SYSTEM_INFO_USER_ID: ColumnName = ColumnName::new("OperatingSystemUserId");
+static OPERATING_SYSTEM_INFO_USER_NAME: ColumnName = ColumnName::new("OperationgSystemUserName");
 
 pub struct CollectionItem {
   pub id: UuidV4,
@@ -38,8 +38,8 @@ impl ReadCompoundValue for CollectionItem {
 }
 
 pub struct CollectionItemSchema {
-  id: Key,
-  name: Key,
+  id: ColumnName,
+  name: ColumnName,
   operating_system_info: operating_system::database::PerUserInfoSchema,
 }
 
@@ -318,11 +318,11 @@ where
 }
 
 pub struct SingletonSchema {
-  maximum_user_number: Key,
+  maximum_user_number: ColumnName,
 }
 
 impl SingletonSchema {
-  pub fn new(maximum_user_number: Key) -> Self {
+  pub fn new(maximum_user_number: ColumnName) -> Self {
     Self {
       maximum_user_number,
     }

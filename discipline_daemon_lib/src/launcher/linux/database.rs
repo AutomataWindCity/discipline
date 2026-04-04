@@ -3,38 +3,38 @@ use crate::x::{TextualError, TextualErrorV2};
 use crate::x::database::*;
 use super::{UserId, UserName, State};
 
-impl WriteScalarValue for UserId {
+impl ScalarWrite for UserId {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(&value.inner());
   }
 }
 
-impl ReadScalarValue for UserId {
+impl ScalarRead for UserId {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     reader.read_scalar_value().map(UserId::new)
   }
 }
 
-impl WriteScalarValue for UserName {
+impl ScalarWrite for UserName {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(value.inner());
   }
 }
 
-impl ReadScalarValue for UserName {
+impl ScalarRead for UserName {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     reader.read_scalar_value().map(UserName::new)
   }
 }
 
 pub struct UserProfileSchema {
-  user_id: Key,
+  user_id: ColumnName,
 }
 
 impl UserProfileSchema {
   pub fn new(
-    user_id: Key,
-    user_name: Key,
+    user_id: ColumnName,
+    user_name: ColumnName,
   ) -> Self {
     Self {
       user_id,

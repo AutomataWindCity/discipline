@@ -1,18 +1,18 @@
 use super::*;
 
 pub struct SingletonSchema {
-  vault_number: Key,
-  vault_maximum_number: Key,
-  data_number: Key,
-  data_maximum_number: Key,
+  vault_number: ColumnName,
+  vault_maximum_number: ColumnName,
+  data_number: ColumnName,
+  data_maximum_number: ColumnName,
 }
 
 impl SingletonSchema {
   pub fn new(
-    vault_number: Key,
-    vault_maximum_number: Key,
-    data_number: Key,
-    data_maximum_number: Key,
+    vault_number: ColumnName,
+    vault_maximum_number: ColumnName,
+    data_number: ColumnName,
+    data_maximum_number: ColumnName,
   ) -> Self {
     Self {
       vault_maximum_number,

@@ -5,7 +5,7 @@ pub mod vaults;
 // pub mod database;
 
 // use serde::{Deserialize, Serialize};
-// use crate::x::MonotonicInstant;
+// use crate::x::Instant;
 
 // #[derive(Debug, Clone, Serialize, Deserialize)]
 // pub struct PerUserInfo {
@@ -35,7 +35,7 @@ pub mod vaults;
 //     }
 //   }
 
-//   pub fn has_enabled_rules(&self, now: MonotonicInstant) -> bool {
+//   pub fn has_enabled_rules(&self, now: Instant) -> bool {
 //     self.block_device_access.rules().are_some_rules_enabled(now)
 //     ||
 //     self.block_account_access.rules().are_some_rules_enabled(now)

@@ -43,6 +43,26 @@ class OurPolicyManager private constructor(
 
       return Tried.success(OurPolicyManager(admin, context, devicePolicyManager))
     }
+
+    fun createOrThrow(context: Context): OurPolicyManager {
+      val admin = try {
+        ComponentName(context, OurDeviceAdminReceiver::class.java)
+      } catch (exception: Exception) {
+        throw TextualError.create("Creating 'OurPolicyManager' from an Android 'Context'")
+          .addMessage("Android threw an exception when creating a 'ComponentName' using 'Context' and 'DisciplineDeviceAdminReceiver'")
+          .addUnknownAttachment("Exception", exception)
+      }
+
+      val devicePolicyManager = try {
+        context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+      } catch (exception: Exception) {
+        throw TextualError.create("Creating 'OurPolicyManager' from an Android 'Context'")
+          .addMessage("Android threw an exception when retrieving the 'DevicePolicyManager' service using 'context.getSystemService(Context.DEVICE_POLICY_SERVICE)'")
+          .addUnknownAttachment("Exception", exception)
+      }
+
+      return OurPolicyManager(admin, context, devicePolicyManager)
+    }
   }
 
   // User Restriction Methods
@@ -245,6 +265,18 @@ class OurPolicyManager private constructor(
           .addStringAttachment("PackageName", appPackageName)
           .addUnknownAttachment("Exception", exception)
       )
+    }
+  }
+
+  fun isApplicationUninstallDisabledOrThrow(appPackageName: String): Boolean {
+    try {
+      return devicePolicyManager.isUninstallBlocked(admin, appPackageName)
+    } catch (exception: Exception) {
+      throw TextualError
+        .create("OurPolicyManager checking if application uninstall is disabled")
+        .addMessage("Android's 'DevicePolicyManager.isUninstallBlocked' threw an exception")
+        .addStringAttachment("PackageName", appPackageName)
+        .addUnknownAttachment("Exception", exception)
     }
   }
 

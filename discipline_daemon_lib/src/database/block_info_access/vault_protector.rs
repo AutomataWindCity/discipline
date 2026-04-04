@@ -27,29 +27,29 @@ impl ProtectorType {
   }
 }
 
-impl WriteScalarValue for ProtectorType {
+impl ScalarWrite for ProtectorType {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(&value.to_number());
   }
 }
 
-impl ReadScalarValue for ProtectorType {
+impl ScalarRead for ProtectorType {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     reader.read_scalar_value().and_then(Self::from_number)
   }
 }
 
 pub struct ProtectorSchema {
-  enum_type: Key,
+  enum_type: ColumnName,
   enum_countdown_after_plea: conditionals::countdown_after_plea::database::Schema,
 }
 
 impl ProtectorSchema {
   pub fn new(
-    enum_type: Key,
-    enum_data_1: Key,
-    enum_data_2: Key,
-    enum_data_3: Key,
+    enum_type: ColumnName,
+    enum_data_1: ColumnName,
+    enum_data_2: ColumnName,
+    enum_data_3: ColumnName,
   ) -> Self {
     Self {
       enum_type,

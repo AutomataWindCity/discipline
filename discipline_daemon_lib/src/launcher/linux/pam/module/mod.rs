@@ -1,7 +1,7 @@
 use super::*;
 
 mod logger;
-use logger::Logger;
+use logger::SystemLogger;
 
 mod module_data;
 use module_data::*;

@@ -1,12 +1,12 @@
 use super::*;
 
-impl WriteScalarValue for Datum {
+impl ScalarWrite for Datum {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(&value.as_ref());
   }
 }
 
-impl ReadScalarValue for Datum {
+impl ScalarRead for Datum {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     reader
       .read_scalar_value()

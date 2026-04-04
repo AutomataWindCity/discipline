@@ -27,6 +27,17 @@ public data class VaultsStats private constructor(
 
       return Tried.success(VaultsStats(vaultsNumber, maximumVaultsNumber))
     }
+
+    fun constructOrThrow(vaultsNumber: Int, maximumVaultsNumber: Int): VaultsStats {
+      if (vaultsNumber > maximumVaultsNumber) {
+        throw TextualError.create("Constructing VaultsStats")
+          .addMessage("Argument 'vaultsNumber' is greater than argument 'maximumVaultsNumber'")
+          .addIntAttachment("Vaults number", vaultsNumber)
+          .addIntAttachment("Maximum vaults number", maximumVaultsNumber)
+      }
+
+      return VaultsStats(vaultsNumber, maximumVaultsNumber)
+    }
   }
   
   fun isFull(): Boolean {

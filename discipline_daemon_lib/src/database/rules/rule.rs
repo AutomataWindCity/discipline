@@ -8,14 +8,14 @@ pub struct RuleSchema {
 
 impl RuleSchema {
   pub fn new(
-    activator_enum_type: Key,
-    activator_enum_data_1: Key,
-    activator_enum_data_2: Key,
-    activator_enum_data_3: Key,
-    enabler_enum_type: Key,
-    enabler_enum_data_1: Key,
-    enabler_enum_data_2: Key,
-    enabler_enum_data_3: Key,
+    activator_enum_type: ColumnName,
+    activator_enum_data_1: ColumnName,
+    activator_enum_data_2: ColumnName,
+    activator_enum_data_3: ColumnName,
+    enabler_enum_type: ColumnName,
+    enabler_enum_data_1: ColumnName,
+    enabler_enum_data_2: ColumnName,
+    enabler_enum_data_3: ColumnName,
   ) -> Self {
     Self {
       activator: RuleActivatorSchema::new(

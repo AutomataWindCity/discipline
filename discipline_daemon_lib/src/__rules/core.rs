@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use crate::x::{UuidV4, TimeConditional, AlwaysConditional, Time, Weekday, MonotonicInstant, CountdownConditional, CountdownAfterPleaConditional};
+use crate::x::{UuidV4, TimeConditional, AlwaysConditional, Time, Weekday, Instant, CountdownConditional, CountdownAfterPleaConditional};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Location {
@@ -41,7 +41,7 @@ pub enum RuleEnabler {
 }
 
 impl RuleEnabler {
-  pub fn evaluate(&self, now: MonotonicInstant) -> bool {
+  pub fn evaluate(&self, now: Instant) -> bool {
     match self {
       RuleEnabler::Countdown(inner) => {
         inner.is_activated(now)
@@ -52,7 +52,7 @@ impl RuleEnabler {
     }
   }
 
-  pub fn activate(&mut self, now: MonotonicInstant) {
+  pub fn activate(&mut self, now: Instant) {
     match self {
       RuleEnabler::Countdown(inner) => {
         inner.activate(now);
@@ -63,7 +63,7 @@ impl RuleEnabler {
     }
   }
 
-  pub fn deactivate(&mut self, now: MonotonicInstant) {
+  pub fn deactivate(&mut self, now: Instant) {
     match self {
       RuleEnabler::Countdown(_inner) => {
         // noop
@@ -124,7 +124,7 @@ impl Rule {
 
   pub fn is_effective(
     &self, 
-    now: MonotonicInstant,
+    now: Instant,
     time: Time, 
     weekday: Weekday,
   ) -> bool {
@@ -133,15 +133,15 @@ impl Rule {
     self.activator.evaluate(time, weekday)
   }
 
-  pub fn is_enabled(&self, now: MonotonicInstant) -> bool {
+  pub fn is_enabled(&self, now: Instant) -> bool {
     self.enabler.evaluate(now)
   }
 
-  pub fn activate(&mut self, now: MonotonicInstant) {
+  pub fn activate(&mut self, now: Instant) {
     self.enabler.activate(now);
   }
 
-  pub fn deactivate(&mut self, now: MonotonicInstant) {
+  pub fn deactivate(&mut self, now: Instant) {
     self.enabler.deactivate(now);
   }
 }
@@ -177,7 +177,7 @@ impl RuleGroup {
     }
   }
 
-  pub fn are_some_rules_enabled(&self, now: MonotonicInstant) -> bool {
+  pub fn are_some_rules_enabled(&self, now: Instant) -> bool {
     self.rules.values().any(|it| it.is_enabled(now))
   }
 

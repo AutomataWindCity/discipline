@@ -48,6 +48,23 @@ public value class Duration private constructor(val milliseconds: Long) {
       return Tried.success(Duration(milliseconds))
     }
 
+    fun fromMillisecondsOrThrow(milliseconds: Long): Duration {
+      if (milliseconds < 0) {
+        throw TextualError.create("Creating a Duration from milliseconds")
+          .addMessage("Argument 'milliseconds' is negative: This Duration type only supports representing positive durations")
+          .addLongAttachment("Argument 'milliseconds'", milliseconds)
+      }
+
+      if (milliseconds > MAXIMUM_MILLISECONDS) {
+        throw TextualError.create("Creating a Duration from milliseconds")
+          .addMessage("Argument 'milliseconds' is greater than maximum value")
+          .addLongAttachment("Argument 'milliseconds'", milliseconds)
+          .addLongAttachment("Maximum value", MAXIMUM_MILLISECONDS)
+      }
+
+      return Duration(milliseconds)
+    }
+
     /**
      * Creates a Duration from seconds
      */
@@ -72,6 +89,25 @@ public value class Duration private constructor(val milliseconds: Long) {
       }
 
       return Tried.success(Duration(seconds * MILLISECONDS_PER_SECOND))
+    }
+
+    fun fromSecondsOrThrow(
+      seconds: Long,
+    ): Duration {
+      if (seconds < 0) {
+        throw TextualError.create("Creating a Duration from seconds")
+          .addMessage("Argument 'seconds' is negative: This Duration type only supports representing positive durations")
+          .addLongAttachment("Argument 'seconds'", seconds)
+      }
+
+      if (seconds > MAXIMUM_SECONDS) {
+        throw TextualError.create("Creating a Duration from seconds")
+          .addMessage("Argument 'seconds' is greater than maximum value")
+          .addLongAttachment("Argument 'seconds'", seconds)
+          .addLongAttachment("Maximum value", MAXIMUM_SECONDS)
+      }
+
+      return Duration(seconds * MILLISECONDS_PER_SECOND)
     }
 
     /**
@@ -100,6 +136,25 @@ public value class Duration private constructor(val milliseconds: Long) {
       return Tried.success(Duration(minutes * MILLISECONDS_PER_MINUTE))
     }
 
+    fun fromMinutesOrThrow(
+      minutes: Long,
+    ): Duration {
+      if (minutes < 0) {
+        throw TextualError.create("Creating a Duration from minutes")
+          .addMessage("Argument 'minutes' is negative: This Duration type only supports representing positive durations")
+          .addLongAttachment("Argument 'minutes'", minutes)
+      }
+
+      if (minutes > MAXIMUM_MINUTES) {
+        throw TextualError.create("Creating a Duration from minutes")
+          .addMessage("Argument 'minutes' is greater than maximum value")
+          .addLongAttachment("Argument 'minutes'", minutes)
+          .addLongAttachment("Maximum value", MAXIMUM_MINUTES)
+      }
+
+      return Duration(minutes * MILLISECONDS_PER_MINUTE)
+    }
+
     /**
      * Creates a Duration from hours
      */
@@ -124,6 +179,25 @@ public value class Duration private constructor(val milliseconds: Long) {
       }
 
       return Tried.success(Duration(hours * MILLISECONDS_PER_HOUR))
+    }
+
+    fun fromHoursOrThrow(
+      hours: Long,
+    ): Duration {
+      if (hours < 0) {
+        throw TextualError.create("Creating a Duration from hours")
+          .addMessage("Argument 'hours' is negative: This Duration type only supports representing positive durations")
+          .addLongAttachment("Argument 'hours'", hours)
+      }
+
+      if (hours > MAXIMUM_HOURS) {
+        throw TextualError.create("Creating a Duration from hours")
+          .addMessage("Argument 'hours' is greater than maximum value")
+          .addLongAttachment("Argument 'hours'", hours)
+          .addLongAttachment("Maximum value", MAXIMUM_HOURS)
+      }
+
+      return Duration(hours * MILLISECONDS_PER_HOUR)
     }
 
     /**
@@ -152,6 +226,25 @@ public value class Duration private constructor(val milliseconds: Long) {
       return Tried.success(Duration(days * MILLISECONDS_PER_DAY))
     }
 
+    fun fromDaysOrThrow(
+      days: Long,
+    ): Duration {
+      if (days < 0) {
+        throw TextualError.create("Creating a Duration from days")
+          .addMessage("Argument 'days' is negative: This Duration type only supports representing positive durations")
+          .addLongAttachment("Argument 'days'", days)
+      }
+
+      if (days > MAXIMUM_DAYS) {
+        throw TextualError.create("Creating a Duration from days")
+          .addMessage("Argument 'days' is greater than maximum value")
+          .addLongAttachment("Argument 'days'", days)
+          .addLongAttachment("Maximum value", MAXIMUM_DAYS)
+      }
+
+      return Duration(days * MILLISECONDS_PER_DAY)
+    }
+
     /**
      * Creates a Duration from weeks
      */
@@ -178,11 +271,23 @@ public value class Duration private constructor(val milliseconds: Long) {
       return Tried.success(Duration(weeks * MILLISECONDS_PER_WEEK))
     }
 
-    /**
-     * Creates a Duration from milliseconds or throws an exception
-     */
-    fun fromMillisecondsOrThrow(milliseconds: Long): Duration {
-      return fromMilliseconds(milliseconds).getOrThrow()
+    fun fromWeeksOrThrow(
+      weeks: Long,
+    ): Duration {
+      if (weeks < 0) {
+        throw TextualError.create("Creating a Duration from weeks")
+          .addMessage("Argument 'weeks' is negative: This Duration type only supports representing positive durations")
+          .addLongAttachment("Argument 'weeks'", weeks)
+      }
+
+      if (weeks > MAXIMUM_WEEKS) {
+        throw TextualError.create("Creating a Duration from weeks")
+          .addMessage("Argument 'weeks' is greater than maximum value")
+          .addLongAttachment("Argument 'weeks'", weeks)
+          .addLongAttachment("Maximum value", MAXIMUM_WEEKS)
+      }
+
+      return Duration(weeks * MILLISECONDS_PER_WEEK)
     }
 
     /**

@@ -27,103 +27,184 @@ value class Time private constructor(
     /**
      * Creates a Time from a timestamp (milliseconds since midnight)
      */
-    fun fromTimestamp(timestamp: Int, textualError: TextualError): Time? {
+    fun fromTimestamp(timestamp: Int): Tried<Time, TextualError> {
       if (timestamp < MINIMUM_TIMESTAMP) {
-        textualError 
-          .changeContext("Creating a Time from a millisecond timestamp since midnight")
-          .addMessage("Argument 'timestamp' is less than the minimum valid value")
-          .addIntAttachment("Argument 'timestamp'", timestamp)
-          .addIntAttachment("Minimum valid value", MINIMUM_TIMESTAMP)
-
-        return null
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from a millisecond timestamp since midnight")
+            .addMessage("Argument 'timestamp' is less than the minimum valid value")
+            .addIntAttachment("Argument 'timestamp'", timestamp)
+            .addIntAttachment("Minimum valid value", MINIMUM_TIMESTAMP)
+        )
       }
       
       if (timestamp > MAXIMUM_TIMESTAMP) {
-        textualError 
-          .changeContext("Creating a Time from a millisecond timestamp since midnight")
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from a millisecond timestamp since midnight")
+            .addMessage("Argument 'timestamp' is greater than the maximum valid value")
+            .addIntAttachment("Argument 'timestamp'", timestamp)
+            .addIntAttachment("Maximum valid value", MAXIMUM_TIMESTAMP)
+        )
+      }
+      
+      return Tried.success(Time(timestamp))
+    }
+
+    fun fromTimestampOrThrow(timestamp: Int): Time {
+      if (timestamp < MINIMUM_TIMESTAMP) {
+        throw TextualError
+          .create("Creating a Time from a millisecond timestamp since midnight")
+          .addMessage("Argument 'timestamp' is less than the minimum valid value")
+          .addIntAttachment("Argument 'timestamp'", timestamp)
+          .addIntAttachment("Minimum valid value", MINIMUM_TIMESTAMP)
+      }
+
+      if (timestamp > MAXIMUM_TIMESTAMP) {
+        throw TextualError
+          .create("Creating a Time from a millisecond timestamp since midnight")
           .addMessage("Argument 'timestamp' is greater than the maximum valid value")
           .addIntAttachment("Argument 'timestamp'", timestamp)
           .addIntAttachment("Maximum valid value", MAXIMUM_TIMESTAMP)
-        
-        return null
       }
-      
+
       return Time(timestamp)
     }
     
     /**
      * Creates a Time from hour and minute (24-hour format)
      */
-    fun fromHourAndMinute(hour: Int, minute: Int, textualError: TextualError): Time? {
+    fun fromHourAndMinute(hour: Int, minute: Int): Tried<Time, TextualError> {
       if (hour !in 0..23) {
-        textualError 
-          .changeContext("Creating a Time from hour and minute arguments")
-          .addMessage("Argument 'hour' must be between 0 and 23")
-          .addIntAttachment("Argument 'hour'", hour)
-        return null
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from hour and minute arguments")
+            .addMessage("Argument 'hour' must be between 0 and 23")
+            .addIntAttachment("Argument 'hour'", hour)
+        )
       }
       
       if (minute !in 0..59) {
-        textualError 
-          .changeContext("Creating a Time from hour and minute arguments")
-          .addMessage("Argument 'minute' must be between 0 and 59")
-          .addIntAttachment("Argument 'minute'", minute)
-
-        return null
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from hour and minute arguments")
+            .addMessage("Argument 'minute' must be between 0 and 59")
+            .addIntAttachment("Argument 'minute'", minute)
+        )
       }
       
+      return Tried.success(
+        Time(hour * MILLISECONDS_PER_HOUR + minute * MILLISECONDS_PER_MINUTE)
+      )
+    }
+
+    fun fromHourAndMinuteOrThrow(hour: Int, minute: Int): Time {
+      if (hour !in 0..23) {
+        throw TextualError
+          .create("Creating a Time from hour and minute arguments")
+          .addMessage("Argument 'hour' must be between 0 and 23")
+          .addIntAttachment("Argument 'hour'", hour)
+      }
+
+      if (minute !in 0..59) {
+        throw TextualError
+          .create("Creating a Time from hour and minute arguments")
+          .addMessage("Argument 'minute' must be between 0 and 59")
+          .addIntAttachment("Argument 'minute'", minute)
+      }
+
       return Time(hour * MILLISECONDS_PER_HOUR + minute * MILLISECONDS_PER_MINUTE)
     }
     
     /**
      * Creates a Time from hour and minute (12-hour AM format)
      */
-    fun fromHourAndMinuteAm(hour: Int, minute: Int, textualError: TextualError): Time? {
+    fun fromHourAndMinuteAm(hour: Int, minute: Int): Tried<Time, TextualError> {
       if (hour !in 0..11) {
-        textualError 
-          .changeContext("Creating a Time from hour (AM) and minute arguments")
-          .addMessage("Argument 'hour' must be between 0 and 11")
-          .addIntAttachment("Argument 'hour'", hour)
-
-        return null
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from hour (AM) and minute arguments")
+            .addMessage("Argument 'hour' must be between 0 and 11")
+            .addIntAttachment("Argument 'hour'", hour)
+        )
       }
       
       if (minute !in 0..59) {
-        textualError 
-          .changeContext("Creating a Time from hour (AM) and minute arguments")
-          .addMessage("Argument 'minute' must be between 0 and 59")
-          .addIntAttachment("Argument 'minute'", minute)
-
-        return null
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from hour (AM) and minute arguments")
+            .addMessage("Argument 'minute' must be between 0 and 59")
+            .addIntAttachment("Argument 'minute'", minute)
+        )
       }
       
+      return Tried.success(
+        Time(hour * MILLISECONDS_PER_HOUR + minute * MILLISECONDS_PER_MINUTE)
+      )
+    }
+
+    fun fromHourAndMinuteAmOrThrow(hour: Int, minute: Int): Time {
+      if (hour !in 0..11) {
+        throw TextualError
+          .create("Creating a Time from hour (AM) and minute arguments")
+          .addMessage("Argument 'hour' must be between 0 and 11")
+          .addIntAttachment("Argument 'hour'", hour)
+      }
+
+      if (minute !in 0..59) {
+        throw TextualError
+          .create("Creating a Time from hour (AM) and minute arguments")
+          .addMessage("Argument 'minute' must be between 0 and 59")
+          .addIntAttachment("Argument 'minute'", minute)
+      }
+
       return Time(hour * MILLISECONDS_PER_HOUR + minute * MILLISECONDS_PER_MINUTE)
     }
     
     /**
      * Creates a Time from hour and minute (12-hour PM format)
      */
-    fun fromHourAndMinutePm(hour: Int, minute: Int, textualError: TextualError): Time? {
+    fun fromHourAndMinutePm(hour: Int, minute: Int): Tried<Time, TextualError> {
       if (hour !in 0..11) {
-        textualError 
-          .changeContext("Creating a Time from hour (PM) and minute arguments")
-          .addMessage("Argument 'hour' must be between 0 and 11")
-          .addIntAttachment("Argument 'hour'", hour)
-
-        return null
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from hour (PM) and minute arguments")
+            .addMessage("Argument 'hour' must be between 0 and 11")
+            .addIntAttachment("Argument 'hour'", hour)
+        )
       }
       
       if (minute !in 0..59) {
-        textualError 
-          .changeContext("Creating a Time from hour (PM) and minute arguments")
-          .addMessage("Argument 'minute' must be between 0 and 59")
-          .addIntAttachment("Argument 'minute'", minute)
-
-        return null
+        return Tried.failure(
+          TextualError
+            .create("Creating a Time from hour (PM) and minute arguments")
+            .addMessage("Argument 'minute' must be between 0 and 59")
+            .addIntAttachment("Argument 'minute'", minute)
+        )
       }
       
+      return Tried.success(
+        Time((12 + hour) * MILLISECONDS_PER_HOUR + minute * MILLISECONDS_PER_MINUTE)
+      )
+    }
+
+    fun fromHourAndMinutePmOrThrow(hour: Int, minute: Int): Time {
+      if (hour !in 0..11) {
+        throw TextualError
+          .create("Creating a Time from hour (PM) and minute arguments")
+          .addMessage("Argument 'hour' must be between 0 and 11")
+          .addIntAttachment("Argument 'hour'", hour)
+      }
+
+      if (minute !in 0..59) {
+        throw TextualError
+          .create("Creating a Time from hour (PM) and minute arguments")
+          .addMessage("Argument 'minute' must be between 0 and 59")
+          .addIntAttachment("Argument 'minute'", minute)
+      }
+
       return Time((12 + hour) * MILLISECONDS_PER_HOUR + minute * MILLISECONDS_PER_MINUTE)
-    }    
+    }
   }
   
   fun toTimestamp(): Int {

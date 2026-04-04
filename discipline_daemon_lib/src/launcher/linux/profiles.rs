@@ -1,13 +1,9 @@
 use std::any::type_name;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use crate::x::{AlwaysRules, MonotonicInstant, TextualErrorContext, Time, TimeRangeRules, ToTextualError, UuidV4, UserUptimeClock};
+use crate::x::{AlwaysRules, Instant, TextualErrorContext, Time, TimeRangeRules, ToTextualError, UserUptimeClock, UuidV4, TimeAllowanceRules};
 use super::{UserId, UserName};
 
-#[derive(Debug, Clone)]
-pub struct UserProfileName {
-  inner: String,
-}
 
 #[derive(Debug, Clone)]
 pub enum CreateFromStringError {
@@ -30,6 +26,11 @@ impl ToTextualError for CreateFromStringError {
 
     context
   }
+}
+
+#[derive(Debug, Clone)]
+pub struct UserProfileName {
+  inner: String,
 }
 
 impl UserProfileName {
@@ -55,57 +56,59 @@ impl UserProfileName {
   }
 }
 
-// deny_device_access_time_rules
-// deny_device_access_always_rules
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DeviceAccessRegulation {
   always_rules: AlwaysRules,
   time_range_rules: TimeRangeRules,
-  // uptime_allowance_rules,
+  daily_uptime_allowance_rules: TimeAllowanceRules,
+  weekly_uptime_allowance_rules: TimeAllowanceRules,
 }
 
 impl DeviceAccessRegulation {
   pub fn new() -> Self {
     Self {
-      always_rules: AlwaysRules::new(),
-      time_range_rules: TimeRangeRules::new(),
+      always_rules: AlwaysRules::default(),
+      time_range_rules: TimeRangeRules::default(),
+      daily_uptime_allowance_rules: TimeAllowanceRules::default(),
+      weekly_uptime_allowance_rules: TimeAllowanceRules::default(),
     }
   }
   
   pub fn construct(
     always_rules: AlwaysRules,
     time_range_rules: TimeRangeRules,
+    daily_uptime_allowance_rules: TimeAllowanceRules,
+    weekly_uptime_allowance_rules: TimeAllowanceRules,
   ) -> Self {
     Self {
       always_rules,
       time_range_rules,
+      daily_uptime_allowance_rules,
+      weekly_uptime_allowance_rules,
     }
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ScreenAccessRegulation {
   always_rules: AlwaysRules,
   time_range_rules: TimeRangeRules,
-  // screen_time_allowance_rules
+  daily_allowance_rules: TimeAllowanceRules,
+  weekly_allowance_rules: TimeAllowanceRules,
 }
 
 impl ScreenAccessRegulation {
-  pub fn new() -> Self {
-    Self {
-      always_rules: AlwaysRules::new(),
-      time_range_rules: TimeRangeRules::new(),
-    }
-  }
-  
   pub fn construct(
     always_rules: AlwaysRules,
     time_range_rules: TimeRangeRules,
+    daily_allowance_rules: TimeAllowanceRules,
+    weekly_allowance_rules: TimeAllowanceRules,
   ) -> Self {
     Self {
       always_rules,
       time_range_rules,
+      daily_allowance_rules,
+      weekly_allowance_rules
     }
   }
 }
@@ -188,7 +191,7 @@ impl UserProfile {
   pub fn is_session_open_blocked(
     &self, 
     time: Time,
-    instant: MonotonicInstant,
+    instant: Instant,
   ) -> bool {
     self.screen_access_regulation.always_rules.are_some_active(instant)
     ||
@@ -236,7 +239,7 @@ impl UserProfilesStats {
 
 #[derive(Debug)]
 pub struct UserProfiles {
-  user_profiles: HashMap<UuidV4, User>,
+  user_profiles: HashMap<UuidV4, UserProfile>,
   user_names_to_profile_ids: HashMap<UserName, UuidV4>,
 }
 
@@ -260,7 +263,7 @@ impl UserProfiles {
     }
   }
 
-  pub fn get_profile_given_id(&self, user_id: &UuidV4) -> Option<&User> {
+  pub fn get_profile_given_id(&self, user_id: &UuidV4) -> Option<&UserProfile> {
     self.user_profiles.get(user_id)
   }
 

@@ -1,8 +1,8 @@
 use super::*;
 
-static VAULT_ID: Key = Key::new("VaultId");
-static DATUM_ID: Key = Key::new("DatumId");
-static DATUM_TEXT: Key = Key::new("DatumText");
+static VAULT_ID: ColumnName = ColumnName::new("VaultId");
+static DATUM_ID: ColumnName = ColumnName::new("DatumId");
+static DATUM_TEXT: ColumnName = ColumnName::new("DatumText");
 
 pub struct DatumTable {
   name: String,

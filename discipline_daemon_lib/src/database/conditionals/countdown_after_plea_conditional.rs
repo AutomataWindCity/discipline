@@ -2,19 +2,19 @@ use crate::x::{CountdownAfterPleaConditional, TextualError};
 use crate::x::database::*;
 
 pub struct CountdownAfterPleaConditionalSchema {
-  is_activated: Key,
-  countdown: CountdownSchema,
+  is_activated: ColumnName,
+  countdown: CountdownColumnNames,
 }
 
 impl CountdownAfterPleaConditionalSchema {
   pub fn new(
-    is_activated: Key,
-    countdown_from: Key,
-    countdown_duration: Key,
+    is_activated: ColumnName,
+    countdown_from: ColumnName,
+    countdown_duration: ColumnName,
   ) -> Self {
     Self {
       is_activated,
-      countdown: CountdownSchema::new(
+      countdown: CountdownColumnNames::new(
         countdown_from, 
         countdown_duration,
       ),

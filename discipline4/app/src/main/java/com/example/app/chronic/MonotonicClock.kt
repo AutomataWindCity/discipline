@@ -9,7 +9,7 @@ import androidx.room.Entity
 @Entity
 public data class MonotonicClock(
   var elapsedTime: Duration,
-  var previousSynchronizationTime: Instant
+  var previousSynchronizationTime: Instant,
   var synchronizationInterval: Duration,
 ) {
   companion object {
@@ -18,6 +18,19 @@ public data class MonotonicClock(
         elapsedTime = Duration.zero(), 
         previousSynchronizationTime = Instant.fromElapsedTime(Duration.zero()),
         synchronizationInterval,
+      )
+    }
+
+    fun constructOrThrow(
+      elapsedTime: Duration,
+      previousSynchronizationTime: Instant,
+      synchronizationInterval: Duration,
+    ): MonotonicClock {
+      // TODO: Vallidate and throw
+      return MonotonicClock(
+        elapsedTime = elapsedTime,
+        previousSynchronizationTime = previousSynchronizationTime,
+        synchronizationInterval = synchronizationInterval,
       )
     }
   }

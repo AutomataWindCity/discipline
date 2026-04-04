@@ -4,7 +4,26 @@ pub struct Duration {
 }
 
 impl Duration {
+  pub const MILLISECONDS_PER_SECOND: u64 = 1000;
+  pub const MILLISECONDS_PER_MINUTE: u64 = 1000 * 60;
+  pub const MILLISECONDS_PER_HOUR: u64 = 1000 * 60 * 60;
+  pub const MILLISECONDS_PER_DAY: u64 = 1000 * 60 * 60 * 24;
+  pub const MILLISECONDS_PER_WEEK: u64 = 1000 * 60 * 60 * 24 * 7;
+
+  pub const MAXIMUM_SECONDS: u64 = u64::MAX / Self::MILLISECONDS_PER_SECOND;
+  pub const MAXIMUM_MINUTES: u64 = u64::MAX / Self::MILLISECONDS_PER_MINUTE;
+  pub const MAXIMUM_HOURS: u64 = u64::MAX / Self::MILLISECONDS_PER_HOUR;
+  pub const MAXIMUM_DAYS: u64 = u64::MAX / Self::MILLISECONDS_PER_DAY;
+  pub const MAXIMUM_WEEKS: u64 = u64::MAX / Self::MILLISECONDS_PER_WEEK;
+
+  pub const MIN: Duration = Duration::from_milliseconds(0);
   pub const MAX: Duration = Duration::from_milliseconds(u64::MAX);
+  
+  pub const SECOND: Duration = Duration::from_milliseconds(Self::MILLISECONDS_PER_SECOND);
+  pub const MINUTE: Duration = Duration::from_milliseconds(Self::MILLISECONDS_PER_MINUTE);
+  pub const HOUR: Duration = Duration::from_milliseconds(Self::MILLISECONDS_PER_HOUR);
+  pub const DAY: Duration = Duration::from_milliseconds(Self::MILLISECONDS_PER_DAY);
+  pub const WEEK: Duration = Duration::from_milliseconds(Self::MILLISECONDS_PER_WEEK);
 
   pub fn from_milliseconds(milliseconds: u64) -> Duration {
     Self { milliseconds }
@@ -24,17 +43,25 @@ impl Duration {
     Self { milliseconds: 0 }
   }
 
+  pub fn day() -> Duration {
+    Duration { milliseconds: 1000 * 60 * 60 * 24 }
+  }
+
+  pub fn week() -> Duration {
+    Duration { milliseconds: 1000 * 60 * 60 * 24 * 7 }
+  }
+
   pub fn is_zero(self) -> bool {
     self.milliseconds == 0
   }
 
-  pub fn is_shorter(self, other: Duration) -> bool {
+  pub fn is_shorter_than(self, other: Duration) -> bool {
     self < other
   }
   pub fn is_shorter_than_or_equal_to(self, other: Duration) -> bool {
     self <= other
   }
-  pub fn is_or_equal_to(self, other: Duration) -> bool {
+  pub fn is_equal_to(self, other: Duration) -> bool {
     self == other
   }
   pub fn is_longer_than(self, other: Duration) -> bool {
@@ -48,11 +75,33 @@ impl Duration {
     Duration::from_milliseconds(self.milliseconds.saturating_sub(rhs.milliseconds))
   }
 
-  pub fn plus_or_zero(self, rhs: Self) -> Duration {
+  pub fn saturating_add(self, rhs: Self) -> Duration {
     Duration::from_milliseconds(self.milliseconds.saturating_add(rhs.milliseconds))
   }
 
-  pub fn milliseconds(self) -> u64 {
+  pub fn div_or_zero(self, rhs: Duration) -> Duration {
+    match self.milliseconds.checked_div(rhs.milliseconds) {
+      Some(result) => {
+        Duration::from_milliseconds(result)
+      }
+      None => {
+        Duration::zero()
+      }
+    }
+  }
+
+  pub fn rem_or_zero(self, rhs: Duration) -> Duration {
+    match self.milliseconds.checked_rem(rhs.milliseconds) {
+      Some(result) => {
+        Duration::from_milliseconds(result)
+      }
+      None => {
+        Duration::zero()
+      }
+    }
+  }
+
+  pub fn as_total_milliseconds(self) -> u64 {
     self.milliseconds
   }
 
@@ -71,7 +120,7 @@ mod serialization {
     where
       S: serde::Serializer 
     {
-      self.milliseconds().serialize(serializer)
+      self.as_total_milliseconds().serialize(serializer)
     }
   }
 

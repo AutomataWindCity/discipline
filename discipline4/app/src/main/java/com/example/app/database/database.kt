@@ -1,54 +1,22 @@
-package com.example.app
+package com.example.app.database
 
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import android.content.Context
+import android.database.sqlite.SQLiteOpenHelper
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteCursor
+import android.database.Cursor
+
 import com.example.app.*
 
-interface Scalar<T> {
-  fun read(): Unit
-  fun write(): Unit
-}
+// class OurDatabase : SQLiteOpenHelper() {
+//   override fun onCreate(database: SQLiteDatabase) {
+//   }
 
-object IntScalar : Scalar<Int> {
-  override fun read(): Unit {
-
-  }
-
-  override fun write(): Unit {
-
-  }
-}
-
-object IntScalar : Scalar<Int> {
-  override fun read(): Unit {
-
-  }
-
-  override fun write(): Unit {
-
-  }
-}
-
-// @Database(entities = [CountdownRule::class], version = 1)
-// public abstract class AppDatabase : RoomDatabase() {
-//     abstract fun userDao(): CountdownRuleDao
-
-//     companion object {
-//         @Volatile
-//         private var INSTANCE: AppDatabase? = null
-
-//         fun getInstance(context: Context): AppDatabase {
-//             return INSTANCE ?: synchronized(this) {
-//                 val instance = Room.databaseBuilder(
-//                     context.applicationContext,
-//                     AppDatabase::class.java,
-//                     "app_database"
-//                 ).build()
-//                 INSTANCE = instance
-//                 instance
-//             }
-//         }
-//     }
+//   override fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+//     database.execSQL(p0)
+//   }
 // }
+
+
+class MainUserCountdownRulesUpdateSet {
+  
+}

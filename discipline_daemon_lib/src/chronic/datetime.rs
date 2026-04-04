@@ -33,7 +33,7 @@ impl DateTime {
     }
   }
 
-  pub fn from_millisecond_timestamp(timestamp: i64) -> Result<DateTime, CreateFromMillisecondTimestampError> {
+  pub fn from_timestamp(timestamp: i64) -> Result<DateTime, CreateFromMillisecondTimestampError> {
     match chrono::DateTime::from_timestamp_millis(timestamp) {
       Some(inner) => {
         Ok(DateTime { inner })
@@ -44,14 +44,14 @@ impl DateTime {
     }
   }
 
-  pub fn millisecond_timestamp(self) -> i64 {
+  pub fn as_timestamp(self) -> i64 {
     self.inner.timestamp_millis()
   }
 
   pub fn till_or_zero(self, later: DateTime) -> Duration {
     match later
-      .millisecond_timestamp()
-      .checked_sub(self.millisecond_timestamp())
+      .as_timestamp()
+      .checked_sub(self.as_timestamp())
     {
       None => {
         Duration::zero()
@@ -78,7 +78,7 @@ impl DateTime {
         time.second() * 1000
       );
 
-      Time::unchecked_from_millisecond_timestamp(milliseconds)
+      Time::unchecked_from_timestamp(milliseconds)
     }
   }
 }
@@ -92,7 +92,7 @@ mod serialization {
     where
       S: serde::Serializer 
     {
-      self.millisecond_timestamp().serialize(serializer)
+      self.as_timestamp().serialize(serializer)
     }
   }
 
@@ -107,7 +107,7 @@ mod serialization {
           .with_attachement_display("Error", error))
       })?;
 
-      DateTime::from_millisecond_timestamp(timestamp).map_err(|error| match error {
+      DateTime::from_timestamp(timestamp).map_err(|error| match error {
         datetime::CreateFromMillisecondTimestampError::RangeViolation { timestamp } => {
           Error::custom(
             TextualError::new("Deserializing DateTime from i64 millisecond-based UTC timestamp")

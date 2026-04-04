@@ -2,14 +2,14 @@ use crate::x::database::*;
 use crate::x::rules::*;
 
 pub struct CrossRuleGroupInfoSchema {
-  rule_number: Key,
-  maximum_rule_number: Key,
+  rule_number: ColumnName,
+  maximum_rule_number: ColumnName,
 }
 
 impl CrossRuleGroupInfoSchema {
   pub fn new(
-    rule_number: Key,
-    maximum_rule_number: Key,
+    rule_number: ColumnName,
+    maximum_rule_number: ColumnName,
   ) -> Self {
     Self {
       rule_number,

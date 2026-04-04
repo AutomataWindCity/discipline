@@ -1,13 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Duration, Time, time};
-
-pub const MINIMUM_FROM_VALUE: u32 = time::MINIMUM_TIMESTAMP;
-pub const MAXIMUM_FROM_VALUE: u32 = time::MAXIMUM_TIMESTAMP;
-
-pub const MINIMUM_TILL_VALUE: u32 = time::MINIMUM_TIMESTAMP;
-pub const MAXIMUM_TILL_VALUE: u32 = time::MAXIMUM_TIMESTAMP * 2;
-
-const MILLISECONDS_PER_DAY: u32 = 1000 * 60 * 60 * 24;
+use crate::x::{Duration, Time};
 
 pub enum CreateFromTimestampsError {
   FromTimestampIsLessThanMinimumValue { from: u32, till: u32 },
@@ -19,6 +11,8 @@ pub enum CreateFromTimestampsError {
   RangeIsLongerThanOneDay { from: u32, till: u32 },
 }
 
+const MILLISECONDS_PER_DAY: u32 = 1000 * 60 * 60 * 24;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TimeRange {
   from: u32,
@@ -26,32 +20,32 @@ pub struct TimeRange {
 }
 
 impl TimeRange {
+  pub const MINIMUM_FROM_VALUE: u32 = Time::MINIMUM_TIMESTAMP;
+  pub const MAXIMUM_FROM_VALUE: u32 = Time::MAXIMUM_TIMESTAMP;
+
+  pub const MINIMUM_TILL_VALUE: u32 = Time::MINIMUM_TIMESTAMP;
+  pub const MAXIMUM_TILL_VALUE: u32 = Time::MAXIMUM_TIMESTAMP * 2 + 1;
+
   pub fn from_times(from: Time, till: Time) -> TimeRange {
-    let from = from.millisecond_timestamp();
-    let till = till.millisecond_timestamp();
+    let from = from.as_timestamp();
+    let till = till.as_timestamp();
     if from < till {
-      TimeRange {
-        from,
-        till,
-      }
+      TimeRange { from, till }
     } else {
-      TimeRange {
-        from,
-        till: MILLISECONDS_PER_DAY + till,
-      }
+      TimeRange { from, till: MILLISECONDS_PER_DAY + till }
     }
   }
 
   pub fn from(&self) -> Time {
     // TODO: Document this properly
     unsafe {
-      Time::unchecked_from_millisecond_timestamp(self.from)
+      Time::unchecked_from_timestamp(self.from)
     }
   }
 
   pub fn till(&self) -> Time {
     // TODO: Document this properly
-    let timestamp = if self.till > MAXIMUM_FROM_VALUE {
+    let timestamp = if self.till > Self::MAXIMUM_FROM_VALUE {
       self.till - MILLISECONDS_PER_DAY
     } else {
       self.till
@@ -59,21 +53,21 @@ impl TimeRange {
 
     // TODO: Document this properly
     unsafe {
-      Time::unchecked_from_millisecond_timestamp(timestamp)
+      Time::unchecked_from_timestamp(timestamp)
     }
   }
 
   pub fn from_timestamps(from: u32, till: u32) -> Result<TimeRange, CreateFromTimestampsError> {
-    if from < MINIMUM_FROM_VALUE {
+    if from < Self::MINIMUM_FROM_VALUE {
       return Err(CreateFromTimestampsError::FromTimestampIsLessThanMinimumValue { from, till });
     }
-    if from > MAXIMUM_FROM_VALUE {
+    if from > Self::MAXIMUM_FROM_VALUE {
       return Err(CreateFromTimestampsError::FromTimestampIsGreaterThanMaximumValue { from, till });
     }
-    if till < MINIMUM_TILL_VALUE {
+    if till < Self::MINIMUM_TILL_VALUE {
       return Err(CreateFromTimestampsError::TillTimestampIsLessThanMinimumValue { from, till });
     }
-    if till > MAXIMUM_TILL_VALUE {
+    if till > Self::MAXIMUM_TILL_VALUE {
       return Err(CreateFromTimestampsError::TillTimestampIsGreaterThanMaximumValue { from, till });
     }
     if from > till {
@@ -92,23 +86,11 @@ impl TimeRange {
   }
 
   pub fn contains(&self, time: Time) -> bool {
-    let time = time.millisecond_timestamp();
+    let time = time.as_timestamp();
     self.from <= time && self.till >= time
   }
 
   pub fn duration(&self) -> Duration {
     Duration::from_milliseconds((self.till - self.from) as u64)
-  }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Creator {
-  from: Time,
-  till: Time,
-}
-
-impl Creator {
-  pub fn create(self) -> TimeRange {
-    TimeRange::from_times(self.from, self.till)
   }
 }

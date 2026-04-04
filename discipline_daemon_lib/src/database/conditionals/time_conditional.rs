@@ -3,14 +3,14 @@ use crate::x::database::*;
 
 pub struct TimeConditionalSchema {
   time_range: TimeRangeSchema,
-  weekday_set: Key,
+  weekday_set: ColumnName,
 }
 
 impl TimeConditionalSchema {
   pub fn new(
-    time_range_from: Key,
-    time_range_till: Key,
-    weekday_set: Key,
+    time_range_from: ColumnName,
+    time_range_till: ColumnName,
+    weekday_set: ColumnName,
   ) -> Self {
     Self {
       time_range: TimeRangeSchema::new(time_range_from, time_range_till),

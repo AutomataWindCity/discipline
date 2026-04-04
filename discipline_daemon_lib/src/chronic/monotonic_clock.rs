@@ -1,40 +1,52 @@
 use crate::x::{DateTime, Duration};
 
 pub struct MonotonicClock {
-  total_elapsed_duration: u64,
-  previous_synchronization_time: Option<DateTime>,
-  synchronization_interval: Duration,
-}
-
-impl Default for MonotonicClock {
-  fn default() -> Self {
-    Self {
-      total_elapsed_duration: 1,
-      previous_synchronization_time: None,
-      synchronization_interval: Duration::from_minutes_or_panic(5)
-    }
-  }
+  total_elapsed_duration: Duration,
+  previous_synchronization_realtime: Instant,
+  previous_synchronization_boottime: Instant,
+  maximum_synchronization_interval: Duration,
 }
 
 impl MonotonicClock {
-  pub fn construct(
-    total_elapsed_duration: Duration,
-    previous_synchronization_time: Option<DateTime>,
-    synchronization_interval: Duration,
+  pub fn create(
+    realtime: Instant,
+    boottime: Instant,
+    maximum_synchronization_interval: Duration,
   ) -> Self {
     Self {
-      total_elapsed_duration: total_elapsed_duration.milliseconds(),
-      previous_synchronization_time,
-      synchronization_interval,
-    }
+      total_elapsed_duration: Duration::zero(),
+      previous_synchronization_realtime: realtime,
+      previous_synchronization_boottime: boottime,
+      maximum_synchronization_interval,
+    } 
+  }
+  
+  pub fn construct(
+    realtime: Instant,
+    boottime: Instant,
+    total_elapsed_duration: Duration,
+    maximum_synchronization_interval: Duration,
+    previous_synchronization_realtime: Instant,
+    previous_synchronization_boottime: Instant,
+  ) -> Self {
+    let mut clock = Self {
+      total_elapsed_duration,
+      maximum_synchronization_interval,
+      previous_synchronization_realtime,
+      previous_synchronization_boottime,
+    };
+
+    clock.synchronize_with_realtime(realtime);
+
+    clock
   }
 
-  pub fn now(&self) -> MonotonicInstant {
-    MonotonicInstant { timestamp: self.total_elapsed_duration }
+  pub fn now(&self) -> Instant {
+    Instant(self.total_elapsed_duration)
   }
 
   pub fn total_elapsed_duration(&self) -> Duration {
-    Duration::from_milliseconds(self.total_elapsed_duration)
+    self.total_elapsed_duration
   }
 
   pub fn previous_synchronization_time(&self) -> Option<DateTime> {
@@ -42,123 +54,113 @@ impl MonotonicClock {
   }
 
   pub fn synchronization_interval(&self) -> Duration {
-    self.synchronization_interval
+    self.maximum_synchronization_interval
+  }
+  
+  fn synchronize_with_realtime(
+    &mut self,
+    realtime: Instant,
+  ) {
+
+    // let Some(realtime) = get_time_from_boottime_clock() else {
+    //   return;
+    // };
+
+    let realtime_since_prev_sync = self
+      .previous_synchronization_realtime
+      .till_or_zero(realtime);
+
+    if realtime_since_prev_sync.is_zero() {
+      return;
+    }
+
+    self.total_elapsed_duration = self
+      .total_elapsed_duration
+      .saturating_add(realtime_since_prev_sync)
+      .min(self.maximum_synchronization_interval);
+    
+    self.previous_synchronization_realtime = realtime;
+  }
+
+  pub fn synchronize(
+    &mut self,
+    realtime: Instant,
+    boottime: Instant,
+  ) {
+    self.previous_synchronization_realtime = realtime;
+
+    let boottime_since_prev_sync = self 
+      .previous_synchronization_boottime
+      .till_or_zero(boottime);
+
+    if boottime_since_prev_sync.is_zero() {
+      return;
+    }
+
+    self.total_elapsed_duration = self
+      .total_elapsed_duration
+      .saturating_add(boottime_since_prev_sync)
+      .min(self.maximum_synchronization_interval);
+
+    self.previous_synchronization_boottime = boottime;
   }
 }
-
-// pub struct SharedMonotonicClock {
-//   clock: Arc<RwLock<MonotonicClock>>,
-// }
-
-// fn synchronization_loop_iteration(clock: &mut MonotonicClock) {
-//   let current_time = DateTime::now();
-
-//   let previous_synchronization_time = match clock.previous_synchronization_time {
-//     None => {
-//       clock.previous_synchronization_time = Some(current_time);
-//       return;
-//     }
-//     Some(time) => {
-//       time
-//     }
-//   };
-
-//   let interval = previous_synchronization_time
-//     .till_or_zero(current_time);
-
-//   // TODO: Log an error if "clock.milliseconds" reaches the maximum value for
-//   // "u64".
-//   clock.total_elapsed_duration = clock.total_elapsed_duration.saturating_add(interval.milliseconds());
-
-//   // TODO: Update the database, too.
-// }
-
-// impl SharedMonotonicClock {
-//   pub async fn start_synchronization_loop(self) {
-//     loop {
-//       let mut clock_guard = self.clock.write().await;
-//       let clock = &mut *clock_guard;
-//       let interval = clock.synchronization_interval.to_std_duration();
-      
-//       synchronization_loop_iteration(clock);
-//       drop(clock_guard);
-//       sleep(interval).await;
-//     }
-//   }
-// }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct MonotonicInstant {
-  timestamp: u64,
-}
+pub struct Instant(Duration);
 
-impl MonotonicInstant {
-  pub const MAX: MonotonicInstant = MonotonicInstant { timestamp: u64::MAX };
+impl Instant {
+  pub const MAX: Instant = Instant(Duration::MAX);
 
   pub fn from_timestamp(timestamp: u64) -> Self {
-    Self { timestamp }
+    Self(Duration::from_milliseconds(timestamp))
+  }
+
+  pub fn from_elapsed_time(elapsed_time: Duration) -> Self {
+    Self(elapsed_time)
   }
   
-  pub fn is_eariler_than(self, other: MonotonicInstant) -> bool {
-    self.timestamp < other.timestamp
-  }
-
-  pub fn is_later_than(self, other: MonotonicInstant) -> bool {
-    self.timestamp > other.timestamp
-  }
-
-  pub fn is_at(self, other: MonotonicInstant) -> bool {
-    self.timestamp == other.timestamp
-  }
-
-  pub fn since_or_zero(self, other: MonotonicInstant) -> Duration {
-    self
-      .timestamp
-      .checked_sub(other.timestamp)
-      .map(Duration::from_milliseconds)
-      .unwrap_or_else(Duration::zero)
-  }
-
-  pub fn till_or_zero(self, other: MonotonicInstant) -> Duration {
-    other
-      .timestamp
-      .checked_sub(self.timestamp)
-      .map(Duration::from_milliseconds)
-      .unwrap_or_else(Duration::zero)
-  }
-
-  pub fn plus_or_max(self, duration: Duration) -> MonotonicInstant {
-    self
-      .timestamp
-      .checked_add(duration.milliseconds())
-      .map(MonotonicInstant::from_timestamp)
-      .unwrap_or(MonotonicInstant::MAX)
+  pub fn is_eariler_than(self, other: Instant) -> bool {
+    self.0.is_shorter_than(other.0)
   }
   
-  pub fn timestamp(&self) -> u64 {
-    self.timestamp
-  }
-}
-
-mod serialization {
-  use serde::{Serialize, Deserialize};
-  use super::{MonotonicInstant};
-
-  impl Serialize for MonotonicInstant {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-      S: serde::Serializer 
-    {
-      self.timestamp.serialize(serializer)
-    }
+  pub fn is_eariler_than_at(self, other: Instant) -> bool {
+    self.0.is_shorter_than_or_equal_to(other.0)
   }
 
-  impl<'a> Deserialize<'a> for MonotonicInstant {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-      D: serde::Deserializer<'a> 
-    {
-      u64::deserialize(deserializer).map(|timestamp| MonotonicInstant { timestamp })
-    }
+  pub fn is_at(self, other: Instant) -> bool {
+    self.0.is_equal_to(other.0)
+  }
+
+  pub fn is_later_than_or_at(self, other: Instant) -> bool {
+    self.0.is_longer_than_or_equal_to(other.0)
+  }
+
+  pub fn is_later_than(self, other: Instant) -> bool {
+    self.0.is_longer_than(other.0)
+  }
+
+  pub fn till_or_zero(self, later: Instant) -> Duration {
+    later.0.minus_or_zero(self.0)
+  }
+
+  pub fn since_or_zero(self, eariler: Instant) -> Duration {
+    eariler.0.minus_or_zero(self.0)
+  }
+
+  pub fn saturating_add(self, duration: Duration) -> Instant {
+    Self(self.0.saturating_add(duration))
+  }
+
+  pub fn saturating_sub(self, duration: Duration) -> Instant {
+    Self(self.0.saturating_sub(duration))
+  }
+  
+  pub fn as_elapsed_time(self) -> Duration {
+    self.0
+  }
+
+  pub fn as_timestamp(&self) -> u64 {
+    self.0.as_total_milliseconds()
   }
 }

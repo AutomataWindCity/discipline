@@ -7,4 +7,7 @@ pub mod weekday;
 pub mod weekday_range;
 pub mod weekday_set;
 pub mod countdown;
-pub mod monotonic;
+pub mod monotonic_clock;
+pub mod instant;
+pub mod rule_protector_type;
+pub mod option_type;

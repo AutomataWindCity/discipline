@@ -3,11 +3,11 @@ package com.example.app
 import com.example.app.*
 
 public data class CountdownRules(
-  val rules: Map<String, CountdownRule>,
+  val rules: MutableMap<UuidV4, CountdownRule>,
 ) {
   companion object {
     fun createDefault(): CountdownRules {
-      return CountdownRules(rules = emptyMap())
+      return CountdownRules(rules = mutableMapOf())
     }
   }
 

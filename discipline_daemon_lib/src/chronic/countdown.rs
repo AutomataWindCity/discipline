@@ -1,53 +1,53 @@
 use serde::{Deserialize, Serialize};
-use crate::x::{Duration, MonotonicInstant};
+use crate::x::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CountdownStatus {
+pub enum CountdownState {
   Pending,
   Running,
   Finished,
 }
 
-impl CountdownStatus {
+impl CountdownState {
   pub fn is_pending(self) -> bool {
-    matches!(self, CountdownStatus::Pending)
+    matches!(self, CountdownState::Pending)
   }
 
   pub fn is_running(self) -> bool {
-    matches!(self, CountdownStatus::Running)
+    matches!(self, CountdownState::Running)
   }
 
   pub fn is_finished(self) -> bool {
-    matches!(self, CountdownStatus::Finished)
+    matches!(self, CountdownState::Finished)
   }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Countdown {
-  pub from: MonotonicInstant,
+  pub from: Instant,
   pub duration: Duration,
 }
 
 impl Countdown {
-  pub fn create(from: MonotonicInstant, duration: Duration) -> Self {
+  pub fn create(from: Instant, duration: Duration) -> Self {
     Self {
       from,
       duration,
     }
   }
 
-  pub fn construct(from: MonotonicInstant, duration: Duration) -> Countdown {
+  pub fn construct(from: Instant, duration: Duration) -> Countdown {
     Self { 
       from, 
       duration,
     }
   }
 
-  pub fn get_from(&self) -> MonotonicInstant {
+  pub fn get_from(&self) -> Instant {
     self.from
   }
 
-  pub fn get_till(&self) -> MonotonicInstant {
+  pub fn get_till(&self) -> Instant {
     self.from.plus_or_max(self.duration)
   }
 
@@ -59,63 +59,63 @@ impl Countdown {
     self.duration = new_value;
   }
 
-  pub fn get_duration_till_start_or_zero(&self, now: MonotonicInstant) -> Duration {
+  pub fn get_duration_till_start_or_zero(&self, now: Instant) -> Duration {
     now.till_or_zero(self.from)
   }
 
-  pub fn get_duration_since_start_or_zero(&self, now: MonotonicInstant) -> Duration {
+  pub fn get_duration_since_start_or_zero(&self, now: Instant) -> Duration {
     now.since_or_zero(self.from)
   }
 
-  pub fn get_elapsed_time_or_zero(&self, now: MonotonicInstant) -> Duration {
+  pub fn get_elapsed_time_or_zero(&self, now: Instant) -> Duration {
     self.get_duration_since_start_or_zero(now).min(self.duration)
   }
 
-  pub fn get_remaining_time_or_zero(&self, now: MonotonicInstant) -> Duration {
+  pub fn get_remaining_time_or_zero(&self, now: Instant) -> Duration {
     self.get_total_duration().minus_or_zero(self.get_elapsed_time_or_zero(now))
   }
 
-  pub fn get_time_till_finish_or_zero(&self, now: MonotonicInstant) -> Duration {
+  pub fn get_time_till_finish_or_zero(&self, now: Instant) -> Duration {
     now.till_or_zero(self.get_till())
   }
 
-  pub fn get_status(&self, now: MonotonicInstant) -> CountdownStatus {
+  pub fn get_state(&self, now: Instant) -> CountdownState {
     if now.is_eariler_than(self.from) {
-      return CountdownStatus::Pending;
+      return CountdownState::Pending;
     } 
     
     let elapsed_time = self.get_elapsed_time_or_zero(now);
     if elapsed_time.is_shorter_than_or_equal_to(self.duration) {
-      return CountdownStatus::Running;
+      return CountdownState::Running;
     }
     
-    CountdownStatus::Finished
+    CountdownState::Finished
   }
 
   // todo: delete
-  pub fn get_remaining_duration_or_zero(&self, now: MonotonicInstant) -> Duration {
-    match self.get_status(now) {
-      CountdownStatus::Pending => {
+  pub fn get_remaining_duration_or_zero(&self, now: Instant) -> Duration {
+    match self.get_state(now) {
+      CountdownState::Pending => {
         self.duration
       }
-      CountdownStatus::Running => {
+      CountdownState::Running => {
         self.duration.minus_or_zero(self.from.till_or_zero(now))
       }
-      CountdownStatus::Finished => {
+      CountdownState::Finished => {
         Duration::zero()
       }
     }
   }
 
-  pub fn is_pending(&self, now: MonotonicInstant) -> bool {
-    self.get_status(now).is_pending()
+  pub fn is_pending(&self, now: Instant) -> bool {
+    self.get_state(now).is_pending()
   }
 
-  pub fn is_running(&self, now: MonotonicInstant) -> bool {
-    self.get_status(now).is_running()
+  pub fn is_running(&self, now: Instant) -> bool {
+    self.get_state(now).is_running()
   }
 
-  pub fn is_finished(&self, now: MonotonicInstant) -> bool {
-    self.get_status(now).is_finished()
+  pub fn is_finished(&self, now: Instant) -> bool {
+    self.get_state(now).is_finished()
   }
 }

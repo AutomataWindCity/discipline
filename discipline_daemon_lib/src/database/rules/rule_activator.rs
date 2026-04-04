@@ -35,13 +35,13 @@ impl RuleActivatorType {
   }
 }
 
-impl WriteScalarValue for RuleActivatorType {
+impl ScalarWrite for RuleActivatorType {
   fn write(value: &Self, writer: &mut ScalarValueWriteDestination) {
     writer.write_scalar_value(&value.to_number());
   }
 }
 
-impl ReadScalarValue for RuleActivatorType {
+impl ScalarRead for RuleActivatorType {
   fn read(reader: &mut ScalarValueReadSource) -> Result<Self, TextualError> {
     reader
       .read_scalar_value()
@@ -50,17 +50,17 @@ impl ReadScalarValue for RuleActivatorType {
 }
 
 pub struct RuleActivatorSchema {
-  enum_type: Key,
+  enum_type: ColumnName,
   enum_time: conditionals::time::database::Schema,
   enum_always: conditionals::always::database::Schema,
 }
 
 impl RuleActivatorSchema {
   pub fn new(
-    enum_type: Key,
-    enum_data_1: Key,
-    enum_data_2: Key,
-    enum_data_3: Key,
+    enum_type: ColumnName,
+    enum_data_1: ColumnName,
+    enum_data_2: ColumnName,
+    enum_data_3: ColumnName,
   ) -> Self {
     Self {
       enum_type,

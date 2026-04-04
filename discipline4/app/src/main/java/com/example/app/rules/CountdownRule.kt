@@ -8,32 +8,35 @@ import androidx.room.Entity
  */
 @Entity
 public data class CountdownRule private constructor(
-  var isEnabled: Boolean,
+  // var isEnabled: Boolean,
   val countdown: Countdown
 ) {
   companion object {
     fun create(countdown: Countdown): CountdownRule {
       return CountdownRule(
-        isEnabled = false, 
+        // isEnabled = false, 
         countdown = countdown,
       )
     }
 
     fun construct(
-      isEnabled: Boolean, 
+      // isEnabled: Boolean, 
       countdown: Countdown,
     ): CountdownRule {
-      return CountdownRule(isEnabled, countdown)
+      return CountdownRule(
+        // isEnabled, 
+        countdown,
+      )
     }
   }
   
-  fun getIsEnabled(): Boolean {
-    return isEnabled
-  }
+  // fun getIsEnabled(): Boolean {
+  //   return isEnabled
+  // }
 
-  fun setIsEnabled(newValue: Boolean) {
-    isEnabled = newValue
-  }
+  // fun setIsEnabled(newValue: Boolean) {
+  //   isEnabled = newValue
+  // }
 
   fun getCountdown(): Countdown {
     return countdown
@@ -43,10 +46,10 @@ public data class CountdownRule private constructor(
    * Checks if this rule is active (enabled and countdown not finished)
    */
   fun isActive(now: Instant): Boolean {
-    return isEnabled && !countdown.isFinished(now)
+    return !countdown.isFinished(now)
   }
   
   override fun toString(): String {
-    return "CountdownRule(enabled=$isEnabled, countdown=${countdown.getTotalDuration()})"
+    return "CountdownRule(countdown=${countdown.getTotalDuration()})"
   }
 }

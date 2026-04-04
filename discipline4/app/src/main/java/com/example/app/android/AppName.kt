@@ -37,6 +37,26 @@ public value class AppName private constructor(val value: String) {
       
       return Tried.success(AppName(string))
     }
+
+    fun createOrThrow(string: String): AppName {
+      if (string.length < MINIMUM_LENGTH) {
+        throw TextualError.create("Creating an ApplicationName from string")
+          .addMessage("String's length is less than the minimum valid length")
+          .addStringAttachment("String", string)
+          .addNumberAttachment("String length", string.length.toDouble())
+          .addNumberAttachment("Minimum valid length", MINIMUM_LENGTH.toDouble())
+      }
+
+      if (string.length > MAXIMUM_LENGTH) {
+        throw TextualError.create("Creating an ApplicationName from string")
+          .addMessage("String's length is greater than the maximum allowed length")
+          .addStringAttachment("String", string)
+          .addNumberAttachment("String length", string.length.toDouble())
+          .addNumberAttachment("Maximum valid length", MAXIMUM_LENGTH.toDouble())
+      }
+
+      return AppName(string)
+    }
     
     /**
      * Creates an ApplicationName without validation (use with caution)

@@ -5,16 +5,16 @@ use crate::x::rules::*;
 use crate::x::database::*;
 use crate::x::database::rules::*;
 
-static USER_ID: Key = Key::new("UserId");
-static RULE_ID: Key = Key::new("RuleId");
-static RULE_ACTIVATOR_ENUM_TYPE: Key = Key::new("RuleActivatorEnumType");
-static RULE_ACTIVATOR_ENUM_DATA_1: Key = Key::new("RuleActivatorEnumData1");
-static RULE_ACTIVATOR_ENUM_DATA_2: Key = Key::new("RuleActivatorEnumData2");
-static RULE_ACTIVATOR_ENUM_DATA_3: Key = Key::new("RuleActivatorEnumData3");
-static RULE_ENABLER_ENUM_TYPE: Key = Key::new("RuleEnablerEnumType");
-static RULE_ENABLER_ENUM_DATA_1: Key = Key::new("RuleEnablerEnumData1");
-static RULE_ENABLER_ENUM_DATA_2: Key = Key::new("RuleEnablerEnumData2");
-static RULE_ENABLER_ENUM_DATA_3: Key = Key::new("RuleEnablerEnumData3");
+static USER_ID: ColumnName = ColumnName::new("UserId");
+static RULE_ID: ColumnName = ColumnName::new("RuleId");
+static RULE_ACTIVATOR_ENUM_TYPE: ColumnName = ColumnName::new("RuleActivatorEnumType");
+static RULE_ACTIVATOR_ENUM_DATA_1: ColumnName = ColumnName::new("RuleActivatorEnumData1");
+static RULE_ACTIVATOR_ENUM_DATA_2: ColumnName = ColumnName::new("RuleActivatorEnumData2");
+static RULE_ACTIVATOR_ENUM_DATA_3: ColumnName = ColumnName::new("RuleActivatorEnumData3");
+static RULE_ENABLER_ENUM_TYPE: ColumnName = ColumnName::new("RuleEnablerEnumType");
+static RULE_ENABLER_ENUM_DATA_1: ColumnName = ColumnName::new("RuleEnablerEnumData1");
+static RULE_ENABLER_ENUM_DATA_2: ColumnName = ColumnName::new("RuleEnablerEnumData2");
+static RULE_ENABLER_ENUM_DATA_3: ColumnName = ColumnName::new("RuleEnablerEnumData3");
 
 pub struct Row {
   pub rule_id: UuidV4, 
@@ -23,8 +23,8 @@ pub struct Row {
 }
 
 pub struct Schema {
-  rule_id: Key,
-  user_id: Key,
+  rule_id: ColumnName,
+  user_id: ColumnName,
   rule: RuleSchema,
 }
 

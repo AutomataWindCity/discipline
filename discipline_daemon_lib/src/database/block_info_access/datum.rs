@@ -1,16 +1,16 @@
 use super::*;
 
 pub struct DatumSchema {
-  pub vault_id: Key,
-  pub datum_id: Key,
-  pub datum_text: Key,
+  pub vault_id: ColumnName,
+  pub datum_id: ColumnName,
+  pub datum_text: ColumnName,
 }
 
 impl DatumSchema {
   pub fn new(
-    vault_id: Key,
-    datum_id: Key,
-    datum_text: Key,
+    vault_id: ColumnName,
+    datum_id: ColumnName,
+    datum_text: ColumnName,
   ) -> Self {
     Self {
       vault_id,

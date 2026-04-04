@@ -2,14 +2,14 @@ use crate::x::{TimeRange, TextualError};
 use crate::x::database::*;
 
 pub struct TimeRangeSchema {
-  from: Key,
-  till: Key,
+  from: ColumnName,
+  till: ColumnName,
 }
 
 impl TimeRangeSchema {
   pub fn new(
-    from: Key,
-    till: Key,
+    from: ColumnName,
+    till: ColumnName,
   ) -> Self {
     Self {
       from,

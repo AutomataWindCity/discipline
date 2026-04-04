@@ -2,48 +2,195 @@ use serde::{Deserialize, Serialize};
 use super::{Daemon, UserProfile};
 use crate::x::{RuleProtector, UuidV4};
 
-pub enum AlwaysRuleLocator {
-  UserScreen { profile_id: UuidV4 },
-  UserDevice { profile_id: UuidV4 },
-  UserInternet { profile_id: UuidV4 },
+pub struct CreateUserProfile {}
+
+pub enum CreateUserProfileReturn {
+  TooManyUserProfiles,
+  InternalError,
+  Success,
+}
+
+pub struct ChangeUserProfileName {}
+
+pub enum ChangeUserProfileNameReturn {
+  InternalError,
+  Success,
+}
+
+pub struct DeleteUserProfile {}
+
+pub enum DeleteUserProfileReturn {
+  NotPermitted,
+  InternalError,
+  Success,
+}
+
+pub enum AlwaysRuleContext {
+  UserProfileDeviceAccessRegulation { user_profile_id: UuidV4 },
+  UserProfileScreenAccessRegulation { user_profile_id: UuidV4 },
+  UserProfileInternetAccessRegulation { user_profile_id: UuidV4 },
 }
 
 pub struct CreateAlwaysRule {
-  id: Option<UuidV4>,
-  locator: AlwaysRuleLocator,
-  protector: RuleProtector,
+
 }
 
 pub enum CreateAlwaysRuleReturn {
+  NoSuchUserProfile,
+  TooManyRules,
+  InternalError,
+  Success,
+}
+
+pub struct CreateAlwaysRuleForUserProfileDeviceAccessRegulation {
+
+}
+
+pub enum CreateAlwaysRuleForUserProfileDeviceAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+pub struct CreateTimeRangeRuleForUserProfileDeviceAccessRegulation {}
+
+pub enum CreateTimeRangeRuleForUserProfileDeviceAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+pub struct CreateDailyTimeAllowanceRuleForUserProfileDeviceAccessRegulation {
+
+}
+
+pub enum CreateDailyTimeAllowanceRuleForUserProfileDeviceAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+pub struct CreateWeeklyTimeAllowanceRuleForUserProfileDeviceAccessRegulation {
+
+}
+
+pub enum CreateWeeklyTimeAllowanceRuleForUserProfileDeviceAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+
+pub struct CreateAlwaysRuleForUserProfileScreenAccessRegulation {
+
+}
+
+pub enum CreateAlwaysRuleForUserProfileScreenAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+pub struct CreateTimeRangeRuleForUserProfileScreenAccessRegulation {}
+
+pub enum CreateTimeRangeRuleForUserProfileScreenAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+pub struct CreateDailyTimeAllowanceRuleForUserProfileScreenAccessRegulation {
+
+}
+
+pub enum CreateDailyTimeAllowanceRuleForUserProfileScreenAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+pub struct CreateWeeklyTimeAllowanceRuleForUserProfileScreenAccessRegulation {
+
+}
+
+pub enum CreateWeeklyTimeAllowanceRuleForUserProfileScreenAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+
+pub struct CreateAlwaysRuleForUserProfileInternetAccessRegulation {
+
+}
+
+pub enum CreateAlwaysRuleForUserProfileInternetAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+pub struct CreateTimeRangeRuleForUserProfileInternetAccessRegulation {
+
+}
+
+pub enum CreateTimeRangeRuleForUserProfileInternetAccessRegulationReturn {
+  NoSuchUser,
+  TooManyRules,
+  DuplicateId,
+  InternalError,
+  Success,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TimeRangeCreator {
+  from: Time,
+  till: Time,
+}
+
+impl TimeRangeCreator {
+  pub fn create(self) -> TimeRange {
+    TimeRange::from_times(self.from, self.till)
+  }
+}
+
+pub struct CreateAlwaysRuleAtUserScreenRegulation {
+  user_id: UuidV4,
+  rule_id: Option<UuidV4>,
+  rule_protector: RuleProtector,
+}
+
+pub enum CreateAlwaysRuleAtUserScreenRegulationReturn {
   NoSuchUser,
   InternalError,
   Success,
 }
 
-pub enum CreateAlwaysRuleContext<'a> {
-  UserInternet(&'a UserProfile),
-  UserDevice(&'a UserProfile),
-  UserScreen(&'a UserProfile),
-}
+impl CreateAlwaysRuleAtUserScreenRegulation {
+  pub fn execute(self, daemon: &Daemon) -> CreateAlwaysRuleAtUserScreenRegulationReturn {
+    let Some(user) = daemon.state.user_profiles.get_profile_given_id(user_id) else {
+      return CreateAlwaysRuleAtUserScreenRegulationReturn::NoSuchUser;
+    };
 
-impl CreateAlwaysRule {
-  pub fn execute(self, daemon: &Daemon) -> CreateAlwaysRuleReturn {
-    let it = match self.locator {
-      AlwaysRuleLocator::UserDevice { profile_id } => {
-        match daemon
-          .state
-          .user_profiles
-          .get_profile_given_id(&profile_id)
-        {
-          Some(value) => {
-            CreateAlwaysRuleContext::UserDevice(value)
-          }
-          None => {
-            return CreateAlwaysRuleReturn::NoSuchUser;
-          }
-        }
-      }
-    }    
+
   }
 }
 
@@ -125,7 +272,7 @@ pub async fn delete_user(
   database: &Database,
   user_group: &mut UserGroup,
   user_id: &UuidV4,
-  now: MonotonicInstant,
+  now: Instant,
 ) -> DeleteUserReturn {
   let Some(user) = user_group.get_user(user_id) else {
     return DeleteUserReturn::NoSuchUser;
@@ -253,5 +400,21 @@ impl SetUserName {
       &self.user_id, 
       &self.new_user_name,
     ).await
+  }
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Creator {
+  time_range: TimeRange,
+  weekday_set: WeekdaySet,
+}
+
+impl Creator {
+  pub fn create(self) -> TimeConditional {
+    TimeConditional { 
+      time_range: self.time_range, 
+      weekday_set: self.weekday_set,
+    }
   }
 }

@@ -2,16 +2,16 @@ use crate::x::{CountdownConditional, TextualError};
 use crate::x::database::*;
 
 pub struct CountdownConditionalSchema {
-  countdown: CountdownSchema,
+  countdown: CountdownColumnNames,
 }
 
 impl CountdownConditionalSchema {
   pub fn new(
-    countdown_from: Key,
-    countdown_duration: Key,
+    countdown_from: ColumnName,
+    countdown_duration: ColumnName,
   ) -> Self {
     Self {
-      countdown: CountdownSchema::new(
+      countdown: CountdownColumnNames::new(
         countdown_from, 
         countdown_duration,
       ),

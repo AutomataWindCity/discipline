@@ -57,6 +57,35 @@ public data class TimeAllowanceRule private constructor(
         lifetime = lifetime,
       ))
     }
+
+    fun createOrThrow(allowance: Duration, lifetime: Countdown): TimeAllowanceRule {
+      if (allowance.isShorterThan(MINIMUM_ALLOWANCE)) {
+        throw TextualError.create("Creating a TimeAllowanceRule")
+          .addMessage("Allowance is too short")
+          .addStringAttachment("Minimum allowance", MINIMUM_ALLOWANCE.toString())
+          .addStringAttachment("Provided allowance", allowance.toString())
+      }
+
+      if (allowance.isLongerThan(MAXIMUM_ALLOWANCE)) {
+        throw TextualError.create("Creating a TimeAllowanceRule")
+          .addMessage("Allowance is too long")
+          .addStringAttachment("Maximum allowance", MAXIMUM_ALLOWANCE.toString())
+          .addStringAttachment("Provided allowance", allowance.toString())
+      }
+
+      if (lifetime.getTotalDuration().isLongerThan(MAXIMUM_LIFETIME)) {
+        throw TextualError.create("Creating a TimeAllowanceRule")
+          .addMessage("Lifetime is too long")
+          .addStringAttachment("Maximum lifetime", MAXIMUM_LIFETIME.toString())
+          .addStringAttachment("Provided lifetime", lifetime.getTotalDuration().toString())
+      }
+
+      return TimeAllowanceRule(
+        isEnabled = false,
+        allowance = allowance,
+        lifetime = lifetime,
+      )
+    }
   }
   
   fun getTotalAllowance(): Duration {

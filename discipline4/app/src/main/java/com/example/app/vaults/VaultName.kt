@@ -31,6 +31,19 @@ public value class VaultName private constructor(val value: String) {
       
       return Tried.success(VaultName(string))
     }
+
+    fun createOrThrow(string: String): VaultName {
+      if (string.length < MINIMUM_LENGTH || string.length > MAXIMUM_LENGTH) {
+        throw TextualError.create("Creating VaultName from string")
+          .addMessage("String violates length invariants")
+          .addNumberAttachment("Minimum length", MINIMUM_LENGTH.toDouble())
+          .addNumberAttachment("Maximum length", MAXIMUM_LENGTH.toDouble())
+          .addNumberAttachment("Provided string length", string.length.toDouble())
+          .addStringAttachment("Provided string", string)
+      }
+
+      return VaultName(string)
+    }
   }
   
   fun isEqualTo(other: VaultName): Boolean {
