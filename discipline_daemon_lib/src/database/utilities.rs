@@ -1,9 +1,11 @@
+use std::borrow::Borrow;
 use std::ffi::CString;
 use std::any::type_name;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use rusqlite::types::ValueRef;
+use crate::IsTextualError;
 use crate::x::TextualError;
 
 pub struct SqlNull;
@@ -19,34 +21,36 @@ trait SqlWritable {
   
 }
 
-impl<'a> SqlWritable for &'a TableName {
+// impl<'a> SqlWritable for &'a TableName {
   
-}
-impl<'a> SqlWritable for &'a ColumnName {
+// }
+// impl<'a> SqlWritable for &'a ColumnName {
   
-}
-impl<'a> SqlWritable for &'a ColumnIndex {
+// }
+// impl<'a> SqlWritable for &'a ColumnIndex {
   
-}
+// }
 // impl<'a> SqlWritable for &'a str {
   
 // }
 
-impl<'a> SqlWritable for TableName {
+// impl SqlWritable for TableName {
   
-}
-impl<'a> SqlWritable for ColumnName {
+// }
+// impl SqlWritable for ColumnName {
   
-}
-impl<'a> SqlWritable for ColumnIndex {
+// }
+// impl SqlWritable for ColumnIndex {
   
-}
-impl<T> SqlWritable for T 
-where 
-  T: ScalarWrite
-{
+// }
 
-}
+// impl<T> SqlWritable for T 
+// where 
+//   T: ScalarWrite
+// {
+
+// }
+// impl<'a, T> SqlWritable {}
 
 impl SqlCode {
   pub fn new() -> Self {
@@ -55,6 +59,10 @@ impl SqlCode {
     }
   }
   
+  pub fn write_literal(&mut self, str: &str) {}
+  pub fn write_value<A: ScalarWrite>(&mut self, str: A) {}
+  pub fn write_value_ref<A: ScalarWrite>(&mut self, str: &A) {}
+
   pub fn write(&mut self, str: &str) {
     self.value.push_str(str);
   }
@@ -63,13 +71,20 @@ impl SqlCode {
     // self.value.push_str(str);
   }
 
-  pub fn write_column_equal_value<T>(&mut self, key: ColumnName, value: &T)
+  pub fn write_2(&mut self, a: impl SqlWritable, b: impl SqlWritable) {
+    // self.value.push_str(str);
+  }
+  pub fn write_3(&mut self, a: impl SqlWritable, b: impl SqlWritable, c: impl SqlWritable) {
+    // self.value.push_str(str);
+  }
+
+  pub fn write_column_equal_value<T>(&mut self, name: impl SqlWritable, value: impl SqlWritable)
   where 
     T: ScalarWrite 
   {
-    self.value.push_str(key.as_str());
-    self.value.push_str(" = ");
-    write_scalar_value(self, value);
+    // self.value.push_str(key.as_str());
+    // self.value.push_str(" = ");
+    // write_scalar_value(self, value);
   }
   
   pub fn write_key(&mut self, key: ColumnName) {
@@ -1099,55 +1114,59 @@ impl MyConnection {
     }
   }
 
-  pub fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
-    let Err(error) = self.connection.execute_batch(code.as_str()) else {
-      return Ok(());
-    };
-    
-    let sqlite_extended_error_code = match error {
-      rusqlite::Error::SqliteFailure(error, _) => {
-        error.extended_code
-      }
-      other => {
-        return Err(DbExecuteError::Other(other));
-      }
-    };
+  pub fn execute(&self, code: &SqlCode, textual_error: &mut impl IsTextualError) -> Result<(), DbExecuteError> {
+    todo!()
 
-    match sqlite_extended_error_code {
-      libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
-        Err(DbExecuteError::PrimaryKeyViolation)
-      }
-      _ => {
-        Err(DbExecuteError::Other(error))
-      }
-    }
+    // let Err(error) = self.connection.execute_batch(code.as_str()) else {
+    //   return Ok(());
+    // };
+    
+    // let sqlite_extended_error_code = match error {
+    //   rusqlite::Error::SqliteFailure(error, _) => {
+    //     error.extended_code
+    //   }
+    //   other => {
+    //     return Err(DbExecuteError::Other(other));
+    //   }
+    // };
+
+    // match sqlite_extended_error_code {
+    //   libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
+    //     Err(DbExecuteError::PrimaryKeyViolation)
+    //   }
+    //   _ => {
+    //     Err(DbExecuteError::Other(error))
+    //   }
+    // }
   }
 
   pub fn execute_with_textual_error(
     &self, 
     code: &SqlCode,
   ) -> Result<(), DbExecuteError> {
-    let Err(error) = self.connection.execute_batch(code.as_str()) else {
-      return Ok(());
-    };
-    
-    let sqlite_extended_error_code = match error {
-      rusqlite::Error::SqliteFailure(error, _) => {
-        error.extended_code
-      }
-      other => {
-        return Err(DbExecuteError::Other(other));
-      }
-    };
+    todo!()
 
-    match sqlite_extended_error_code {
-      libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
-        Err(DbExecuteError::PrimaryKeyViolation)
-      }
-      _ => {
-        Err(DbExecuteError::Other(error))
-      }
-    }
+    // let Err(error) = self.connection.execute_batch(code.as_str()) else {
+    //   return Ok(());
+    // };
+    
+    // let sqlite_extended_error_code = match error {
+    //   rusqlite::Error::SqliteFailure(error, _) => {
+    //     error.extended_code
+    //   }
+    //   other => {
+    //     return Err(DbExecuteError::Other(other));
+    //   }
+    // };
+
+    // match sqlite_extended_error_code {
+    //   libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
+    //     Err(DbExecuteError::PrimaryKeyViolation)
+    //   }
+    //   _ => {
+    //     Err(DbExecuteError::Other(error))
+    //   }
+    // }
   }
 
   pub fn execute_or_textual_error(&self, code: &SqlCode) -> Result<(), TextualError> {
@@ -1165,12 +1184,12 @@ impl MyConnection {
 
 
 pub struct Connection {
-  connection: Arc<Mutex<MyConnection>>,
+  connection: MyConnection,
 }
 
 #[derive(Debug)]
 pub enum DbExecuteError {
-  Other(rusqlite::Error),
+  Other,
   PrimaryKeyViolation,
   ForiegnKeyViolation,
 }
@@ -1188,13 +1207,14 @@ impl Connection {
 
     rusqlite::Connection::open(&file)
       .map(|connection| {
-        Self {
-          connection: Arc::new(
-            Mutex::new(
-              MyConnection { connection }
-            ),
-          ),
-        }
+        todo!()
+        // Self {
+        //   connection: Arc::new(
+        //     Mutex::new(
+        //       MyConnection { connection }
+        //     ),
+        //   ),
+        // }
       })
       .map_err(|error| {
         TextualError::new("Opening connection to a SQLite database")
@@ -1206,21 +1226,27 @@ impl Connection {
   }
 
   pub async fn changes(&self) -> u64 {
-    self.connection.lock().await.changes()
+    // self.connection.lock().await.changes()
+    todo!()
+
   }
 
   pub async fn get_one<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<T, TextualError>
   where 
     T: ReadCompoundValue
   {
-    self.connection.lock().await.get_one(code, schema)
+    // self.connection.lock().await.get_one(code, schema)
+    todo!()
+
   }
 
   pub async fn get_one_or_none<T>(&self, code: &SqlCode, schema: &T::Schema) -> Result<Option<T>, TextualError>
   where 
     T: ReadCompoundValue
   {
-    self.connection.lock().await.get_one_or_none(code, schema)
+    // self.connection.lock().await.get_one_or_none(code, schema)
+    todo!()
+
   }
 
   pub async fn select_multiple<T, ForEach>(
@@ -1233,48 +1259,59 @@ impl Connection {
     T: ReadCompoundValue,
     ForEach: FnMut(T),
   {
-    self.connection.lock().await.get_multiple(code, schema, for_each)
+    // self.connection.lock().await.get_multiple(code, schema, for_each)
+    todo!()
+
   }
 
-  pub async fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
-    self.connection.lock().await.execute(code)
+  pub fn execute(&self, code: &SqlCode) -> Result<(), DbExecuteError> {
+    // self.connection.lock().execute(code)
+    todo!()
   }
 
   pub async fn execute_or_textual_error(&self, code: &SqlCode) -> Result<(), TextualError> {
-    self.connection.lock().await.execute_or_textual_error(code)
+    // self.connection.lock().await.execute_or_textual_error(code)
+    todo!()
+
   }
 
   pub async fn execute_2(&self, code: &SqlCode) -> Result<(), rusqlite::Error> {
-    self.connection.lock().await.connection.execute_batch(code.as_str())
+    // self.connection.lock().await.connection.execute_batch(code.as_str())
+    todo!()
+
   }
 
   pub async fn execute_with_changes(&self, code: &SqlCode) -> Result<u64, DbExecuteError> {
-    let connection = &self.connection.lock().await.connection;
-    let Err(error) = connection.execute_batch(code.as_str()) else {
-      return Ok(connection.changes());
-    };
-    
-    let sqlite_extended_error_code = match error {
-      rusqlite::Error::SqliteFailure(error, _) => {
-        error.extended_code
-      }
-      other => {
-        return Err(DbExecuteError::Other(other));
-      }
-    };
+    todo!()
 
-    match sqlite_extended_error_code {
-      libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
-        Err(DbExecuteError::PrimaryKeyViolation)
-      }
-      _ => {
-        Err(DbExecuteError::Other(error))
-      }
-    }
+    // let connection = &self.connection.lock().await.connection;
+    // let Err(error) = connection.execute_batch(code.as_str()) else {
+    //   return Ok(connection.changes());
+    // };
+    
+    // let sqlite_extended_error_code = match error {
+    //   rusqlite::Error::SqliteFailure(error, _) => {
+    //     error.extended_code
+    //   }
+    //   other => {
+    //     return Err(DbExecuteError::Other(other));
+    //   }
+    // };
+
+    // match sqlite_extended_error_code {
+    //   libsqlite3_sys::SQLITE_CONSTRAINT_PRIMARYKEY => {
+    //     Err(DbExecuteError::PrimaryKeyViolation)
+    //   }
+    //   _ => {
+    //     Err(DbExecuteError::Other(error))
+    //   }
+    // }
   }
 
   pub async fn lock(&self) -> tokio::sync::MutexGuard<'_, MyConnection> {
-    self.connection.lock().await
+    // self.connection.lock().await
+    todo!()
+
   }
 }
 

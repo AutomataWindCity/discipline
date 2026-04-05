@@ -48,7 +48,7 @@ impl Countdown {
   }
 
   pub fn get_till(&self) -> Instant {
-    self.from.plus_or_max(self.duration)
+    self.from.saturating_add(self.duration)
   }
 
   pub fn get_total_duration(&self) -> Duration {
@@ -72,7 +72,7 @@ impl Countdown {
   }
 
   pub fn get_remaining_time_or_zero(&self, now: Instant) -> Duration {
-    self.get_total_duration().minus_or_zero(self.get_elapsed_time_or_zero(now))
+    self.get_total_duration().saturating_sub(self.get_elapsed_time_or_zero(now))
   }
 
   pub fn get_time_till_finish_or_zero(&self, now: Instant) -> Duration {
@@ -99,7 +99,7 @@ impl Countdown {
         self.duration
       }
       CountdownState::Running => {
-        self.duration.minus_or_zero(self.from.till_or_zero(now))
+        self.duration.saturating_sub(self.from.till_or_zero(now))
       }
       CountdownState::Finished => {
         Duration::zero()

@@ -7,27 +7,24 @@ import androidx.room.Ignore
 /**
  * Complete user profile with all regulations and stats
  */
-@Entity
 public data class UserProfile(
   val uptimeClock: UptimeClock,
   val vaultsStats: VaultsStats,
-  @Ignore
   val screenRule: ScreenRule,
-  @Ignore
-  val applicationRules: ApplicationRules,
+  val applicationRegulations: ApplicationRegulations,
 ) {
   companion object {
     // fun create(
     //   uptimeClock: UptimeClock,
     //   vaultsStats: VaultsStats
     //   screenRule: ScreenRule,
-    //   applicationRules: ApplicationRules,
+    //   ApplicationRegulations: ApplicationRegulations,
     // ): UserProfile {
     //   return UserProfile(
     //     uptimeClock = uptimeClock,
     //     vaultsStats = vaultsStats,
     //     screenRule = screenRule,
-    //     applicationRules = applicationRules,
+    //     ApplicationRegulations = ApplicationRegulations,
     //   )
     // }
     
@@ -36,7 +33,7 @@ public data class UserProfile(
         uptimeClock = UptimeClock.create(now),
         vaultsStats = VaultsStats.create(maximumVaultsNumber = 10),
         screenRule = ScreenRule.createDefault(),
-        applicationRules = ApplicationRules.createDefault(),
+        applicationRegulations = ApplicationRegulations.createDefault(),
       )
     }
   }
@@ -45,8 +42,8 @@ public data class UserProfile(
     return screenRule
   }
 
-  fun getApplicationRules(): ApplicationRules {
-    return applicationRules
+  fun getApplicationRegulations(): ApplicationRegulations {
+    return applicationRegulations
   }
 
   fun getUptimeClock(): UptimeClock {

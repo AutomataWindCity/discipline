@@ -1,3 +1,5 @@
+use crate::x::IsTextualError;
+
 pub trait IsSerializationFormat {
   fn serialize(
     &self, 

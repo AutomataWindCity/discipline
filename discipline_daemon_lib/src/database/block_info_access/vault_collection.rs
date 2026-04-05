@@ -3,10 +3,10 @@ use super::*;
 static USER_ID: ColumnName = ColumnName::new("UserId");
 static VAULT_ID: ColumnName = ColumnName::new("VaultId");
 static VAULT_NAME: ColumnName = ColumnName::new("VaultName");
-static VAULT_PROTECTOR_ENUM_TYPE: ColumnName = ColumnName::new("VaultProtectorEnumType");
-static VAULT_PROTECTOR_ENUM_DATA_1: ColumnName = ColumnName::new("VaultProtectorEnumData1");
-static VAULT_PROTECTOR_ENUM_DATA_2: ColumnName = ColumnName::new("VaultProtectorEnumData2");
-static VAULT_PROTECTOR_ENUM_DATA_3: ColumnName = ColumnName::new("VaultProtectorEnumData3");
+static VAULT_Enabler_ENUM_TYPE: ColumnName = ColumnName::new("VaultEnablerEnumType");
+static VAULT_Enabler_ENUM_DATA_1: ColumnName = ColumnName::new("VaultEnablerEnumData1");
+static VAULT_Enabler_ENUM_DATA_2: ColumnName = ColumnName::new("VaultEnablerEnumData2");
+static VAULT_Enabler_ENUM_DATA_3: ColumnName = ColumnName::new("VaultEnablerEnumData3");
 
 pub struct VaultTable {
   name: String,
@@ -21,10 +21,10 @@ impl VaultTable {
         USER_ID,
         VAULT_ID,
         VAULT_NAME,
-        VAULT_PROTECTOR_ENUM_TYPE,
-        VAULT_PROTECTOR_ENUM_DATA_1,
-        VAULT_PROTECTOR_ENUM_DATA_2,
-        VAULT_PROTECTOR_ENUM_DATA_3,
+        VAULT_Enabler_ENUM_TYPE,
+        VAULT_Enabler_ENUM_DATA_1,
+        VAULT_Enabler_ENUM_DATA_2,
+        VAULT_Enabler_ENUM_DATA_3,
       ),
     }
   }
@@ -43,13 +43,13 @@ pub fn write_initialize_vault_table(
   code.write(" TEXT NOT NULL, ");
   code.write_key(VAULT_NAME);
   code.write(" TEXT NOT NULL, ");
-  code.write_key(VAULT_PROTECTOR_ENUM_TYPE);
+  code.write_key(VAULT_Enabler_ENUM_TYPE);
   code.write(" INTEGER NOT NULL, ");
-  code.write_key(VAULT_PROTECTOR_ENUM_DATA_1);
+  code.write_key(VAULT_Enabler_ENUM_DATA_1);
   code.write(", ");
-  code.write_key(VAULT_PROTECTOR_ENUM_DATA_2);
+  code.write_key(VAULT_Enabler_ENUM_DATA_2);
   code.write(", ");
-  code.write_key(VAULT_PROTECTOR_ENUM_DATA_3);
+  code.write_key(VAULT_Enabler_ENUM_DATA_3);
   code.write(") WITHOUT ROWID;");
 }
 
@@ -59,7 +59,7 @@ fn write_insert_vault(
   user_id: &UuidV4,
   vault_id: &UuidV4,
   vault_name: &VaultName,
-  vault_protector: &VaultProtector,
+  vault_Enabler: &VaultEnabler,
 ) {
   code.write("INSERT INTO ");
   code.write(&table.name);
@@ -70,7 +70,7 @@ fn write_insert_vault(
       user_id,
       vault_id,
       vault_name,
-      vault_protector,
+      vault_Enabler,
     }
   );
   code.write_char(';');
@@ -140,7 +140,7 @@ pub async fn insert_vault(
   user_id: &UuidV4,
   vault_id: &UuidV4,
   vault_name: &VaultName,
-  vault_protector: &VaultProtector,
+  vault_Enabler: &VaultEnabler,
 ) -> Result<(), AddVaultError> {
   let mut code = SqlCode::new();
   write_insert_vault(
@@ -149,7 +149,7 @@ pub async fn insert_vault(
     user_id, 
     vault_id, 
     vault_name, 
-    vault_protector,
+    vault_Enabler,
   );
 
   let connection = database.connection.lock().await;

@@ -1,7 +1,7 @@
 use std::any::type_name;
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use crate::x::{AlwaysRules, Instant, TextualErrorContext, Time, TimeRangeRules, ToTextualError, UserUptimeClock, UuidV4, TimeAllowanceRules};
+use crate::x::{AlwaysRules, Instant, RulesStats, TextualErrorContext, Time, TimeAllowanceRules, TimeRangeRules, ToTextualError, UserUptimeClock, UuidV4};
 use super::{UserId, UserName};
 
 
@@ -28,7 +28,7 @@ impl ToTextualError for CreateFromStringError {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserProfileName {
   inner: String,
 }
@@ -58,10 +58,10 @@ impl UserProfileName {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DeviceAccessRegulation {
-  always_rules: AlwaysRules,
-  time_range_rules: TimeRangeRules,
-  daily_uptime_allowance_rules: TimeAllowanceRules,
-  weekly_uptime_allowance_rules: TimeAllowanceRules,
+  pub always_rules: AlwaysRules,
+  pub time_range_rules: TimeRangeRules,
+  pub daily_uptime_allowance_rules: TimeAllowanceRules,
+  pub weekly_uptime_allowance_rules: TimeAllowanceRules,
 }
 
 impl DeviceAccessRegulation {
@@ -91,10 +91,10 @@ impl DeviceAccessRegulation {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ScreenAccessRegulation {
-  always_rules: AlwaysRules,
-  time_range_rules: TimeRangeRules,
-  daily_allowance_rules: TimeAllowanceRules,
-  weekly_allowance_rules: TimeAllowanceRules,
+  pub always_rules: AlwaysRules,
+  pub time_range_rules: TimeRangeRules,
+  pub daily_allowance_rules: TimeAllowanceRules,
+  pub weekly_allowance_rules: TimeAllowanceRules,
 }
 
 impl ScreenAccessRegulation {
@@ -115,8 +115,8 @@ impl ScreenAccessRegulation {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InternetAccessRegulation {
-  always_rules: AlwaysRules,
-  time_range_rules: TimeRangeRules,
+  pub always_rules: AlwaysRules,
+  pub time_range_rules: TimeRangeRules,
   // traffic_allowance_rules
 }
 
@@ -141,13 +141,14 @@ impl InternetAccessRegulation {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserProfile {
-  name: UserProfileName,
-  user_id: UserId,
-  user_name: UserName,
-  uptime_clock: UserUptimeClock,
-  device_access_regulation: DeviceAccessRegulation,
-  screen_access_regulation: ScreenAccessRegulation,
-  internet_access_regulation: InternetAccessRegulation,
+  pub name: UserProfileName,
+  pub user_id: UserId,
+  pub user_name: UserName,
+  pub uptime_clock: UserUptimeClock,
+  pub device_access_regulation: DeviceAccessRegulation,
+  pub screen_access_regulation: ScreenAccessRegulation,
+  pub internet_access_regulation: InternetAccessRegulation,
+  pub rules_stats: RulesStats,
 }
 
 impl UserProfile {
@@ -157,15 +158,17 @@ impl UserProfile {
     user_name: UserName,
     uptime_clock: UserUptimeClock,
   ) -> Self {
-    Self {
-      name,
-      user_id,
-      user_name,
-      uptime_clock,
-      device_access_regulation: DeviceAccessRegulation::new(),
-      screen_access_regulation: ScreenAccessRegulation::new(),
-      internet_access_regulation: InternetAccessRegulation::new(),
-    }
+    // Self {
+    //   name,
+    //   user_id,
+    //   user_name,
+    //   uptime_clock,
+    //   device_access_regulation: DeviceAccessRegulation::new(),
+    //   screen_access_regulation: ScreenAccessRegulation::new(),
+    //   internet_access_regulation: InternetAccessRegulation::new(),
+    // }
+
+    todo!()
   } 
   
   pub fn construct(
@@ -177,15 +180,17 @@ impl UserProfile {
     screen_access_regulation: ScreenAccessRegulation,
     internet_access_regulation: InternetAccessRegulation,
   ) -> Self {
-    Self {
-      name,
-      user_id,
-      user_name,
-      uptime_clock,
-      device_access_regulation,
-      screen_access_regulation,
-      internet_access_regulation,
-    }
+    // Self {
+    //   name,
+    //   user_id,
+    //   user_name,
+    //   uptime_clock,
+    //   device_access_regulation,
+    //   screen_access_regulation,
+    //   internet_access_regulation,
+    // }
+
+    todo!()
   } 
 
   pub fn is_session_open_blocked(
@@ -263,8 +268,12 @@ impl UserProfiles {
     }
   }
 
-  pub fn get_profile_given_id(&self, user_id: &UuidV4) -> Option<&UserProfile> {
-    self.user_profiles.get(user_id)
+  pub fn get_profile_given_id(&self, user_profile_id: &UuidV4) -> Option<&UserProfile> {
+    self.user_profiles.get(user_profile_id)
+  }
+
+  pub fn get_profile_given_id_mut(&mut self, user_profile_id: &UuidV4) -> Option<&mut UserProfile> {
+    self.user_profiles.get_mut(user_profile_id)
   }
 
   pub fn get_profile_given_user_name(&self, user_name: &UserName) -> Option<&UserProfile> {
@@ -277,7 +286,7 @@ impl UserProfiles {
     self.user_profiles.len()
   }
 
-  pub fn add_user(&mut self, user_id: UuidV4, user: User) {
+  pub fn add_user(&mut self, user_id: UuidV4, user: UserProfile) {
     self.user_profiles.insert(user_id, user);
   }
 

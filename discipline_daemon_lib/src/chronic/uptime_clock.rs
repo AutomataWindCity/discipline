@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use crate::x::{Duration, Instant};
 
 const DAY: Duration = Duration::day();
@@ -22,16 +23,17 @@ pub fn get_monotonic_time() -> Option<Instant> {
   // let seconds: u64 = timespec.tv_sec.try_into().ok()?;
   // let milliseconds = seconds.checked_mul(1000)?;
   
+  let timestamp: u64 =     timespec
+    .tv_sec
+    .try_into()
+    .ok()?;
+  
   Some(Instant::from_timestamp(
-    timespec
-      .tv_sec
-      .try_into()
-      .ok()
-      .checked_mul(1000)?
+    timestamp.checked_mul(1000)?
   ))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserUptimeClock {
   pub is_running: bool,
   pub day_start: Instant,
@@ -98,7 +100,7 @@ impl UserUptimeClock {
     } else {
       self.day_start = self
         .day_start
-        .plus_or_max(DAY);
+        .saturating_add(DAY);
 
       self.day_uptime = self
         .day_start
@@ -114,7 +116,7 @@ impl UserUptimeClock {
     } else {
       self.week_start = self
         .week_start
-        .plus_or_max(WEEK);
+        .saturating_add(WEEK);
 
       self.week_uptime = self
         .week_start

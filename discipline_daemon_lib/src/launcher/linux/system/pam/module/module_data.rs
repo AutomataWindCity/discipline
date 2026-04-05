@@ -1,12 +1,13 @@
 use std::sync::{Mutex, MutexGuard};
 use std::path::{Path, PathBuf};
 use crate::x::{IsTextualError, OptionalTextualErrorContext};
-use super::{SystemLogger, ClientConnection, EstablishConnectionError, UserNameRef, ModuleConfiguration};
+// use super::{SystemLogger, ClientConnection, EstablishConnectionError, UserNameRef, ModuleConfiguration};
+use super::{SystemLogger, UserNameRef, ModuleConfiguration};
 
 struct ModuleData {
   logger: SystemLogger,
   configuration: ModuleConfiguration,
-  connection: ClientConnection,  
+  // connection: ClientConnection,  
 }
 
 // TODO: Add a field containing magic bytes that we check
@@ -28,7 +29,7 @@ impl ModuleDataMutex {
     let mut textual_error = textual_error
       .optional_context("Creating Discipline Linux-PAM Module Data");
 
-    let logger = Logger::create(custom_log_file_path);
+    let logger = SystemLogger::create(custom_log_file_path);
 
     let configuration = ModuleConfiguration
       ::load(

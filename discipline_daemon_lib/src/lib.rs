@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 mod rules;
 
-mod launcher;
+pub mod launcher;
 
 mod serializaton;
 
@@ -12,7 +12,7 @@ pub mod vaults;
 pub mod chronic;
 pub mod other;
 pub use other::textual_error::*;
-// pub mod conditionals;
+pub mod conditionals;
 // pub mod rules;
 // pub mod regulation;
 // pub mod operating_system;
@@ -37,3 +37,6 @@ pub mod protocol;
 
 //   daemon.start().await;
 // }
+
+
+pub mod procedures;

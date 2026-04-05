@@ -1,6 +1,6 @@
 use std::path::PathBuf;
-use crate::x::{DateTime, TextualErrorV2};
-use super::{State, Database, Api, UserName, pam};
+use crate::x::{DateTime, TextualErrorV2, Database};
+use super::{State, Api, UserName, pam};
 
 pub struct LaunchConfiguration {
   pub api_server_port: u16,
@@ -11,9 +11,9 @@ pub struct LaunchConfiguration {
 
 pub struct Daemon {
   pub state: State,
-  database: Database,
-  api_server: Api,
-  pam_server: pam::Server,
+  pub database: Database,
+  pub api_server: Api,
+  pub pam_server: pam::Server,
 }
 
 impl Daemon {
@@ -25,31 +25,32 @@ impl Daemon {
       "Launchnig Discipline Linux Daemon",
     );
 
-    let database = Database::open(
-      &mut textual_error_context, 
-      configuration.database_directory,
-    )?;
+    // let database = Database::open(
+    //   &mut textual_error_context, 
+    //   configuration.database_directory,
+    // )?;
 
-    let state = database.load_state(
-      &mut textual_error_context,
-    )?;
+    // let state = database.load_state(
+    //   &mut textual_error_context,
+    // )?;
 
-    let api = Api::create(
-      &mut textual_error_context,
-    )?;
+    // let api = Api::create(
+    //   &mut textual_error_context,
+    // )?;
 
-    let pam_server = pam::Server::new(
-      configuration.pam_server_path, 
-      configuration.pam_client_authentication_token, 
-      textual_error,
-    )?;
+    // let pam_server = pam::Server::new(
+    //   configuration.pam_server_path, 
+    //   configuration.pam_client_authentication_token, 
+    //   textual_error,
+    // )?;
 
-    Ok(Self {
-      api_server: api,
-      state,
-      database,
-      pam_server,
-    })
+    // Ok(Self {
+    //   api_server: api,
+    //   state,
+    //   database,
+    //   pam_server,
+    // })
+    todo!()
   }
 
   pub fn is_user_session_open_blocked(&self, user_name: &UserName) -> bool {

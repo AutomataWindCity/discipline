@@ -129,7 +129,8 @@ impl BlockingStream {
         textual_error.add_attachement_display("Message buffer length", self.buffer.len());
       })?;
     
-    if message_length > buffer.maximum_message_length() {
+    // if message_length > self.buffer.maximum_message_length() {
+    if message_length > 89 {
       textual_error.add_message("Message length is larger than the maximum allowed length");
       textual_error.add_attachement_display("Message data type name", type_name::<Message>());
       textual_error.add_attachement_display("Message length", message_length);
@@ -202,8 +203,8 @@ impl BlockingStream {
 pub struct BasicStream {}
 pub struct StreamWithBuffer {}
 
-impl OurRead {}
-impl OurWrite {}
+// impl OurRead {}
+// impl OurWrite {}
 
 pub struct SyncStream2 {
   stream: UnixStream,
@@ -250,7 +251,7 @@ impl SyncStream2 {
   pub fn read<Message, SerializationFormat>(
     &mut self, 
     format: &SerializationFormat,
-    buffer: &mut StreamBuffer,
+    buffer: &mut super::StreamBuffer,
     maximum_message_length: usize,
     textual_error: &mut impl IsTextualError,
   ) -> Result<Message, ()> 
@@ -277,7 +278,7 @@ impl SyncStream2 {
       textual_error.add_message("Message length is larger than maximum valid length");
       textual_error.add_attachement_display("Message data type", type_name::<Message>());
       textual_error.add_attachement_display("Message length", message_length);
-      textual_error.add_attachement_display("Message maximum valid length", self.maximum_message_size());
+      // textual_error.add_attachement_display("Message maximum valid length", self.maximum_message_size());
       return Err(());
     }
 
@@ -307,7 +308,7 @@ impl SyncStream2 {
     &mut self, 
     message: &Message, 
     format: &SerializationFormat,
-    buffer: &mut StreamBuffer,
+    buffer: &mut super::StreamBuffer,
     textual_error: &mut impl IsTextualError,
   ) -> Result<(), ()> 
   where 
@@ -328,14 +329,14 @@ impl SyncStream2 {
       .map_err(|_| {
         textual_error.add_message("Failed to serialize the message");
         textual_error.add_attachement_display("Message data type name", type_name::<Message>());
-        textual_error.add_attachement_display("Message buffer length", self.buffer.len());
+        // textual_error.add_attachement_display("Message buffer length", self.buffer.len());
       })?;
     
     if message_length > buffer.maximum_message_length() {
       textual_error.add_message("Message length is larger than the maximum allowed length");
       textual_error.add_attachement_display("Message data type name", type_name::<Message>());
       textual_error.add_attachement_display("Message length", message_length);
-      textual_error.add_attachement_display("Message maximum valid length", self.maximum_message_size());
+      // textual_error.add_attachement_display("Message maximum valid length", self.maximum_message_size());
       return Err(());
     }
 
@@ -345,7 +346,7 @@ impl SyncStream2 {
         textual_error.add_message("Message length is larger than the maximum allowed length");
         textual_error.add_attachement_display("Message data type name", type_name::<Message>());
         textual_error.add_attachement_display("Message length", message_length);
-        textual_error.add_attachement_display("Message maximum valid length", self.maximum_message_size());
+        // textual_error.add_attachement_display("Message maximum valid length", self.maximum_message_size());
       })?;
 
     let message_length_buffer = &mut buffer[0..MessageLength::BINARY_SIZE];

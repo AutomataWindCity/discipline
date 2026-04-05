@@ -1,5 +1,5 @@
-// mod utilities;
-// pub use utilities::*;
+mod utilities;
+pub use utilities::*;
 
 // mod other;
 
@@ -49,3 +49,9 @@
 // pub mod block_info_access;
 // pub mod users;
 // pub mod rules;
+
+pub mod database;
+pub use database::Database;
+
+pub mod tables;
+pub use tables::*;

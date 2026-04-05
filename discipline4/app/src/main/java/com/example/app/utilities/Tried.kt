@@ -113,6 +113,10 @@ public fun <T> triedSuccess(value: T): Tried<T, Nothing> = Tried.success(value)
 
 public fun <E> triedFailure(error: E): Tried<Nothing, E> = Tried.failure(error)
 
+public fun <T> success(value: T): Tried<T, Nothing> = Tried.success(value)
+
+public fun <E> failure(error: E): Tried<Nothing, E> = Tried.failure(error)
+
 public fun <T, E> T?.toTried(errorIfNull: () -> E): Tried<T, E> =
   if (this != null) {
     Tried.Success(this)

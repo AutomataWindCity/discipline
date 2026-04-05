@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use super::{Daemon, UserProfile};
-use crate::x::{RuleProtector, UuidV4};
+use crate::x::{RuleEnabler, UuidV4};
 
 pub struct CreateUserProfile {}
 
@@ -175,7 +175,7 @@ impl TimeRangeCreator {
 pub struct CreateAlwaysRuleAtUserScreenRegulation {
   user_id: UuidV4,
   rule_id: Option<UuidV4>,
-  rule_protector: RuleProtector,
+  rule_Enabler: RuleEnabler,
 }
 
 pub enum CreateAlwaysRuleAtUserScreenRegulationReturn {

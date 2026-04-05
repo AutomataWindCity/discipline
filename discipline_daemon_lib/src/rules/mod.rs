@@ -1,141 +1,43 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use crate::x::{Countdown, CountdownState, Duration, Instant, Time, TimeRange, UuidV4, TextualError};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum RuleEnablerType {
-  Countdown = 0,
-  CountdownAfterPlea = 1,
-}
-
-impl RuleEnablerType {
-  pub fn from_number(number: u8) -> Result<Self, TextualError> {
-    match number {
-      0 => {
-        Ok(Self::Countdown)
-      }
-      1 => {
-        Ok(Self::CountdownAfterPlea)
-      }
-      _ => {
-        Err(TextualError::new("action"))
-      }
-    }
-  }
-
-  pub fn to_number(self) -> u8 {
-    self as u8
-  }
-}
-
-pub struct CountdownEnabler {
-  pub duration: Duration,
-  pub countdown: Option<Countdown>,
-}
-
-impl CountdownEnabler {
-  pub fn is_rule_enabled(&self, time: Instant) -> bool {
-    matches!(self.countdown, Some(countdown) if countdown.is_running(time))
-  }
-
-  pub fn enable_rule(&mut self, time: Instant) {
-    self.countdown = Some(Countdown::construct(time, self.duration));
-  }
-}
-
-pub struct CountdownAfterPleaEnabler {
-  pub duration: Duration,
-  pub countdown: Option<Countdown>,
-}
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CountdownAfterPleaEnablerState {
-  Active,
-  Deactivating,
-  Deactivated,
-}
-
-impl CountdownAfterPleaEnablerState {
-  pub fn is_active(&self) -> bool {
-    matches!(self, Self::Active)
-  }
-  
-  pub fn is_deactivaing(&self) -> bool {
-    matches!(self, Self::Deactivating)
-  }
-  
-  pub fn is_deactivated(&self) -> bool {
-    matches!(self, Self::Deactivated)
-  }
-}
-
-impl CountdownAfterPleaEnabler {
-  pub fn create(duration: Duration) -> Self {
-    Self {
-      duration,
-      countdown: None,
-    }
-  }
-
-  pub fn construct(duration: Duration, countdown: Option<Countdown>) -> Self {
-    Self { 
-      duration,
-      countdown,
-    }
-  }
-  
-  pub fn get_state(&self, now: Instant) -> CountdownAfterPleaEnablerState {
-    let Some(countdown) = &self.countdown else {
-      return CountdownAfterPleaEnablerState::Active;
-    };
-
-    match countdown.get_state(now) {
-      CountdownState::Pending => {
-        CountdownAfterPleaEnablerState::Active
-      }
-      CountdownState::Running => {
-        CountdownAfterPleaEnablerState::Deactivating
-      }
-      CountdownState::Finished => {
-        CountdownAfterPleaEnablerState::Deactivated
-      }
-    }
-  }
-
-  pub fn is_rule_enabled(&self, time: Instant) -> bool {
-    matches!(
-      self.get_state(time), 
-      CountdownAfterPleaEnablerState::Active 
-      | 
-      CountdownAfterPleaEnablerState::Deactivating,
-    )
-  }
-
-  pub fn enable_rule(&mut self) {
-    self.countdown = None;
-  }
-
-  pub fn disable_rule(&mut self, now: Instant) {
-    self.countdown = Some(Countdown::construct(now, self.duration))
-  }
-}
-
+use crate::x::{CountdownAfterPleaConditional, CountdownConditional, Duration, Instant, Time, TimeRange, UuidV4};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RuleEnabler {
-  Countdown(CountdownEnabler),
-  CountdownAfterPlea(CountdownAfterPleaEnabler),
+  Countdown(CountdownConditional),
+  CountdownAfterPlea(CountdownAfterPleaConditional),
 }
 
 impl RuleEnabler {
   pub fn is_rule_enabled(&self, time: Instant) -> bool {
     match self {
       Self::Countdown(enabler) => {
-        enabler.is_rule_enabled(time)
+        enabler.is_active(time)
       }
       Self::CountdownAfterPlea(enabler) => {
-        enabler.is_rule_enabled(time)
+        enabler.is_activate_or_deactivating(time)
+      }
+    }
+  }
+
+  pub fn enable(&mut self, now: Instant) {
+    match self {
+      Self::Countdown(enabler) => {
+        enabler.activate(now);
+      }
+      Self::CountdownAfterPlea(enabler) => {
+        enabler.activate();
+      }
+    }
+  }
+
+  pub fn disable(&mut self, now: Instant) {
+    match self {
+      Self::Countdown(enabler) => {
+        // TODO
+      }
+      Self::CountdownAfterPlea(enabler) => {
+        enabler.deactivate(now);
       }
     }
   }
@@ -192,6 +94,10 @@ pub struct AlwaysRule {
 }
 
 impl AlwaysRule {
+  pub fn create(enabler: RuleEnabler) -> AlwaysRule {
+    AlwaysRule { enabler }
+  }
+  
   pub fn is_enabled(&self, now: Instant) -> bool {
     self.enabler.is_rule_enabled(now)
   }
@@ -203,7 +109,7 @@ impl AlwaysRule {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AlwaysRules {
-  rules: HashMap<UuidV4, AlwaysRule>,
+  pub rules: HashMap<UuidV4, AlwaysRule>,
 }
 
 impl AlwaysRules {
@@ -247,7 +153,7 @@ impl TimeAllowanceRule {
   }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TimeAllowanceRules {
   rules: HashMap<UuidV4, TimeAllowanceRules>,
 }
@@ -255,8 +161,8 @@ pub struct TimeAllowanceRules {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RulesStats {
-  rules_number: usize,
-  maximum_rules_number: usize,
+  pub rules_number: usize,
+  pub maximum_rules_number: usize,
 }
 
 impl RulesStats {
@@ -266,4 +172,23 @@ impl RulesStats {
       maximum_rules_number,
     }
   }
+
+  pub fn update_after_always_rule_created(&mut self) {}
+  pub fn update_after_always_rule_deleted(&mut self) {}
+
+  pub fn add_always_rule(&mut self) -> Result<(), ()> {
+    todo!()
+  }
+
+  pub fn create_add_always_rule_updater(&self) -> Option<AddAlwaysRuleUpdater> {
+    if self.rules_number < self.maximum_rules_number {
+      Some(AddAlwaysRuleUpdater { rules_number: self.rules_number + 1 })
+    } else {
+      None
+    }
+  }
+}
+
+pub struct AddAlwaysRuleUpdater {
+  rules_number: usize,
 }

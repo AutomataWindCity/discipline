@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::x::{DateTime, Duration};
 
 pub struct MonotonicClock {
@@ -49,9 +51,9 @@ impl MonotonicClock {
     self.total_elapsed_duration
   }
 
-  pub fn previous_synchronization_time(&self) -> Option<DateTime> {
-    self.previous_synchronization_time
-  }
+  // pub fn previous_synchronization_time(&self) -> Option<DateTime> {
+  //   self.previous_synchronization_time
+  // }
 
   pub fn synchronization_interval(&self) -> Duration {
     self.maximum_synchronization_interval
@@ -106,7 +108,7 @@ impl MonotonicClock {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct Instant(Duration);
 
 impl Instant {
@@ -141,11 +143,11 @@ impl Instant {
   }
 
   pub fn till_or_zero(self, later: Instant) -> Duration {
-    later.0.minus_or_zero(self.0)
+    later.0.saturating_sub(self.0)
   }
 
   pub fn since_or_zero(self, eariler: Instant) -> Duration {
-    eariler.0.minus_or_zero(self.0)
+    eariler.0.saturating_sub(self.0)
   }
 
   pub fn saturating_add(self, duration: Duration) -> Instant {

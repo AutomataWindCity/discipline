@@ -14,8 +14,8 @@ mod datum_text;
 mod vault_collection;
 pub use vault_collection::*;
 
-mod vault_protector;
-use vault_protector::*;
+mod vault_Enabler;
+use vault_Enabler::*;
 
 use crate::x::{Database, TextualError, UuidV4, conditionals, database::*};
 use crate::x::vaults::*;

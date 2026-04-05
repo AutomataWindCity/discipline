@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Duration {
   milliseconds: u64,
 }
@@ -25,7 +25,7 @@ impl Duration {
   pub const DAY: Duration = Duration::from_milliseconds(Self::MILLISECONDS_PER_DAY);
   pub const WEEK: Duration = Duration::from_milliseconds(Self::MILLISECONDS_PER_WEEK);
 
-  pub fn from_milliseconds(milliseconds: u64) -> Duration {
+  pub const fn from_milliseconds(milliseconds: u64) -> Duration {
     Self { milliseconds }
   }
 
@@ -39,15 +39,15 @@ impl Duration {
     Self { milliseconds }
   }
 
-  pub fn zero() -> Duration {
+  pub const fn zero() -> Duration {
     Self { milliseconds: 0 }
   }
 
-  pub fn day() -> Duration {
+  pub const fn day() -> Duration {
     Duration { milliseconds: 1000 * 60 * 60 * 24 }
   }
 
-  pub fn week() -> Duration {
+  pub const fn week() -> Duration {
     Duration { milliseconds: 1000 * 60 * 60 * 24 * 7 }
   }
 
@@ -71,7 +71,7 @@ impl Duration {
     self >= other
   }
   
-  pub fn minus_or_zero(self, rhs: Self) -> Duration {
+  pub fn saturating_sub(self, rhs: Self) -> Duration {
     Duration::from_milliseconds(self.milliseconds.saturating_sub(rhs.milliseconds))
   }
 

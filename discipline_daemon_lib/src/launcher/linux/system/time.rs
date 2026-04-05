@@ -1,3 +1,4 @@
+use crate::x::{Instant, Duration};
 
 pub fn get_time_from_realtime_clock() -> Option<Instant> {
   let mut timespec = libc::timespec {
@@ -13,12 +14,13 @@ pub fn get_time_from_realtime_clock() -> Option<Instant> {
     return None;
   } 
   
-  Some(Instant::from_milliseconds(
-    timespec
+  let timestamp: u64 = timespec
       .tv_sec
       .try_into()
-      .ok()?
-      .checked_mul(Duration::MILLISECONDS_PER_SECOND)?
+      .ok()?;
+
+  Some(Instant::from_timestamp(
+    timestamp.checked_mul(Duration::MILLISECONDS_PER_SECOND)?
   ))
 }
 
@@ -37,11 +39,12 @@ pub fn get_time_from_boottime_clock() -> Option<Instant> {
     return None;
   } 
   
-  Some(Instant::from_milliseconds(
-    timespec
+  let timestamp: u64 = timespec
       .tv_sec
       .try_into()
-      .ok()?
-      .checked_mul(Duration::MILLISECONDS_PER_SECOND)?
+      .ok()?;
+
+  Some(Instant::from_timestamp(
+    timestamp.checked_mul(Duration::MILLISECONDS_PER_SECOND)?
   ))
 }

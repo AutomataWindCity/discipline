@@ -4,14 +4,14 @@ use crate::x::vaults::*;
 use crate::x::database::block_info_access as database;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-enum VaultProtectorCreator {
+enum VaultEnablerCreator {
   CountdownAfterPlea(conditionals::countdown_after_plea::Creator),
 }
 
-impl VaultProtectorCreator {
-  fn create(self) -> VaultProtector {
+impl VaultEnablerCreator {
+  fn create(self) -> VaultEnabler {
     match self {
-      Self::CountdownAfterPlea(inner) => VaultProtector::CountdownAfterPlea(inner.create()),
+      Self::CountdownAfterPlea(inner) => VaultEnabler::CountdownAfterPlea(inner.create()),
     }
   }
 }
@@ -21,7 +21,7 @@ pub struct AddVault {
   user_id: UuidV4,
   vault_id: Option<UuidV4>,
   vault_name: VaultName,
-  vault_protector: VaultProtectorCreator,
+  vault_Enabler: VaultEnablerCreator,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,14 +42,14 @@ impl AddVault {
 
     let vault_id_is_created_by_client = self.vault_id.is_some();
     let vault_id = self.vault_id.unwrap_or_else(UuidV4::generate);
-    let vault_protector = self.vault_protector.create();
+    let vault_Enabler = self.vault_Enabler.create();
 
     if let Err(error) = database::insert_vault(
       &daemon.database,
       &self.user_id,
       &vault_id,
       &self.vault_name,
-      &vault_protector,
+      &vault_Enabler,
     )
     .await
     {

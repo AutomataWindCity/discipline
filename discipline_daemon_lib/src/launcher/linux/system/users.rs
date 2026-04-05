@@ -1,8 +1,9 @@
 use libc::{gid_t, uid_t, group, passwd};
+use serde::{Deserialize, Serialize};
 use std::ffi::{CStr, CString};
 use std::{mem, ptr};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UserId {
   inner: uid_t,
 }
@@ -19,7 +20,7 @@ impl UserId {
   }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UserName {
   inner: CString
 }

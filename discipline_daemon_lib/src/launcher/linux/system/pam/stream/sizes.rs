@@ -1,4 +1,4 @@
-use std::ops::{Index, IndexMut, RangeFrom, RangeTo, RangeFull};
+use std::ops::{Index, IndexMut, RangeFrom, RangeTo, RangeFull, Range};
 
 pub struct MessageLength(usize);
 

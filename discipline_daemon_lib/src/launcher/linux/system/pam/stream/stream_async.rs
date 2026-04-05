@@ -21,12 +21,12 @@ impl AsyncStream {
     }
   }
   
-  pub fn connect(
+  pub async fn connect(
     path: impl AsRef<Path>, 
     maximum_buffer_length: BufferLength,
     textual_error: &mut impl IsTextualError,
-  ) -> Result<Stream, ()> {
-    match UnixStream::connect(&path) {
+  ) -> Result<Self, ()> {
+    match UnixStream::connect(&path).await {
       Ok(stream) => {
         Ok(Self::construct(
           stream, 

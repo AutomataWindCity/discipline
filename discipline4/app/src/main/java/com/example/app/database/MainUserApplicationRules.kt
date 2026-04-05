@@ -1,5 +1,5 @@
 package com.example.app.database
 
-import com.example.app.ApplicationRules
+import com.example.app.ApplicationRegulations
 
-// TODO: Create a class here to represent the ApplicationRules type. 
+// TODO: Create a class here to represent the ApplicationRegulations type. 

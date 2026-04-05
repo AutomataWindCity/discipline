@@ -1,13 +1,11 @@
 package com.example.app
 
 import com.example.app.*
-import androidx.room.Entity
 
 /**
  * Represents regulations for a single application
  */
-@Entity
-public data class ApplicationRule private constructor(
+public data class ApplicationRegulation private constructor(
   val countdownRules: CountdownRules,
   val timeRangeRules: TimeRangeRules,
   val dailyTimeAllowanceRules: TimeAllowanceRules,
@@ -17,16 +15,16 @@ public data class ApplicationRule private constructor(
       countdownRules: CountdownRules,
       timeRangeRules: TimeRangeRules,
       dailyTimeAllowanceRules: TimeAllowanceRules
-    ): ApplicationRule {
-      return ApplicationRule(
+    ): ApplicationRegulation {
+      return ApplicationRegulation(
         countdownRules, 
         timeRangeRules, 
         dailyTimeAllowanceRules,
       )
     }
     
-    fun createDefault(): ApplicationRule {
-      return ApplicationRule(
+    fun createDefault(): ApplicationRegulation {
+      return ApplicationRegulation(
         countdownRules = CountdownRules.createDefault(),
         timeRangeRules = TimeRangeRules.createDefault(),
         dailyTimeAllowanceRules = TimeAllowanceRules.createDefault()
