@@ -86,11 +86,11 @@ public data class Vault private constructor(
   //   val maximum = MAXIMUM_PROTECTION_DURATION
     
   //   var actualFactor = factor
-  //   if (actualFactor.plusOrMax(remaining).isLongerThan(maximum)) {
-  //     actualFactor = maximum.minusOrZero(remaining)
+  //   if (actualFactor.saturatingAdd(remaining).isLongerThan(maximum)) {
+  //     actualFactor = maximum.saturatingSub(remaining)
   //   }
     
-  //   val newProtection = protection.copy(duration = protection.getTotalDuration().plusOrMax(actualFactor))
+  //   val newProtection = protection.copy(duration = protection.getTotalDuration().saturatingAdd(actualFactor))
   //   protection.set = newProtection
   // }
 

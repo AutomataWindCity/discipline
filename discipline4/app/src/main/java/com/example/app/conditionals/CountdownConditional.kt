@@ -9,7 +9,7 @@ public data class CountdownConditional(
       return CountdownConditional(duration, null)
     }
 
-    fun construct(duration: Duration, countdown: Countdown): CountdownConditional {
+    fun construct(duration: Duration, countdown: Countdown?): CountdownConditional {
       return CountdownConditional(duration, countdown)
     }
   }

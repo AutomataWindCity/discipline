@@ -66,7 +66,7 @@ value class Instant private constructor(
    * otherwise returns zero
    */
   fun tillOrZero(other: Instant): Duration {
-    return elapsedTime.minusOrZero(other.elapsedTime)
+    return elapsedTime.saturatingSub(other.elapsedTime)
   }
   
   /**
@@ -74,21 +74,21 @@ value class Instant private constructor(
    * otherwise returns zero
    */
   fun sinceOrZero(other: Instant): Duration {
-    return other.elapsedTime.minusOrZero(elapsedTime)
+    return other.elapsedTime.saturatingSub(elapsedTime)
   }
   
   /**
    * Subtracts a duration from this instant, clamping at zero
    */
-  fun minusOrZero(duration: Duration): Instant {
-    return Instant(elapsedTime.minusOrZero(duration))
+  fun saturatingSub(duration: Duration): Instant {
+    return Instant(elapsedTime.saturatingSub(duration))
   }
   
   /**
    * Adds a duration to this instant, capping at maximum value
    */
-  fun plusOrMax(duration: Duration): Instant {
-    return Instant(elapsedTime.plusOrMax(duration))
+  fun saturatingAdd(duration: Duration): Instant {
+    return Instant(elapsedTime.saturatingAdd(duration))
   }
   
   /**

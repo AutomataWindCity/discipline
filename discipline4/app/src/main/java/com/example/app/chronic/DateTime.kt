@@ -146,7 +146,7 @@
 //   /**
 //    * Adds a duration to this DateTime, capping at maximum timestamp
 //    */
-//   fun plusOrMax(duration: Duration): DateTime {
+//   fun saturatingAdd(duration: Duration): DateTime {
 //     val newTimestamp = toTimestamp() + duration.toTotalMilliseconds()
     
 //     return if (newTimestamp >= MAXIMUM_TIMESTAMP) {
@@ -221,7 +221,7 @@
 //   fun format(formatter: DateTimeFormatter): String = formatter.format(toJavaInstant())
   
 //   // Operator overloads
-//   operator fun plus(duration: Duration): DateTime = plusOrMax(duration)
+//   operator fun plus(duration: Duration): DateTime = saturatingAdd(duration)
 //   operator fun minus(duration: Duration): DateTime = minusOrMin(duration)
 //   operator fun compareTo(other: DateTime): Int = toTimestamp().compareTo(other.toTimestamp())
   

@@ -30,4 +30,9 @@ public sealed class RuleEnabler {
       }
     }
   }
+
+  enum class Variant {
+    Countdown,
+    CountdownAfterPlea,
+  }
 }

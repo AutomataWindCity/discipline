@@ -21,7 +21,6 @@ class AlwaysRulesTable {
   }
 
   fun writeAddRule() {}
-  fun write
 }
 
 class TimeRangeRulesTable {

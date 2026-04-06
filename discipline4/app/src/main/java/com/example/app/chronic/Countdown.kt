@@ -1,19 +1,9 @@
 package com.example.app
 
-import com.example.app.Instant
-import com.example.app.Duration
-
-
-/**
- * Represents a countdown from a start instant over a duration
- */
 public data class Countdown(
   val from: Instant,
   var duration: Duration
 ) {
-  /**
-   * Represents the status of a countdown
-   */
   public enum class Status {
     Pending,   // Hasn't started yet
     Running,   // Currently in progress
@@ -29,7 +19,7 @@ public data class Countdown(
   }
 
   fun getTill(): Instant {
-    return from.plusOrMax(duration)
+    return from.saturatingAdd(duration)
   }
 
   fun getTotalDuration(): Duration {
@@ -53,7 +43,7 @@ public data class Countdown(
   }
   
   fun getRemainingTimeOrZero(now: Instant): Duration {
-    return duration.minusOrZero(getElapsedTimeOrZero(now))
+    return duration.saturatingSub(getElapsedTimeOrZero(now))
   }
   
   fun getTimeTillFinishOrZero(now: Instant): Duration {
@@ -87,7 +77,7 @@ public data class Countdown(
   }
   
   fun extendByOrSetToMax(factor: Duration) {
-    duration = duration.plusOrMax(factor)
+    duration = duration.saturatingAdd(factor)
   }
   
   fun <R> match(

@@ -440,8 +440,8 @@ public value class Duration private constructor(val milliseconds: Long) {
   }
 
   // operator fun plus(other: Duration): Duration {
-  //   return plusOrMax(other)
+  //   return saturatingAdd(other)
   // }
-  // operator fun minus(other: Duration): Duration = minusOrZero(other)
+  // operator fun minus(other: Duration): Duration = saturatingSub(other)
   // operator fun compareTo(other: Duration): Int = milliseconds.compareTo(other.milliseconds)
 }

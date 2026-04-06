@@ -40,7 +40,7 @@ public data class MonotonicClock(
    */
   fun synchronize(now: Instant) {
     val interval = previousSynchronizationTime.tillOrZero(now)
-    elapsedTime = elapsedTime.plusOrMax(interval)
+    elapsedTime = elapsedTime.saturatingAdd(interval)
     previousSynchronizationTime = now
   }
   

@@ -48,7 +48,7 @@ public data class UptimeClock(
   //     synchronizationInterval
   //   )
     
-  //   totalDailyUptime = totalDailyUptime.plusOrMax(timeSincePreviousSynchronization)
+  //   totalDailyUptime = totalDailyUptime.saturatingAdd(timeSincePreviousSynchronization)
   //   previousSynchronizationTime = now
   // }
   

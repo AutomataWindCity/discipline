@@ -1,6 +1,6 @@
 {
-  "editor.fontSize": 20,
-  "editor.fontFamily": "Comic Mono",
+  "editor.fontSize": 24,
+  "editor.fontFamily": "Naru Mono Demo",
   "java.import.gradle.enabled": true,
   "java.import.gradle.wrapper.enabled": true,
   "kotlin.languageServer.enabled": true,
