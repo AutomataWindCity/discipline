@@ -1,6 +1,6 @@
 {
   "files.autoSave": "afterDelay",
-  "editor.fontSize": 25,
+  "editor.fontSize": 18,
   "editor.fontFamily": "Purisa",
   "rust-analyzer.linkedProjects": [
     // "dependencies/pam/Cargo.toml",
