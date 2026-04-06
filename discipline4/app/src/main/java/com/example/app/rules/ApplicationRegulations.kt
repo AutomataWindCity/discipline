@@ -4,10 +4,10 @@ package com.example.app
  * Collection of rules for multiple applications
  */
 public data class ApplicationRegulations private constructor(
-  private val regulations: MutableMap<AppName, ApplicationRegulation>
+  private val regulations: MutableMap<ApplicationName, ApplicationRegulation>
 ) {
   companion object {
-    fun create(rules: MutableMap<AppName, ApplicationRegulation>): ApplicationRegulations {
+    fun create(rules: MutableMap<ApplicationName, ApplicationRegulation>): ApplicationRegulations {
       return ApplicationRegulations(rules)
     }
     
@@ -16,24 +16,24 @@ public data class ApplicationRegulations private constructor(
     }
   }
   
-  fun add(app: AppName, rule: ApplicationRegulation) {
+  fun add(app: ApplicationName, rule: ApplicationRegulation) {
     regulations.set(app, rule)
   }
   
-  fun remove(app: AppName) {
+  fun remove(app: ApplicationName) {
     regulations.remove(app)
   }
 
-  fun get(app: AppName): ApplicationRegulation? {
+  fun get(app: ApplicationName): ApplicationRegulation? {
     return regulations.get(app)
   }
 
-  fun has(app: AppName): Boolean {
+  fun has(app: ApplicationName): Boolean {
     return regulations.containsKey(app)
   }
 
   fun isApplicationRestricted(
-    app: AppName,
+    app: ApplicationName,
     nowAsInstant: Instant,
     nowAsTime: Time,
     dailyUsedAllowance: Duration,

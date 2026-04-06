@@ -1,116 +1,82 @@
-package com.example.app.procedures
+package com.example.app
 
-import com.example.app.*
+sealed class CountdownConditionalLocation {
+  class MainUserProfileScreenRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : CountdownConditionalLocation() {}
+  class MainUserProfileScreenRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : CountdownConditionalLocation() {}
+  class MainUserProfileScreenRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : CountdownConditionalLocation() {}
 
-class CountdownConditionalApi {
-  sealed class Location {
-    class MainUserProfileScreenRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileScreenRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileScreenRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : Location() {}
+  class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : CountdownConditionalLocation() {}
+  class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : CountdownConditionalLocation() {}
+  class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : CountdownConditionalLocation() {}
 
-    class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : Location() {}
-
-    class MainUserProfileVaultProtector(val vaultId: UuidV4) : Location() {}
-  }
-
-  sealed class LocateError {
-    class NoSuchApplicationRegulation() : LocateError() {}
-    class NoSuchRule() : LocateError() {}
-    class WrongRuleEnablerType() : LocateError() {}
-    class WrongVaultProtectorType() : LocateError() {}
-  }
-
-  typealias ReactivateReturn = Either<LocateError, procedures.countdownconditional.ReactivateReturn>
+  class MainUserProfileVaultProtector(val vaultId: UuidV4) : CountdownConditionalLocation() {}
 }
 
-class CountdownAfterPleaConditionalApi {
-  sealed class Location {
-    class MainUserProfileScreenRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileScreenRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileScreenRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : Location() {}
-
-    class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : Location() {}
-    class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : Location() {}
-
-    class MainUserProfileVaultProtector(val vaultId: UuidV4) : Location() {}
-  }
-
-  sealed class LocateError {
-    class NoSuchApplicationRegulation() : LocateError() {}
-    class NoSuchRule() : LocateError() {}
-    class WrongRuleEnablerType() : LocateError() {}
-    class WrongVaultProtectorType() : LocateError() {}
-  }
-
-  typealias ReactivateReturn = Either<LocateError, procedures.countdownafterpleaconditional.ReactivateReturn>
-  typealias ReDeactivateReturn = Either<LocateError, procedures.countdownafterpleaconditional.ReDeactivateReturn>
+sealed class CountdownConditionalLocateError {
+  class NoSuchApplicationRegulation() : CountdownConditionalLocateError() {}
+  class NoSuchRule() : CountdownConditionalLocateError() {}
+  class WrongRuleEnablerType() : CountdownConditionalLocateError() {}
+  class WrongVaultProtectorType() : CountdownConditionalLocateError() {}
 }
 
-class AlwaysRuleApi {
-  sealed class LocateError {
-    class NoSuchApplicationRegulation() : LocateError() {}
-  }
+sealed class CountdownAfterPleaConditionalLocation {
+  class MainUserProfileScreenRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
+  class MainUserProfileScreenRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
+  class MainUserProfileScreenRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
 
-  sealed class Location {
-    class MainUserProfileScreenRegulation() AlwaysRuleApi() {}
-    class MainUserProfileApplicationRegulation(val applicationName: ApplicationName) AlwaysRuleApi() {}
-  }
+  class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
+  class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
+  class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
 
-  typealias CreateReturn = Either<LocateError, procedures.alwaysrule.CreateReturn>
-  typealias DeleteReturn = Either<LocateError, procedures.alwaysrule.DeleteReturn>
+  class MainUserProfileVaultProtector(val vaultId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
 }
 
-class TimeRangeRuleApi {
-  sealed class LocateError {
-    class NoSuchApplicationRegulation() : LocateError() {}
-  }
-
-  sealed class Location {
-    class MainUserProfileScreenRegulation() TimeRangeRuleApi() {}
-    class MainUserProfileApplicationRegulation(val applicationName: ApplicationName) TimeRangeRuleApi() {}
-  }
-
-  typealias CreateReturn = Either<LocateError, procedures.timerangerule.CreateReturn>
-  typealias DeleteReturn = Either<LocateError, procedures.timerangerule.DeleteReturn>
+sealed class CountdownAfterPleaConditionalLocateError {
+  class NoSuchApplicationRegulation() : CountdownAfterPleaConditionalLocateError() {}
+  class NoSuchRule() : CountdownAfterPleaConditionalLocateError() {}
+  class WrongRuleEnablerType() : CountdownAfterPleaConditionalLocateError() {}
+  class WrongVaultProtectorType() : CountdownAfterPleaConditionalLocateError() {}
 }
 
-class TimeAllowanceRuleApi {
-  sealed class LocateError {
-    class NoSuchApplicationRegulation() : LocateError() {}
-  }
-
-  sealed class Location {
-    class MainUserProfileScreenRegulationDailyTimeAllowance() : Location() {}
-    class MainUserProfileApplicationRegulationDailyTimeAllowance() : Location() {}
-  }
-
-  typealias CreateReturn = Either<LocateError, procedures.timeallowancerule.CreateReturn>
-  typealias DeleteReturn = Either<LocateError, procedures.timeallowancerule.DeleteReturn>
+sealed class AlwaysRuleLocation {
+  class MainUserProfileScreenRegulation(): AlwaysRuleLocation() {}
+  class MainUserProfileApplicationRegulation(val applicationName: ApplicationName):  AlwaysRuleLocation() {}
 }
 
-class ApplicationRegulationApi {
-  sealed class LocateError() {
-    
-  }
-
-  sealed class Location() {
-    class MainUserProfile() : Location() {}
-  }
-
-  typealias CreateReturn = Either<LocateError, procedures.applicationregulation.CreateReturn>
-  typealias DeleteReturn = Either<LocateError, procedures.applicationregulation.DeleteReturn>
+sealed class AlwaysRuleLocateError {
+  class NoSuchApplicationRegulation() : AlwaysRuleLocateError() {}
 }
 
-class VaultApi {
-  sealed class LocateError() {}
+sealed class TimeRangeRuleLocateError {
+  class NoSuchApplicationRegulation() : TimeRangeRuleLocateError() {}
+}
 
-  sealed class Location() {
-    class MainUserProfile() : Location() {}
-  }
+sealed class TimeRangeRuleLocation {
+  class MainUserProfileScreenRegulation(): TimeRangeRuleLocation() {}
+  class MainUserProfileApplicationRegulation(val applicationName: ApplicationName): TimeRangeRuleLocation() {}
+}
 
-  typealias CreateReturn = Either<LocateError, procedures.vault.CreateReturn>
-  typealias DeleteReturn = Either<LocateError, procedures.vault.DeleteReturn>
+sealed class TimeAllowanceRuleLocateError {
+  class NoSuchApplicationRegulation() : TimeAllowanceRuleLocateError() {}
+}
+
+sealed class TimeAllowanceRuleLocation {
+  class MainUserProfileScreenRegulationDailyTimeAllowance() : TimeAllowanceRuleLocation() {}
+  class MainUserProfileApplicationRegulationDailyTimeAllowance() : TimeAllowanceRuleLocation() {}
+}
+
+sealed class ApplicationRegulationLocateError() {
+  
+}
+
+sealed class ApplicationRegulationLocation() {
+  class MainUserProfile() : ApplicationRegulationLocation() {}
+}
+
+sealed class VaultLocateError() {
+
+}
+
+sealed class VaultLocation() {
+  class MainUserProfile() : VaultLocation() {}
 }

@@ -1,6 +1,46 @@
-package com.example.app.database
+package com.example.app
 
-class MainUserScreenRegulationAlwaysRulesTable {
+class AlwaysRulesTable {
+  companion object {
+    const val TABLE = ""
+
+    const val ID = ""
+    const val ENABLER_TYPE = ""
+    const val ENABLER_DATA_1 = ""
+    const val ENABLER_DATA_2 = ""
+    const val ENABLER_DATA_3 = ""
+    const val LOCATION_ID = ""
+
+    const val ENABLER_COUNTDOWN_DURATION = ENABLER_DATA_1
+    const val ENABLER_COUNTDOWN_COUNTDOWN_FROM = ENABLER_DATA_2
+    const val ENABLER_COUNTDOWN_COUNTDOWN_TILL = ENABLER_DATA_3
+  }
+
+  fun writeCreateTable() {
+
+  }
+
+  fun writeAddRule() {}
+  fun write
+}
+
+class TimeRangeRulesTable {
+  companion object {
+    const val TABLE = ""
+
+    const val ID = ""
+    const val ENABLER_TYPE = ""
+    const val ENABLER_DATA_1 = ""
+    const val ENABLER_DATA_2 = ""
+    const val ENABLER_DATA_3 = ""
+
+    const val ENABLER_COUNTDOWN_DURATION = ENABLER_DATA_1
+    const val ENABLER_COUNTDOWN_COUNTDOWN_FROM = ENABLER_DATA_2
+    const val ENABLER_COUNTDOWN_COUNTDOWN_TILL = ENABLER_DATA_3
+  }
+}
+
+class MainUserScreenRegulationTimeAllowanceRulesTable {
   companion object {
     const val TABLE = ""
 

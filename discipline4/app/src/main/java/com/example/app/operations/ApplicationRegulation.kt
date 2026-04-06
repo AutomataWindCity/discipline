@@ -6,7 +6,7 @@ sealed class CreateReturn {
   class TooManyRegulations() : CreateReturn() {}
   class DuplicateRegulationId() : CreateReturn() {}
   class InternalError(val error: Throwable) : CreateReturn() {}
-  class Success(val app: AppName, val regulation: ApplicationRegulation) : CreateReturn() {}
+  class Success(val app: ApplicationName, val regulation: ApplicationRegulation) : CreateReturn() {}
 }
 
 fun create(

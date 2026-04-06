@@ -42,7 +42,7 @@ public data class UserProfile(
   }
 
   fun isApplicationRestricted(
-    app: AppName,
+    app: ApplicationName,
     nowAsInstant: Instant,
     nowAsTime: Time,
     dailyUsedAllowance: Duration,

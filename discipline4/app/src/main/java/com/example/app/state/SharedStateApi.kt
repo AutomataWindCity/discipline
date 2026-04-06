@@ -34,8 +34,8 @@ class Database {
   fun addTimeAllowanceRuleOrThrow(id: UuidV4, rule: TimeAllowanceRule, locator: TimeAllowanceRuleOperation.Location) {}
   fun deleteTimeAllowanceRuleOrThrow(id: UuidV4, locator: TimeAllowanceRuleOperation.Location) {}
 
-  fun addApplicationRegulationOrThrow(app: AppName, rule: ApplicationRegulation, locator: ApplicationRegulationOperation.Location) {}
-  fun deleteApplicationRegulationOrThrow(app: AppName, locator: ApplicationRegulationOperation.Location) {}
+  fun addApplicationRegulationOrThrow(app: ApplicationName, rule: ApplicationRegulation, locator: ApplicationRegulationOperation.Location) {}
+  fun deleteApplicationRegulationOrThrow(app: ApplicationName, locator: ApplicationRegulationOperation.Location) {}
 
   fun ruleEnablerCountdownReactivateOrThrow(
     location: RuleEnablerCountdownOperation.Location,
@@ -56,22 +56,22 @@ class Database {
 
 // sealed class TimeRangeRuleLocation {
 //   class MainUserScreen : TimeRangeRuleLocation() {}
-//   class MainUserApplicationRegulation(val app: AppName) : TimeRangeRuleLocation() {}
+//   class MainUserApplicationRegulation(val app: ApplicationName) : TimeRangeRuleLocation() {}
 // }
 
 // sealed class TimeRangeRuleContext {
 //   class MainUserScreen : TimeRangeRuleContext() {}
-//   class MainUserApplicationRegulation(val app: AppName, val appRule: ApplicationRegulation) : TimeRangeRuleContext() {}
+//   class MainUserApplicationRegulation(val app: ApplicationName, val appRule: ApplicationRegulation) : TimeRangeRuleContext() {}
 // }
 
 // sealed class TimeAllowanceRuleLocation {
 //   class MainUserScreenDaily : TimeAllowanceRuleLocation() {}
-//   class MainUserApplicationRegulationDaily(val app: AppName) : TimeAllowanceRuleLocation() {}
+//   class MainUserApplicationRegulationDaily(val app: ApplicationName) : TimeAllowanceRuleLocation() {}
 // }
 
 // sealed class TimeAllowanceRuleContext {
 //   class MainUserScreenDaily : TimeAllowanceRuleContext() {}
-//   class MainUserApplicationRegulationDaily(val app: AppName, val appRule: ApplicationRegulation) : TimeAllowanceRuleContext() {}
+//   class MainUserApplicationRegulationDaily(val app: ApplicationName, val appRule: ApplicationRegulation) : TimeAllowanceRuleContext() {}
 // }
 
 // sealed class AlwaysRuleError {
@@ -148,7 +148,7 @@ public class SharedStateApi(
 
 
   // suspend fun createAlwaysRuleAtMainUserProfileApplicationRegulaton(
-  //   app: AppName,
+  //   app: ApplicationName,
   //   idOrNull: UuidV4?,
   //   duration: Duration,
   // ): Tried<Pair<UuidV4, AlwaysRule>, AlwaysRuleError> {
@@ -183,7 +183,7 @@ public class SharedStateApi(
   // }
   
   // suspend fun deleteAlwaysRuleAtMainUserProfileApplicationRegulaton(
-  //   app: AppName,
+  //   app: ApplicationName,
   //   id: UuidV4,
   // ): Tried<AlwaysRule, AlwaysRuleError> {
   //   mutex.withLock() {
@@ -230,9 +230,9 @@ public class SharedStateApi(
 // }
 
 // sealed class ApplicationsRegulationOperation {
-//   class Create(val app: AppName) : ApplicationsRegulationOperation() {}
-//   class Delete(val app: AppName) : ApplicationsRegulationOperation() {}
-//   class Modify(val app: AppName, val it: ApplicationRegulationOperation) : ApplicationsRegulationOperation() {}
+//   class Create(val app: ApplicationName) : ApplicationsRegulationOperation() {}
+//   class Delete(val app: ApplicationName) : ApplicationsRegulationOperation() {}
+//   class Modify(val app: ApplicationName, val it: ApplicationRegulationOperation) : ApplicationsRegulationOperation() {}
 // }
 
 // sealed class UserProfileOperation {

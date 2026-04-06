@@ -1,6 +1,6 @@
 {
-  "editor.fontSize": 17,
-  "editor.fontFamily": "Purisa",
+  "editor.fontSize": 20,
+  "editor.fontFamily": "Comic Mono",
   "java.import.gradle.enabled": true,
   "java.import.gradle.wrapper.enabled": true,
   "kotlin.languageServer.enabled": true,
