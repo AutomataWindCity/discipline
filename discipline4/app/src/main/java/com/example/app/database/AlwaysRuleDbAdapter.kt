@@ -6,16 +6,18 @@ object AlwaysRuleDbAdapter {
   fun createOrThrow(
     database: DatabaseConnection,
     location: AlwaysRuleLocation,
-    ruleId: AlwaysRuleId,
     rule: AlwaysRule,
-  ) {
+  ): AlwaysRuleId {
     when (location) {
       is AlwaysRuleLocation.MainUserProfileScreenRegulation -> {
-        AlwaysRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
-        // MainUserProfileScreenRegulationAlwaysRules
+        val id = AlwaysRulesTable.insertRuleOrThrow(database, rule)
+        MainUserProfileScreenRegulationAlwaysRulesLinkingTable.insertOrThrow(database, id)
+        return id
       }
       is AlwaysRuleLocation.MainUserProfileApplicationRegulation -> {
-        AlwaysRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        val id = AlwaysRulesTable.insertRuleOrThrow(database, rule)
+        MainUserProfileApplicationRegulationAlwaysRulesLinkingTable.insertOrThrow(database, id)
+        return id
       }
     }
   }

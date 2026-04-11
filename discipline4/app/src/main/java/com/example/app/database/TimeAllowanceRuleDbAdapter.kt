@@ -5,16 +5,18 @@ import com.example.app.*
 object TimeAllowanceRuleDbAdapter {
   fun createOrThrow(
     database: DatabaseConnection,
-    location: TimeAllowanceRuleLocation,
-    ruleId: TimeAllowanceRuleId,
     rule: TimeAllowanceRule,
-  ) {
+  ): TimeAllowanceRuleId {
     when (location) {
       is TimeAllowanceRuleLocation.MainUserProfileScreenRegulationDailyTimeAllowance -> {
-        TimeAllowanceRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        val ruleId = TimeAllowanceRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        MainUserProfileScreenRegulationDailyTimeAllowanceLinkingTable.insertOrThrow(ruleId)
+        return ruleId
       }
       is TimeAllowanceRuleLocation.MainUserProfileApplicationRegulationDailyTimeAllowance -> {
-        TimeAllowanceRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        val ruleId = TimeAllowanceRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        MainUserProfileApplicationRegulationDailyTimeAllowanceRulesLinkingTable.insertOrThrow(ruleId)
+        return ruleId
       }
     }
   }

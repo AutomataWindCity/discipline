@@ -29,9 +29,6 @@ object AlwaysRulesTable {
   // Duration: .enabler.countdownConditional.countdown.some.duration
   // Duration: .enabler.countdownAfterPleaConditional.countdown.some.duration
   const val ENABLER_DATA_4 = "enabler_data_4"
-  // INTEGER NOT NULL
-  // LocationId: .locationId
-  const val LOCATION_ID = "location_id"
 
   const val ID_INDEX = 0
   const val ENABLER_VARIANT_INDEX = 1
@@ -39,7 +36,6 @@ object AlwaysRulesTable {
   const val ENABLER_DATA_2_INDEX = 3
   const val ENABLER_DATA_3_INDEX = 4
   const val ENABLER_DATA_4_INDEX = 5
-  const val LOCATION_ID_INDEX = 6
 
   val names = AlwaysRuleNames(
     enabler = RuleEnablerNames(
@@ -103,38 +99,29 @@ object AlwaysRulesTable {
         $ENABLER_DATA_1 INTEGER NOT NULL,
         $ENABLER_DATA_2 INTEGER NOT NULL,
         $ENABLER_DATA_3 INTEGER,
-        $ENABLER_DATA_4 INTEGER,
-        $LOCATION_ID INTEGER NOT NULL
+        $ENABLER_DATA_4 INTEGER
       ) STRICT, WITHOUT ROWID;
     """)
   }
 
   fun writeInsertRule(
     buffer: Buffer,
-    ruleId: AlwaysRuleId,
     rule: AlwaysRule,
-    locationId: LocationId,
   ) {
     buffer.apply {
-      code("INSERT INTO $TABLE VALUES (")
-      alwaysRuleId(ruleId)
-      comma()
+      code("INSERT INTO $TABLE VALUES (NULL, ")
       orderedAlwaysRule(rule)
-      comma()
-      ruleLocationId(locationId)
       code(");")
     }
   }
 
   fun insertRuleOrThrow(
     database: DatabaseConnection,
-    ruleId: AlwaysRuleId,
     rule: AlwaysRule,
-    locationId: LocationId,
-  ) {
+  ): AlwaysRuleId {
     val buffer = Buffer()
-    writeInsertRule(buffer, ruleId, rule, locationId)
-    database.execSqlOrThrow(buffer.string())
+    writeInsertRule(buffer, rule)
+    AlwaysRuleId(database.insertOrThrow(buffer.string()))
   }
 
   fun writeDeleteRule(

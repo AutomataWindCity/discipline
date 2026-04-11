@@ -7,27 +7,25 @@ object TimeAllowanceRulesTable {
 
   const val ID = "id"
   const val ALLOWANCE = "allowance"
-  const val ENABLER_TYPE = "enabler_tag"
+  const val ENABLER_VARIANT = "enabler_variant"
   const val ENABLER_DATA_1 = "enabler_data_1"
   const val ENABLER_DATA_2 = "enabler_data_2"
   const val ENABLER_DATA_3 = "enabler_data_3"
   const val ENABLER_DATA_4 = "enabler_data_4"
   const val ENABLER_DATA_5 = "enabler_data_5"
-  const val LOCATION_ID = "location_id"
 
   const val ID_INDEX = 0
   const val ALLOWANCE_INDEX = 1
-  const val ENABLER_TYPE_INDEX = 2
+  const val ENABLER_VARIANT_INDEX = 2
   const val ENABLER_DATA_1_INDEX = 3
   const val ENABLER_DATA_2_INDEX = 4
   const val ENABLER_DATA_3_INDEX = 5
   const val ENABLER_DATA_4_INDEX = 6
   const val ENABLER_DATA_5_INDEX = 7
-  const val LOCATION_ID_INDEX = 8
 
   val names = TimeAllowanceRuleNames(
     enabler = RuleEnablerNames(
-      variant = ENABLER_TYPE,
+      variant = ENABLER_VARIANT,
       countdownConditional = CountdownConditionalNames(
         duration = ENABLER_DATA_1,
         countdown = OptionNames(
@@ -56,7 +54,7 @@ object TimeAllowanceRulesTable {
   val indexes = TimeAllowanceRuleIndexes(
     allowance = ALLOWANCE_INDEX,
     enabler = RuleEnablerIndexes(
-      variant = ENABLER_TYPE_INDEX,
+      variant = ENABLER_VARIANT_INDEX,
       countdownConditional = CountdownConditionalIndexes(
         duration = ENABLER_DATA_1_INDEX, 
         countdown = OptionIndexes(
@@ -86,42 +84,33 @@ object TimeAllowanceRulesTable {
       CREATE TABLE IF NOT EXISTS $TABLE (
         $ID INTEGER PRIMARY KEY,
         $ALLOWANCE INTEGER NOT NULL,
-        $ENABLER_TYPE INTEGER NOT NULL,
+        $ENABLER_VARIANT INTEGER NOT NULL,
         $ENABLER_DATA_1 INTEGER NOT NULL,
         $ENABLER_DATA_2 INTEGER NOT NULL,
         $ENABLER_DATA_3 INTEGER,
-        $ENABLER_DATA_4 INTEGER,
-        $LOCATION_ID INTEGER NOT NULL
+        $ENABLER_DATA_4 INTEGER
       ) STRICT, WITHOUT ROWID;
     """)
   }
 
   fun writeInsertRule(
     buffer: Buffer,
-    ruleId: TimeAllowanceRuleId,
     rule: TimeAllowanceRule,
-    locationId: LocationId,
   ) {
     buffer.apply {
-      write("INSERT INTO $TABLE VALUES (")
-      timeAllowanceRuleId(ruleId)
-      comma()
+      write("INSERT INTO $TABLE VALUES (NULL, ")
       orderedTimeAllowanceRule(rule)
-      comma()
-      ruleLocationId(locationId)
       code(");")
     }
   }
 
   fun insertRuleOrThrow(
     database: DatabaseConnection,
-    ruleId: TimeAllowanceRuleId,
     rule: TimeAllowanceRule,
-    locationId: LocationId,
-  ) {
+  ): TimeAllowanceRuleId {
     val buffer = Buffer()
-    writeInsertRule(buffer, ruleId, rule, locationId)
-    database.execSqlOrThrow(buffer.string())
+    writeInsertRule(buffer, rule)
+    TimeAllowanceRuleId(database.insertOrThrow(buffer.string()))
   }
 
   fun writeDeleteRule(

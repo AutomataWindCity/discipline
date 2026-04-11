@@ -6,15 +6,18 @@ object TimeRangeRuleDbAdapter {
   fun createOrThrow(
     database: DatabaseConnection,
     location: TimeRangeRuleLocation,
-    ruleId: TimeRangeRuleId,
     rule: TimeRangeRule,
-  ) {
+  ): TimeRangeRuleId {
     when (location) {
       is TimeRangeRuleLocation.MainUserProfileScreenRegulation -> {
-        TimeRangeRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        val ruleId = TimeRangeRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        MainUserProfileScreenRegulationTimeRangeRulesLinkingTable.insertOrThrow(ruleId)
+        return ruleId
       }
       is TimeRangeRuleLocation.MainUserProfileApplicationRegulation -> {
-        TimeRangeRulesTable.insertRuleOrThrow(database, ruleId, rule, location.locationId)
+        val ruleId = TimeRangeRulesTable.insertRuleOrThrow(database, rule)
+        MainUserProfileApplicationRegulationTimeRangeRulesLinkingTable.insertOrThrow(ruleId)
+        return ruleId
       }
     }
   }

@@ -8,30 +8,24 @@ object TimeRangeRulesTable {
   const val ID = "id"
   const val CONDITION_FROM = "condition_from"
   const val CONDITION_TILL = "condition_till"
-  const val ENABLER_TYPE = "enabler_variant"
+  const val ENABLER_VARIANT = "enabler_variant"
   const val ENABLER_DATA_1 = "enabler_data_1"
   const val ENABLER_DATA_2 = "enabler_data_2"
   const val ENABLER_DATA_3 = "enabler_data_3"
   const val ENABLER_DATA_4 = "enabler_data_4"
-  const val LOCATION_ID = "location_id"
-
-  const val ENABLER_COUNTDOWN_DURATION = ENABLER_DATA_1
-  const val ENABLER_COUNTDOWN_COUNTDOWN_FROM = ENABLER_DATA_2
-  const val ENABLER_COUNTDOWN_COUNTDOWN_TILL = ENABLER_DATA_3
 
   const val ID_INDEX = 0
   const val CONDITION_FROM_INDEX = 1
   const val CONDITION_TILL_INDEX = 2
-  const val ENABLER_TYPE_INDEX = 3
+  const val ENABLER_VARIANT_INDEX = 3
   const val ENABLER_DATA_1_INDEX = 4
   const val ENABLER_DATA_2_INDEX = 5
   const val ENABLER_DATA_3_INDEX = 6
   const val ENABLER_DATA_4_INDEX = 7
-  const val LOCATION_ID_INDEX = 8
 
   val names = TimeRangeRuleNames(
     enabler = RuleEnablerNames(
-      variant = ENABLER_TYPE,
+      variant = ENABLER_VARIANT,
       countdownConditional = CountdownConditionalNames(
         duration = ENABLER_DATA_1,
         countdown = OptionNames(
@@ -61,7 +55,7 @@ object TimeRangeRulesTable {
 
   val indexes = TimeRangeRuleIndexes(
     enabler = RuleEnablerIndexes(
-      variant = ENABLER_TYPE_INDEX,
+      variant = ENABLER_VARIANT_INDEX,
       countdownConditional = CountdownConditionalIndexes(
         duration = ENABLER_DATA_1_INDEX, 
         countdown = OptionIndexes(
@@ -99,12 +93,11 @@ object TimeRangeRulesTable {
           $ID INTEGER PRIMARY KEY,
           $CONDITION_FROM INTEGER NOT NULL,
           $CONDITION_TILL INTEGER NOT NULL,
-          $ENABLER_TYPE INTEGER NOT NULL,
+          $ENABLER_VARIANT INTEGER NOT NULL,
           $ENABLER_DATA_1 INTEGER NOT NULL,
           $ENABLER_DATA_2 INTEGER NOT NULL,
           $ENABLER_DATA_3 INTEGER,
-          $ENABLER_DATA_4 INTEGER,
-          $LOCATION_ID INTEGER NOT NULL
+          $ENABLER_DATA_4 INTEGER
         ) STRICT, WITHOUT ROWID;
       """)
     }
@@ -112,28 +105,22 @@ object TimeRangeRulesTable {
 
   fun writeInsertRule(
     buffer: Buffer,
-    ruleId: TimeRangeRuleId,
     rule: TimeRangeRule,
-    locationId: LocationId,
   ) {
     buffer.apply {
-      code("INSERT INTO $TABLE VALUES (")
-      timeRangeRuleId(ruleId)
+      code("INSERT INTO $TABLE VALUES (NULL, ")
       orderedTimeRangeRule(rule)
-      ruleLocationId(locationId)
       code(");")
     }
   }
 
   fun insertRuleOrThrow(
     database: DatabaseConnection,
-    ruleId: TimeRangeRuleId,
     rule: TimeRangeRule,
-    locationId: LocationId,
-  ) {
+  ): TimeRangeRuleId {
     val buffer = Buffer()
-    writeInsertRule(buffer, ruleId, rule, locationId)
-    database.execSqlOrThrow(buffer.string())
+    writeInsertRule(buffer, rule)
+    TimeRangeRuleId(database.insertOrThrow(buffer.string()))
   }
 
   fun writeDeleteRule(

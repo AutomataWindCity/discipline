@@ -7,7 +7,7 @@ class VaultsTable {
     const val ID = "id"
     const val NAME = "name"
     const val DATA = "data"
-    const val ENABLER_TAG = "enabler_tag"
+    const val ENABLER_TAG = "enabler_variant"
     const val ENABLER_DATA_1 = "enabler_data_1"
     const val ENABLER_DATA_2 = "enabler_data_2"
     const val ENABLER_DATA_3 = "enabler_data_3"
