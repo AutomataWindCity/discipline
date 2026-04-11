@@ -10,7 +10,7 @@ sealed class CreateReturn {
 }
 
 fun create(
-  database: Database,
+  database: DatabaseConnection,
   adapter: TimeAllowanceRuleDbAdapter,
   location: TimeRangeRuleLocation,
   rules: TimeAllowanceRules,
@@ -52,7 +52,7 @@ sealed class DeleteReturn {
 }
 
 fun delete(
-  database: Database,
+  database: DatabaseConnection,
   adapter: TimeAllowanceRuleDbAdapter, 
   location: Location,
   rules: TimeAllowanceRules,

@@ -8,7 +8,7 @@ sealed class ReactivateReturn {
 }
 
 fun reactivate(
-  database: Database,
+  database: DatabaseConnection,
   adapter: CountdownConditionalDbAdapter,
   location: CountdownConditionalLocation,
   conditional: CountdownConditional,

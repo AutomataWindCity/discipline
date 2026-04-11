@@ -10,7 +10,7 @@ sealed class CreateReturn {
 }
 
 fun create(
-  database: Database,
+  database: DatabaseConnection,
   adapter: ApplicationRegulationDbAdapter,
   location: ApplicationRegulationLocation,
   regulations: ApplicationRegulations,
@@ -46,7 +46,7 @@ sealed class DeleteReturn {
 }
 
 fun delete(
-  database: Database,
+  database: DatabaseConnection,
   adapter: ApplicationRegulationDbAdapter,
   location: ApplicationRegulationLocation,
   regulations: ApplicationRegulations,

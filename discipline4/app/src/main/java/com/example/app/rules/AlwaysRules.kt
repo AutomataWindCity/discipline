@@ -34,5 +34,11 @@ public data class AlwaysRules(
   }
 
   @JvmInline
-  public value class Id(val id: Long)
+  public value class Id(val id: Long) {
+    fun asNumber(): Long {
+      return id
+    }
+  }
 }
+
+typealias AlwaysRuleId = AlwaysRules.Id

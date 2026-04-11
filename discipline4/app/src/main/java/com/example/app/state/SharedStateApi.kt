@@ -5,51 +5,58 @@ import com.example.app.State
 import com.example.app.Tried
 import com.example.app.success
 import com.example.app.failure
-import com.example.app.TimeRangeRuleOperation
-import com.example.app.AlwaysRuleOperation
+// import com.example.app.TimeRangeRuleOperation
+// import com.example.app.AlwaysRuleOperation
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import android.database.Cursor
 
-class Database {
-  fun addAlwaysRuleOrThrow(id: UuidV4, rule: AlwaysRule, locator: AlwaysRuleOperation.Location) {}
-  fun deleteAlwaysRuleOrThrow(id: UuidV4, locator: AlwaysRuleOperation.Location) {}
-  fun alwaysRuleEnablerCountdownReactivateOrThrow(
-    ruleId: UuidV4,
-    ruleLocation: AlwaysRuleOperation.Location,
-    reactivateState: CountdownConditional.ReactivateState
-  ) {}
-  fun alwaysRuleEnablerCountdownAfterPleaReactivateOrThrow(
-    ruleId: UuidV4,
-    ruleLocation: AlwaysRuleOperation.Location,
-  ) {}
-  fun alwaysRuleEnablerCountdownAfterPleaReDeactivateOrThrow(
-    ruleId: UuidV4,
-    ruleLocation: AlwaysRuleOperation.Location,
-    reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState
-  ) {}
+class DatabaseConnection {
+  fun queryOrThrow(string: String): Cursor {
+    TODO()
+    // x.rawQuery(buffer.string(), emptyArray())
+  }
 
-  fun addTimeRangeRuleOrThrow(id: UuidV4, rule: TimeRangeRule, locator: TimeRangeRuleOperation.Location) {}
-  fun deleteTimeRangeRuleOrThrow(id: UuidV4, locator: TimeRangeRuleOperation.Location) {}
+  fun execSqlOrThrow(sql: String) {}
+  // fun addAlwaysRuleOrThrow(id: UuidV4, rule: AlwaysRule, locator: AlwaysRuleOperation.Location) {}
+  // fun deleteAlwaysRuleOrThrow(id: UuidV4, locator: AlwaysRuleOperation.Location) {}
+  // fun alwaysRuleEnablerCountdownReactivateOrThrow(
+  //   ruleId: UuidV4,
+  //   ruleLocation: AlwaysRuleOperation.Location,
+  //   reactivateState: CountdownConditional.ReactivateState
+  // ) {}
+  // fun alwaysRuleEnablerCountdownAfterPleaReactivateOrThrow(
+  //   ruleId: UuidV4,
+  //   ruleLocation: AlwaysRuleOperation.Location,
+  // ) {}
+  // fun alwaysRuleEnablerCountdownAfterPleaReDeactivateOrThrow(
+  //   ruleId: UuidV4,
+  //   ruleLocation: AlwaysRuleOperation.Location,
+  //   reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState
+  // ) {}
+
+  // fun addTimeRangeRuleOrThrow(id: UuidV4, rule: TimeRangeRule, locator: TimeRangeRuleOperation.Location) {}
+  // fun deleteTimeRangeRuleOrThrow(id: UuidV4, locator: TimeRangeRuleOperation.Location) {}
   
-  fun addTimeAllowanceRuleOrThrow(id: UuidV4, rule: TimeAllowanceRule, locator: TimeAllowanceRuleOperation.Location) {}
-  fun deleteTimeAllowanceRuleOrThrow(id: UuidV4, locator: TimeAllowanceRuleOperation.Location) {}
+  // fun addTimeAllowanceRuleOrThrow(id: UuidV4, rule: TimeAllowanceRule, locator: TimeAllowanceRuleOperation.Location) {}
+  // fun deleteTimeAllowanceRuleOrThrow(id: UuidV4, locator: TimeAllowanceRuleOperation.Location) {}
 
-  fun addApplicationRegulationOrThrow(app: ApplicationName, rule: ApplicationRegulation, locator: ApplicationRegulationOperation.Location) {}
-  fun deleteApplicationRegulationOrThrow(app: ApplicationName, locator: ApplicationRegulationOperation.Location) {}
+  // fun addApplicationRegulationOrThrow(app: ApplicationName, rule: ApplicationRegulation, locator: ApplicationRegulationOperation.Location) {}
+  // fun deleteApplicationRegulationOrThrow(app: ApplicationName, locator: ApplicationRegulationOperation.Location) {}
 
-  fun ruleEnablerCountdownReactivateOrThrow(
-    location: RuleEnablerCountdownOperation.Location,
-    reactivateState: CountdownConditional.ReactivateState
-  ) {}
+  // fun ruleEnablerCountdownReactivateOrThrow(
+  //   location: RuleEnablerCountdownOperation.Location,
+  //   reactivateState: CountdownConditional.ReactivateState
+  // ) {}
 
-  fun ruleEnablerCountdownAfterPleaReactivateOrThrow(
-    location: RuleEnablerCountdownAfterPleaOperation.Location,
-  ) {}
+  // fun ruleEnablerCountdownAfterPleaReactivateOrThrow(
+  //   location: RuleEnablerCountdownAfterPleaOperation.Location,
+  // ) {}
   
-  fun ruleEnablerCountdownAfterPleaReDeactivateOrThrow(
-    location: RuleEnablerCountdownAfterPleaOperation.Location,
-    reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState
-  ) {}
+  // fun ruleEnablerCountdownAfterPleaReDeactivateOrThrow(
+  //   location: RuleEnablerCountdownAfterPleaOperation.Location,
+  //   reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState
+  // ) {}
 }
 
 
@@ -85,7 +92,7 @@ class Database {
 
 public class SharedStateApi(
   val state: State,
-  val database: Database,
+  val database: DatabaseConnection,
   val mutex: Mutex,
 ) {
   // TODO: Create versions of the createAlwaysRuleAtMainUserProfileScreenRegulaton and deleteAlwaysRuleAtMainUserProfileScreenRegulaton (named createAlwaysRuleAtMainUserProfileApplicationRegulaton and deleteAlwaysRuleAtMainUserProfileApplicationRegulaton) functions that instead create countdown rules at the main user profile's ApplicationRegulation.AlwaysRules

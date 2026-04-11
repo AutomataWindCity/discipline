@@ -4,417 +4,384 @@ import com.example.app.database.*
 import com.example.app.*
 import android.database.Cursor
 
- // fun writeSql(slice: String) {}
 
-@JvmInline
-value class ScalarWriteDestination(val buffer: Buffer) {
-  fun writeInt(value: Int) {}
-  fun writeLong(value: Long) {}
-  fun writeString(value: String) {}
-  fun writeBoolean(value: Boolean) {}
-}
+enum class OptionVariant {
+  None,
+  Some;
 
-class NamedWriteDestination() {
-  fun writeNull(name: String) {}
-  fun writeInt(name: String, value: Int) {}
-  fun writeLong(name: String, value: Long) {}
-  fun writeString(name: String, value: String) {}
-  fun writeBoolean(name: String, value: Boolean) {}
-  // fun write(name: String) {}
-}
-
-class OrderedWriteDestination(
-  var buffer: Buffer,
-  var comma: Boolean,
-) {
-  fun writeNull() {}
-  fun writeInt(value: Int) {}
-  fun writeLong(value: Long) {}
-  fun writeString(value: String) {}
-  fun writeBoolean(value: Boolean) {}
-}
-
-// ----------------------------------------------------------
-fun Int.scalarWrite(destination: ScalarWriteDestination) {
-  destination.writeInt(this)
-}
-
-fun Long.scalarWrite(destination: ScalarWriteDestination) {
-  destination.writeLong(this)
-}
-
-fun String.scalarWrite(destination: ScalarWriteDestination) {
-  destination.writeString(this)
-}
-
-fun Boolean.scalarWrite(destination: ScalarWriteDestination) {
-  destination.writeBoolean(this)
-}
-
-fun UuidV4.scalarWrite(destination: ScalarWriteDestination) {
-  toString().scalarWrite(destination)
-}
-
-fun Time.scalarWrite(destination: ScalarWriteDestination) {
-  toTimestamp().scalarWrite(destination)
-}
-
-fun Duration.scalarWrite(destination: ScalarWriteDestination) {
-  toTotalMilliseconds().scalarWrite(destination)
-}
-
-fun Instant.scalarWrite(destination: ScalarWriteDestination) {
-  toElapsedTime().scalarWrite(destination)
-}
-
-fun RuleEnabler.Variant.scalarWrite(destination: ScalarWriteDestination) {
-  toNumber().scalarWrite(destination)
-}
-// ----------------------------------------------------------------
-
-
-// write named for insert
-// write ordered for insert
-// read indexed 
-
-// ----------------------------------------------------------------
-// class Buffer(val buffer: Buffer) {
-//   // fun write(slice: String) {}
-//   fun writeNull() {}
-//   fun writeInt(value: Int) {}
-//   fun writeLong(value: Long) {}
-//   fun writeString(value: String) {}
-//   fun writeBoolean(value: Boolean) {}
-// }
-
-fun Countdown.Companion.orderedWriteNull(destination: OrderedWriteDestination) {
-  destination.writeNull()
-  destination.writeNull()
-}
-
-// ----------------------------------------------------------------
-
-fun <T> T?.optionalOrderedWrite(destination: OrderedWriteDestination, orderedWriteNull: T.() -> Unit) {
-
-}
-
-fun Int.orderedWrite(destination: OrderedWriteDestination) {
-  destination.writeInt(this)
-}
-
-fun Long.orderedWrite(destination: OrderedWriteDestination) {
-  destination.writeLong(this)
-}
-
-fun String.orderedWrite(destination: OrderedWriteDestination) {
-  destination.writeString(this)
-}
-
-fun Boolean.orderedWrite(destination: OrderedWriteDestination) {
-  destination.writeBoolean(this)
-}
-
-fun UuidV4.orderedWrite(destination: OrderedWriteDestination) {
-  toString().orderedWrite(destination)
-}
-
-fun Time.orderedWrite(destination: OrderedWriteDestination) {
-  toTimestamp().orderedWrite(destination)
-}
-
-fun Duration.orderedWrite(destination: OrderedWriteDestination) {
-  toTotalMilliseconds().orderedWrite(destination)
-}
-
-fun Instant.orderedWrite(destination: OrderedWriteDestination) {
-  toElapsedTime().orderedWrite(destination)
-}
-
-fun RuleEnabler.Variant.orderedWrite(destination: OrderedWriteDestination) {
-  toNumber().orderedWrite(destination)
-}
-
-fun TimeRange.orderedWrite(destination: OrderedWriteDestination) {
-  fromTimestamp.orderedWrite(destination)
-  tillTimestamp.orderedWrite(destination)
-}
-
-fun Countdown.orderedWrite(destination: OrderedWriteDestination) {
-  from.orderedWrite(destination)
-  duration.orderedWrite(destination)
-}
-
-fun CountdownConditional.orderedWrite(destination: OrderedWriteDestination) {
-  duration.orderedWrite(destination)
-  countdown.optionalOrderedWrite(destination) { 
-    Countdown.orderedWriteNull(destination) 
+  companion object {
+    fun fromNumberOrThrow(number: Int): OptionVariant {
+      return when (number) {
+        0 -> None
+        1 -> Some
+        else -> throw TextualError.create("Unknown OptionVariant number: $number")
+      }
+    }
   }
 }
 
-fun CountdownAfterPleaConditional.orderedWrite(destination: OrderedWriteDestination) {
-  intervalFromPleaTillDeactivation.orderedWrite(destination)
-  countdownTillDeactivation.optionalOrderedWrite(destination) { 
-    Countdown.orderedWriteNull(destination) 
-  }
+fun Buffer.none() {
+  code("NULL")
 }
 
-fun RuleEnabler.orderedWrite(destination: OrderedWriteDestination) {
-  when (this) {
+fun Buffer.comma() {
+  code(", ")
+}
+
+fun <T> Buffer.orderedOption(value: T?, orderedWrite: Buffer.(T) -> Unit) {
+  value
+    ?.let {
+      int(1)
+      orderedWrite(it)
+    }
+    ?: {
+      int(0)
+    }
+}
+
+fun Buffer.named(name: String, namedValue: Buffer.() -> Unit) {
+  code("$name = ")
+  namedValue()
+}
+
+// -------------------------------
+fun Buffer.int(value: Int) {
+  code(value.toString())
+}
+
+fun Buffer.long(value: Long) {
+  code(value.toString())
+}
+
+fun Buffer.string(value: String) {
+  code(value.toString())
+}
+
+fun Buffer.boolean(value: Boolean) {
+  code(value.toString())
+}
+
+fun Buffer.uuidV4(value: UuidV4) {
+  code(value.toString())
+}
+
+fun Buffer.time(value: Time) {
+  int(value.toTimestamp())
+}
+
+fun Buffer.duration(value: Duration) {
+  long(value.toTotalMilliseconds())
+}
+
+fun Buffer.instant(value: Instant) {
+  duration(value.toElapsedTime())
+}
+
+fun Buffer.ruleEnablerVariant(value: RuleEnabler.Variant) {
+  int(value.toNumber())
+}
+
+fun Buffer.orderedTimeRange(value: TimeRange) {
+  int(value.fromTimestamp)
+  comma()
+  int(value.tillTimestamp)
+}
+
+fun Buffer.orderedCountdown(value: Countdown) {
+  instant(value.from)
+  comma()
+  duration(value.duration)
+}
+
+fun Buffer.orderedNullCountdown() {
+  code("NULL, NULL")
+}
+
+fun Buffer.orderedCountdownConditional(value: CountdownConditional) {
+  duration(value.duration)
+  orderedOption(value.countdown) { orderedCountdown(it) }
+}
+
+fun Buffer.orderedCountdownAfterPleaConditional(value: CountdownAfterPleaConditional) {
+  duration(value.intervalFromPleaTillDeactivation)
+  orderedOption(value.countdownTillDeactivation) { orderedCountdown(it) }
+}
+
+fun Buffer.orderedRuleEnabler(value: RuleEnabler) {
+  when (value) {
     is RuleEnabler.Countdown -> {
-      RuleEnabler.Variant.Countdown.orderedWrite(destination)
-      it.orderedWrite(destination)
+      ruleEnablerVariant(RuleEnabler.Variant.Countdown)
+      comma()
+      orderedCountdownConditional(value.it)
     }
     is RuleEnabler.CountdownAfterPlea -> {
-      RuleEnabler.Variant.CountdownAfterPlea.orderedWrite(destination)
-      it.orderedWrite(destination)
+      ruleEnablerVariant(RuleEnabler.Variant.CountdownAfterPlea)
+      orderedCountdownAfterPleaConditional(value.it)
     }
   }
 }
 
-fun AlwaysRule.orderdWrite(destination: OrderedWriteDestination) {
-  enabler.orderedWrite(destination)
+fun Buffer.orderedAlwaysRule(value: AlwaysRule) {
+  orderedRuleEnabler(value.enabler)
 }
 
-fun AlwaysRules.Id.orderdWrite(destination: OrderedWriteDestination) {
-  id.orderedWrite(destination)
+fun Buffer.alwaysRuleId(value: AlwaysRuleId) {
+  long(value.asNumber())
 }
 
-fun TimeRangeRule.orderedWrite(destination: OrderedWriteDestination) {
-  enabler.orderedWrite(destination)
-  condition.orderedWrite(destination)
+fun Buffer.orderedTimeRangeRule(value: TimeRangeRule) {
+  orderedRuleEnabler(value.enabler)
+  comma()
+  orderedTimeRange(value.condition)
 }
 
-fun TimeRangeRules.Id.orderedWrite(destination: OrderedWriteDestination) {
-  id.orderedWrite(destination)
+fun Buffer.timeRangeRuleId(value: TimeRangeRuleId) {
+  long(value.asNumber())
 }
 
-fun TimeAllowanceRule.orderedWrite(destination: OrderedWriteDestination) {
-  enabler.orderedWrite(destination)
-  allowance.orderedWrite(destination)
+fun Buffer.orderedTimeAllowanceRule(value: TimeAllowanceRule) {
+  orderedRuleEnabler(value.enabler)
+  comma()
+  duration(value.allowance)
 }
 
-fun TimeAllowanceRules.Id.orderedWrite(destination: OrderedWriteDestination) {
-  id.orderedWrite(destination)
+fun Buffer.timeAllowanceRuleId(value: TimeAllowanceRuleId) {
+  long(value.asNumber())
 }
 
-// ----------------------------------------------------------------
-fun Int.namedWrite(name: String, destination: NamedWriteDestination) {
-  destination.writeInt(name, this)
-}
+fun Buffer.ruleLocationId(id: LocationId) {
 
-fun Long.namedWrite(name: String, destination: NamedWriteDestination) {
-  destination.writeLong(name, this)
-}
-
-fun String.namedWrite(name: String, destination: NamedWriteDestination) {
-  destination.writeString(name, this)
-}
-
-fun Boolean.namedWrite(name: String, destination: NamedWriteDestination) {
-  destination.writeBoolean(name, this)
-}
-
-fun UuidV4.namedWrite(name: String, destination: NamedWriteDestination) {
-  toString().namedWrite(name: String, destination)
-}
-
-fun Time.namedWrite(name: String, destination: NamedWriteDestination) {
-  toTimestamp().namedWrite(name: String, destination)
-}
-
-fun Duration.namedWrite(name: String, destination: NamedWriteDestination) {
-  toTotalMilliseconds().namedWrite(name: String, destination)
-}
-
-fun Instant.namedWrite(name: String, destination: NamedWriteDestination) {
-  toElapsedTime().namedWrite(name: String, destination)
-}
-
-fun RuleEnabler.Variant.namedWrite(name: String, destination: NamedWriteDestination) {
-  toNumber().namedWrite(name: String, destination)
-}
-
-fun AlwaysRules.Id.namedWrite(name: String, destination: NamedWriteDestination) {
-  id.namedWrite(name: String, destination)
-}
-
-fun TimeRangeRules.Id.namedWrite(name: String, destination: NamedWriteDestination) {
-  id.namedWrite(name: String, destination)
-}
-
-fun TimeAllowanceRules.Id.namedWrite(name: String, destination: NamedWriteDestination) {
-  id.namedWrite(name: String, destination)
 }
 
 data class OptionNames<SomeNames>(
   val tag: String,
   val some: SomeNames,
-) {
-  fun writeNone(
-    destination: NamedWriteDestination, 
-    valueNamedWriteNull: SomeNames.() -> Unit,
-  ) {
-    0.namedWrite(tag, destination)
-    valueNamedWriteNull(some)
-  }
+) 
 
-  fun writeSome(
-    destination: NamedWriteDestination, 
-    valueNamedWrite: SomeNames.() -> Unit
-  ) {
-    1.namedWrite(tag, destination)
-    valueNamedWrite(some)
-  }
-}
+fun <SomeNames> Buffer.setOptionToNone(
+  names: OptionNames<SomeNames>
+) {}
+
+fun <SomeNames> Buffer.setOptionToSome(
+  names: OptionNames<SomeNames>,
+  namedWriteSome: Buffer.(SomeNames) -> Unit
+) {}
+
+// {
+//   fun writeNone(
+//     destination: NamedWriteDestination, 
+//     valueNamedWriteNull: SomeNames.() -> Unit,
+//   ) {
+//     0.namedWrite(tag, destination)
+//     valueNamedWriteNull(some)
+//   }
+
+//   fun writeSome(
+//     destination: NamedWriteDestination, 
+//     valueNamedWrite: SomeNames.() -> Unit
+//   ) {
+//     1.namedWrite(tag, destination)
+//     valueNamedWrite(some)
+//   }
+// }
 
 data class TimeRangeNames(
   val from: String,
   val till: String,
+)
+
+fun Buffer.namedTimeRange(
+  names: TimeRangeNames,
+  value: TimeRange,
 ) {
-  fun writeFrom(destination: NamedWriteDestination, value: Time) {
-    value.namedWrite(from, destination)
-  }
-
-  fun writeTill(destination: NamedWriteDestination, value: Time) {
-    value.namedWrite(till, destination)
-  }
-
-  fun write(destination: NamedWriteDestination, value: TimeRange) {
-    value.getFrom().namedWrite(from, destination)
-    value.getTill().namedWrite(till, destination)
-  }
+  named(names.from) { int(value.fromTimestamp) }
+  comma()
+  named(names.till) { int(value.tillTimestamp) }
 }
 
 data class CountdownNames(
   val from: String,
   val duration: String,
+)
+
+fun Buffer.namedCountdown(
+  names: CountdownNames,
+  value: Countdown,
 ) {
-  fun writeFrom(destination: NamedWriteDestination, value: Instant) {
-    value.namedWrite(from, destination)
-  }
-
-  fun writeDuration(destination: NamedWriteDestination, value: Duration) {
-    value.namedWrite(duration, destination)
-  }
-
-  fun write(destination: NamedWriteDestination, value: Countdown) {
-    value.from.namedWrite(from, destination)
-    value.duration.namedWrite(duration, destination)
-  }
-
-  fun writeNull(destination: NamedWriteDestination) {
-    destination.writeNull(from)
-    destination.writeNull(duration)
-  }
+  named(names.from) { instant(value.from) }
+  comma()
+  named(names.duration) { duration(value.duration) }
 }
 
 data class CountdownConditionalNames(
   val duration: String,
   val countdown: OptionNames<CountdownNames>,
+) 
+
+fun Buffer.reactivateCountdownConditional(
+  names: CountdownConditionalNames,
+  reactivateState: CountdownConditional.ReactivateState,
 ) {
-  fun writeDuration(destination: NamedWriteDestination, value: Duration) {
-    value.namedWrite(duration, destination)
-  }
+  setOptionToSome(names.countdown) { namedCountdown(it, reactivateState.countdown) }
+}
 
-  fun writeCountdownNone(destination: NamedWriteDestination) {
-    countdown.writeNone(destination) { writeNull(destination) }
-  }
+// {
+//   fun writeDuration(destination: NamedWriteDestination, value: Duration) {
+//     value.namedWrite(duration, destination)
+//   }
 
-  fun writeCountdownSome(destination: NamedWriteDestination, value: Countdown) {
-    countdown.writeSome(destination) { write(destination, value) }
-  }
+//   fun writeCountdownNone(destination: NamedWriteDestination) {
+//     countdown.writeNone(destination) { writeNull(destination) }
+//   }
 
-  fun writeCountdown(destination: NamedWriteDestination, value: Countdown?) {
-    value 
-      ?.let {
-        writeCountdownSome(destination, it)
-      } 
-      ?: run {
-        writeCountdownNone(destination)
-      }
-  }
+//   fun writeCountdownSome(destination: NamedWriteDestination, value: Countdown) {
+//     countdown.writeSome(destination) { write(destination, value) }
+//   }
 
-  fun write(destination: NamedWriteDestination, value: CountdownConditional) {
-    writeDuration(destination, value.duration)
-    writeCountdown(destination, value.countdown)
-  }
+//   fun writeCountdown(destination: NamedWriteDestination, value: Countdown?) {
+//     value 
+//       ?.let {
+//         writeCountdownSome(destination, it)
+//       } 
+//       ?: run {
+//         writeCountdownNone(destination)
+//       }
+//   }
 
-  fun reactivate(
-    destination: NamedWriteDestination,
-    reactivateState: CountdownConditional.ReactivateState,
-  ) {
-    writeCountdownSome(destination, reactivateState.countdown)
-  }
+//   fun write(destination: NamedWriteDestination, value: CountdownConditional) {
+//     writeDuration(destination, value.duration)
+//     writeCountdown(destination, value.countdown)
+//   }
+
+//   fun reactivate(
+//     destination: NamedWriteDestination,
+//     reactivateState: CountdownConditional.ReactivateState,
+//   ) {
+//     writeCountdownSome(destination, reactivateState.countdown)
+//   }
+// }
+
+fun Buffer.namedCountdownConditional(
+  names: CountdownConditionalNames,
+  value: CountdownConditional,
+) {
+  named(names.duration) { duration(value.duration) }
+  comma()
+  // TODO
 }
 
 data class CountdownAfterPleaConditionalNames(
-  val duration: String,
-  val countdown: OptionNames<CountdownNames>,
+  val intervalFromPleaTillDeactivation: String,
+  val countdownTillDeactivation: OptionNames<CountdownNames>,
+) 
+// {
+//   fun writeDuration(destination: NamedWriteDestination, value: Duration) {
+//     value.namedWrite(duration, destination)
+//   }
+
+//   fun writeCountdownNone(destination: NamedWriteDestination) {
+//     countdown.writeNone(destination) { writeNull(destination) }
+//   }
+
+//   fun writeCountdownSome(destination: NamedWriteDestination, value: Countdown) {
+//     countdown.writeSome(destination) { write(destination, value) }
+//   }
+
+//   fun writeCountdown(destination: NamedWriteDestination, value: Countdown?) {
+//     value 
+//       ?.let {
+//         writeCountdownSome(destination, it)
+//       } 
+//       ?: run {
+//         writeCountdownNone(destination)
+//       }
+//   }
+
+//   fun write(destination: NamedWriteDestination, value: CountdownAfterPleaConditional) {
+//     writeDuration(destination, value.intervalFromPleaTillDeactivation)
+//     writeCountdown(destination, value.countdownTillDeactivation)
+//   }
+
+//   fun reactivate(
+//     destination: NamedWriteDestination,
+//   ) {
+//     writeCountdownNone(destination)
+//   }
+
+//   fun reDeactivate(
+//     destination: NamedWriteDestination,
+//     reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState,
+//   ) {
+//     writeCountdownSome(destination, reDeactivateState.countdown)
+//   }
+// }
+
+fun Buffer.namedCountdownAfterPleaConditional(
+  names: CountdownAfterPleaConditionalNames,
+  value: CountdownAfterPleaConditional,
 ) {
-  fun writeDuration(destination: NamedWriteDestination, value: Duration) {
-    value.namedWrite(duration, destination)
-  }
+  named(names.intervalFromPleaTillDeactivation) { duration(value.intervalFromPleaTillDeactivation) }
+  comma()
+  // TODO
+}
 
-  fun writeCountdownNone(destination: NamedWriteDestination) {
-    countdown.writeNone(destination) { writeNull(destination) }
-  }
 
-  fun writeCountdownSome(destination: NamedWriteDestination, value: Countdown) {
-    countdown.writeSome(destination) { write(destination, value) }
-  }
+fun Buffer.reactivateCountdownAfterPleaConditional(
+  names: CountdownAfterPleaConditionalNames,
+) {
+  setOptionToNone(names.countdownTillDeactivation)
+}
 
-  fun writeCountdown(destination: NamedWriteDestination, value: Countdown?) {
-    value 
-      ?.let {
-        writeCountdownSome(destination, it)
-      } 
-      ?: run {
-        writeCountdownNone(destination)
-      }
-  }
-
-  fun write(destination: NamedWriteDestination, value: CountdownAfterPleaConditional) {
-    writeDuration(destination, value.intervalFromPleaTillDeactivation)
-    writeCountdown(destination, value.countdownTillDeactivation)
-  }
-
-  fun reactivate(
-    destination: NamedWriteDestination,
-  ) {
-    writeCountdownNone(destination)
-  }
-
-  fun reDeactivate(
-    destination: NamedWriteDestination,
-    reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState,
-  ) {
-    writeCountdownSome(destination, reDeactivateState.countdown)
-  }
+fun Buffer.reDeactivateCountdownAfterPleaConditional(
+  names: CountdownAfterPleaConditionalNames,
+  reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState,
+) {
+  setOptionToSome(names.countdownTillDeactivation) { namedCountdown(it, reDeactivateState.countdown) }
 }
 
 data class RuleEnablerNames(
   val variant: String,
   val countdownConditional: CountdownConditionalNames,
   val countdownAfterPleaConditional: CountdownAfterPleaConditionalNames,
+) 
+// {
+//   fun writeCountdown(destination: NamedWriteDestination, value: CountdownConditional) {
+//     RuleEnabler.Variant.Countdown.namedWrite(variant, destination)
+//     countdownConditional.write(destination, value)
+//   }
+
+//   fun writeCountdownAfterPlea(destination: NamedWriteDestination, value: CountdownAfterPleaConditional) {
+//     RuleEnabler.Variant.CountdownAfterPlea.namedWrite(variant, destination)
+//     countdownAfterPleaConditional.write(destination, value)
+//   }
+
+//   fun write(destination: NamedWriteDestination, value: RuleEnabler) {
+//     when (value) {
+//       is RuleEnabler.Countdown -> {
+//         writeCountdown(destination, value.it)
+//       }
+//       is RuleEnabler.CountdownAfterPlea -> {
+//         writeCountdownAfterPlea(destination, value.it)
+//       }
+//     }
+//   }
+// }
+
+fun Buffer.namedRuleEnabler(
+  names: RuleEnablerNames,
+  value: RuleEnabler,
 ) {
-  fun writeCountdown(destination: NamedWriteDestination, value: CountdownConditional) {
-    RuleEnabler.Variant.Countdown.namedWrite(variant, destination)
-    countdownConditional.write(destination, value)
-  }
+  when (value) {
+    is RuleEnabler.Countdown -> {
+      ruleEnablerVariant(RuleEnabler.Variant.Countdown)
+      comma()
+      namedCountdownConditional(names.countdownConditional, value.it)
+    }
 
-  fun writeCountdownAfterPlea(destination: NamedWriteDestination, value: CountdownAfterPleaConditional) {
-    RuleEnabler.Variant.CountdownAfterPlea.namedWrite(variant, destination)
-    countdownAfterPleaConditional.write(destination, value)
-  }
-
-  fun write(destination: NamedWriteDestination, value: RuleEnabler) {
-    when (value) {
-      is RuleEnabler.Countdown -> {
-        writeCountdown(destination, value.it)
-      }
-      is RuleEnabler.CountdownAfterPlea -> {
-        writeCountdownAfterPlea(destination, value.it)
-      }
+    is RuleEnabler.CountdownAfterPlea -> {
+      ruleEnablerVariant(RuleEnabler.Variant.CountdownAfterPlea)
+      comma()
+      namedCountdownAfterPleaConditional(names.countdownAfterPleaConditional, value.it)
     }
   }
 }
@@ -423,18 +390,40 @@ data class AlwaysRuleNames(
   val enabler: RuleEnablerNames,
 )
 
+fun Buffer.namedAlwaysRule(
+  names: AlwaysRuleNames,
+  value: AlwaysRule,
+) {
+  namedRuleEnabler(names.enabler, value.enabler)
+}
+
 data class TimeRangeRuleNames(
   val enabler: RuleEnablerNames,
   val condition: TimeRangeNames,
 )
 
+fun Buffer.namedTimeRange(
+  names: TimeRangeRuleNames,
+  value: TimeRangeRule,
+) {
+  namedRuleEnabler(names.enabler, value.enabler)
+  comma()
+  namedTimeRange(names.condition, value.condition)
+}
+
 data class TimeAllowanceRuleNames(
   val enabler: RuleEnablerNames,
   val allowance: String,
 )
-// -------------------------------------------------
 
-
+fun Buffer.namedTimeAllowanceRule(
+  names: TimeAllowanceRuleNames,
+  value: TimeAllowanceRule,
+) {
+  namedRuleEnabler(names.enabler, value.enabler)
+  comma()
+  named(names.allowance) { duration(value.allowance) }
+}
 
 // ============ Base Read Functions ============
 
@@ -1198,21 +1187,12 @@ fun Cursor.readBooleanOrNull(index: Int): Boolean? {
 data class OptionIndexes<T>(
   val variant: Int,
   val value: T,
-) {
-  fun read(cursor: Cursor)
-}
+)
 
 data class TimeRangeIndexes(
   val from: Int,
   val till: Int,
-) {
-  fun writeFrom(
-    buffer: Buffer,
-    newValue: Time,
-  ) {
-    
-  }
-}
+)
 
 data class CountdownIndexes(
   val from: Int,
@@ -1220,7 +1200,7 @@ data class CountdownIndexes(
 )
 
 data class CountdownConditionalIndexes(
-  val duratioin: Int,
+  val duration: Int,
   val countdown: OptionIndexes<CountdownIndexes>,
 )
 
@@ -1249,30 +1229,6 @@ data class TimeAllowanceRuleIndexes(
   val allowance: Int,
 )
 
-// ============ Composite Read Functions ============
-
-fun Cursor.readTime(index: Int): Time {
-  try {
-    return Time.fromTimestampOrThrow(readInt(index))
-  } catch (error: TextualError) {
-    throw error.changeContext("Reading a Time")
-  }
-}
-
-enum class OptionVariant {
-  None,
-  Some;
-
-  companion object {
-    fun fromNumberOrThrow(number: Int): OptionVariant {
-      return when (number) {
-        0 -> None
-        1 -> Some
-        else -> throw TextualError.create("Unknown OptionVariant number: $number")
-      }
-    }
-  }
-}
 
 fun Cursor.readOptionalVariant(index: Int): OptionVariant {
   return OptionVariant.fromNumberOrThrow(readInt(index))
@@ -1280,11 +1236,19 @@ fun Cursor.readOptionalVariant(index: Int): OptionVariant {
 
 fun <Value, ValueIndexes> Cursor.readOptional(
   indexes: OptionIndexes<ValueIndexes>,
-  readSome: (ValueIndexes) -> Value,
+  indexedReadValue: (ValueIndexes) -> Value,
 ): Value? {
   return when (readOptionalVariant(indexes.variant)) {
     OptionVariant.None -> null
-    OptionVariant.Some -> readSome(indexes.value)
+    OptionVariant.Some -> indexedReadValue(indexes.value)
+  }
+}
+
+fun Cursor.readTime(index: Int): Time {
+  try {
+    return Time.fromTimestampOrThrow(readInt(index))
+  } catch (error: TextualError) {
+    throw error.changeContext("Reading a Time")
   }
 }
 
@@ -1329,7 +1293,7 @@ fun Cursor.readCountdown(indexes: CountdownIndexes): Countdown {
 fun Cursor.readCountdownConditional(indexes: CountdownConditionalIndexes): CountdownConditional {
   try {
     return CountdownConditional.construct(
-      readDuration(indexes.duratioin),
+      readDuration(indexes.duration),
       readOptional(indexes.countdown) { readCountdown(it) }
     )
   } catch (error: TextualError) {
@@ -1398,5 +1362,37 @@ fun Cursor.readTimeAllowanceRule(indexes: TimeAllowanceRuleIndexes): TimeAllowan
     )
   } catch (error: TextualError) {
     throw error.changeContext("Reading a TimeAllowanceRule")
+  }
+}
+
+fun Cursor.readAlwaysRuleId(index: Int): AlwaysRuleId {
+  try {
+    return AlwaysRuleId(readLong(index))
+  } catch (error: TextualError) {
+    throw error.changeContext("Reading an AlwaysRuleId")
+  }
+}
+
+fun Cursor.readTimeRangeRuleId(index: Int): TimeRangeRuleId {
+  try {
+    return TimeRangeRuleId(readLong(index))
+  } catch (error: TextualError) {
+    throw error.changeContext("Reading an TimeRangeRuleId")
+  }
+}
+
+fun Cursor.readTimeAllowanceRuleId(index: Int): TimeAllowanceRuleId {
+  try {
+    return TimeAllowanceRuleId(readLong(index))
+  } catch (error: TextualError) {
+    throw error.changeContext("Reading an TimeAllowanceRuleId")
+  }
+}
+
+fun Cursor.readLocationId(index: Int): LocationId {
+  try {
+    return LocationId(readLong(index))
+  } catch (error: TextualError) {
+    throw error.changeContext("Reading an LocationId")
   }
 }

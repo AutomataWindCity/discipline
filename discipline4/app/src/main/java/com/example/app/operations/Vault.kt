@@ -10,7 +10,7 @@ sealed class CreateReturn {
 }
 
 fun create(
-  database: Database,
+  database: DatabaseConnection,
   adapter: VaultDbAdapter,
   location: VaultLocation,
   stats: VaultsStats,
@@ -51,7 +51,7 @@ sealed class DeleteReturn {
 }
 
 fun delete(
-  database: Database,
+  database: DatabaseConnection,
   adapter: VaultDbAdapter,
   location: VaultLocation,
   stats: VaultsStats,

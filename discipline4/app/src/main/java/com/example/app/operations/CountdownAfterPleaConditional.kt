@@ -8,7 +8,7 @@ sealed class ReactivateReturn {
 }
 
 fun reactivate(
-  database: Database,
+  database: DatabaseConnection,
   adapter: CountdownAfterPleaConditionalDbAdapter,
   location: CountdownAfterPleaConditionalLocation,
   conditional: CountdownAfterPleaConditional,
@@ -29,7 +29,7 @@ sealed class ReDeactivateReturn {
 }
 
 fun reDeactivate(
-  database: Database,
+  database: DatabaseConnection,
   adapter: CountdownAfterPleaConditionalDbAdapter,
   location: CountdownAfterPleaConditionalLocation,
   conditional: CountdownAfterPleaConditional,

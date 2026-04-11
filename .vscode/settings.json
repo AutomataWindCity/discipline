@@ -3,6 +3,7 @@
   "editor.fontSize": 18,
   "editor.fontFamily": "Purisa",
   "rust-analyzer.linkedProjects": [
+    "discipline_slint/Cargo.toml"
     // "dependencies/pam/Cargo.toml",
     // "dependencies/install/Cargo.toml",
     // "discipline_daemon_primitive_rs/Cargo.toml",

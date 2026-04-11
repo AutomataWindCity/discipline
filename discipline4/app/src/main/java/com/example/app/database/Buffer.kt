@@ -1,8 +1,8 @@
 package com.example.app.database
 
 public class Buffer(val string: StringBuilder = StringBuilder()) {
-  fun write(slice: String) {
-
+  fun code(slice: String) {
+    string.append(slice)
   }
 
   fun builder(): StringBuilder {
