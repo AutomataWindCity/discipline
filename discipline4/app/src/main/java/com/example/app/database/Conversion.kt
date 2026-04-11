@@ -1184,7 +1184,7 @@ fun Cursor.readBooleanOrNull(index: Int): Boolean? {
 }
 
 // ============ Indexes Data Classes ============
-data class OptionIndexes<T>(
+data class OptionIndexes<ValueIndexes>(
   val variant: Int,
   val value: T,
 )
@@ -1197,37 +1197,115 @@ data class TimeRangeIndexes(
 data class CountdownIndexes(
   val from: Int,
   val duration: Int,
-)
+) {
+  fun read(cursor: Cursor) {
+      try {
+        return Countdown.construct(
+          cursor.readInstant(from),
+          cursor.readDuration(duration),
+        )
+      } catch (error: TextualError) {
+        throw error.changeContext("Reading a Countdown")
+      }
+  }
+}
 
 data class CountdownConditionalIndexes(
   val duration: Int,
   val countdown: OptionIndexes<CountdownIndexes>,
-)
+) {
+  fun read(cursor: Cursor) {
+    try {
+      return CountdownConditional.construct(
+        cursor.readDuration(duratioin),
+        cursor.readOptional(countdown) { read(cursor) }
+      )
+    } catch (error: TextualError) {
+      throw error.changeContext("Reading a CountdownConditional")
+    }
+  }
+}
 
 data class CountdownAfterPleaConditionalIndexes(
   val duration: Int,
   val countdown: OptionIndexes<CountdownIndexes>,
-)
+) {
+  fun read(cursor: Cursor) {
+    try {
+      return CountdownAfterPleaConditional.construct(
+        cursor.readDuration(duration),
+        cursor.readOptional(countdown) { read(cursor) }
+      )
+    } catch (error: TextualError) {
+      throw error.changeContext("Reading a CountdownAfterPleaConditional")
+    }
+  }
+}
 
 data class RuleEnablerIndexes(
   val variant: Int,
   val countdownConditional: CountdownConditionalIndexes,
   val countdownAfterPleaConditional: CountdownAfterPleaConditionalIndexes,
-)
+) {
+  fun read(cursor: Cursor) {
+    try {
+      return when (readRuleEnablerVariant(indexes.variant)) {
+        RuleEnabler.Variant.Countdown -> {
+          RuleEnabler.Countdown(countdownConditional.read(cursor))
+        }
+        RuleEnabler.Variant.CountdownAfterPlea -> {
+          RuleEnabler.CountdownAfterPlea(countdownAfterPleaConditional.read(cursor))
+        }
+      }
+    } catch (error: TextualError) {
+      throw error.changeContext("Reading a RuleEnabler")
+    }
+  }
+}
 
 data class AlwaysRuleIndexes(
   val enabler: RuleEnablerIndexes,
-)
+) {
+  fun read(cursor: Cursor) {
+    try {
+      return AlwaysRule.construct(enabler.read(cursor))
+    } catch (error: TextualError) {
+      throw error.changeContext("Reading an AlwaysRule")
+    }
+  } 
+}
 
 data class TimeRangeRuleIndexes(
   val enabler: RuleEnablerIndexes,
   val condition: TimeRangeIndexes,
-)
+) {
+  fun read(cursor: Cursor) {
+    try {
+      return TimeRangeRule.construct(
+        enabler.read(cursor),
+        condition.read(cursor),
+      )
+    } catch (error: TextualError) {
+      throw error.changeContext("Reading a TimeRangeRule")
+    }
+  }
+}
 
 data class TimeAllowanceRuleIndexes(
   val enabler: RuleEnablerIndexes,
   val allowance: Int,
-)
+) {
+  fun read(cursor: Cursor) {
+    try {
+      return TimeAllowanceRule.construct(
+        enabler.read(cursor),
+        readDuration(allowance),
+      )
+    } catch (error: TextualError) {
+      throw error.changeContext("Reading a TimeAllowanceRule")
+    }
+  }
+}
 
 
 fun Cursor.readOptionalVariant(index: Int): OptionVariant {
