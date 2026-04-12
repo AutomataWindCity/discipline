@@ -1,6 +1,7 @@
 package com.example.app.procedures.applicationregulation
 
 import com.example.app.*
+import com.example.app.database.*
 
 sealed class CreateReturn {
   class TooManyRegulations() : CreateReturn() {}
@@ -16,26 +17,26 @@ fun create(
   regulations: ApplicationRegulations,
   regulationsStats: ApplicationRegulationsStats,
   applicationName: ApplicationName,
-) {
+): CreateReturn {
   if (regulationsStats.isFull()) {
     return CreateReturn.TooManyRegulations()
   }
   
-  if (context.regulations.has(applicationName)) {
+  if (regulations.has(applicationName)) {
     return CreateReturn.DuplicateRegulationId()
   }
 
   val regulation = ApplicationRegulation.createDefault()
 
   try {
-    adapter.createOrThrow(database, location, applicationName, regulation)
+    adapter.createOrThrow(database, location, applicationName)
   } catch (exception: Throwable) {
     return CreateReturn.InternalError(exception)
   }
 
-  regulations.add(app, regulation)
+  regulations.add(applicationName, regulation)
   regulationsStats.applicationRegulationsNumber += 1
-  return CreateReturn.Success(app, regulation)
+  return CreateReturn.Success(applicationName, regulation)
 }
 
 sealed class DeleteReturn {
@@ -65,10 +66,10 @@ fun delete(
   try {
     adapter.deleteOrThrow(database, location, applicationName)
   } catch (exception: Throwable) {
-    return Return.InternalError(exception)
+    return DeleteReturn.InternalError(exception)
   }
 
-  regulations.remove(app)
+  regulations.remove(applicationName)
   regulationsStats.applicationRegulationsNumber -= 1
   return DeleteReturn.Success(regulation)
 }

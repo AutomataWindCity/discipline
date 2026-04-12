@@ -56,4 +56,25 @@ object ApplicationRegulationsTable {
     writeDelete(buffer, applicationName)
     database.execSqlOrThrow(buffer.string())
   }
+
+
+  fun writeDeleteById(
+    buffer: Buffer,
+    regulationId: ApplicationRegulationId,
+  ) {
+    buffer.apply {
+      code("DELETE FROM $TABLE WHERE $APPLICATION_NAME = ")
+      applicationRegulationId(regulationId)
+      code(";")
+    }
+  }
+
+  fun deleteByIdOrThrow(
+    database: DatabaseConnection,
+    regulationId: ApplicationRegulationId,
+  ) {
+    val buffer = Buffer()
+    writeDeleteById(buffer, regulationId)
+    database.execSqlOrThrow(buffer.string())
+  }
 }

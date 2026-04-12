@@ -16,7 +16,7 @@ object AlwaysRuleDbAdapter {
       }
       is AlwaysRuleLocation.MainUserProfileApplicationRegulation -> {
         val id = AlwaysRulesTable.insertRuleOrThrow(database, rule)
-        MainUserProfileApplicationRegulationAlwaysRulesLinkingTable.insertOrThrow(database, id)
+        MainUserProfileApplicationRegulationAlwaysRulesLinkingTable.insertOrThrow(database, location.regulationId, id)
         return id
       }
     }

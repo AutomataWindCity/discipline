@@ -2,14 +2,17 @@ package com.example.app.database
 
 import com.example.app.*
 
-class ApplicationRegulationDbAdapter {
+object ApplicationRegulationDbAdapter {
   fun createOrThrow(
     database: DatabaseConnection,
     location: ApplicationRegulationLocation,
     applicationName: ApplicationName,
-    regulation: ApplicationRegulation,
-  ) {
-
+  ): ApplicationRegulationId {
+    when (location) {
+      is ApplicationRegulationLocation.MainUserProfile -> {
+        return ApplicationRegulationsTable.insertOrThrow(database, applicationName)
+      }
+    }
   }
 
   fun deleteOrThrow(
@@ -17,6 +20,10 @@ class ApplicationRegulationDbAdapter {
     location: ApplicationRegulationLocation,
     applicationName: ApplicationName,
   ) {
-
+    when (location) {
+      is ApplicationRegulationLocation.MainUserProfile -> {
+        ApplicationRegulationsTable.deleteOrThrow(database, applicationName)
+      }
+    }
   }
 }

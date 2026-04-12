@@ -120,7 +120,7 @@ object TimeRangeRulesTable {
   ): TimeRangeRuleId {
     val buffer = Buffer()
     writeInsertRule(buffer, rule)
-    TimeRangeRuleId(database.insertOrThrow(buffer.string()))
+    return TimeRangeRuleId(database.insertOrThrow(buffer.string()))
   }
 
   fun writeDeleteRule(

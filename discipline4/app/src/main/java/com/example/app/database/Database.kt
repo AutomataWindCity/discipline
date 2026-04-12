@@ -12,6 +12,18 @@ class Database(
     return returnValue
   }
 
+  fun createApplicationRegulation(location: ApplicationRegulationLocation, applicationName: ApplicationName): ApplicationRegulationId {
+    return withTransaction {
+      ApplicationRegulationDbAdapter.createOrThrow(connection, location, applicationName)
+    }
+  }
+
+  fun deleteApplicationRegulation(location: ApplicationRegulationLocation, regulationId: ApplicationRegulationId) {
+    withTransaction() {
+      ApplicationRegulationDbAdapter.deleteOrThrow(connection, location, regulationId)
+    }
+  }
+
   fun createAlwaysRule(location: AlwaysRuleLocation, rule: AlwaysRule): AlwaysRuleId {
     return withTransaction {
       AlwaysRuleDbAdapter.createOrThrow(connection, location, rule)

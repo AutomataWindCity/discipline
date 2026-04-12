@@ -1,6 +1,7 @@
 package com.example.procedures.countdownafterpleaconditional
 
 import com.example.app.*
+import com.example.app.database.*
 
 sealed class ReactivateReturn {
   class Database(val error: Throwable) : ReactivateReturn() {}

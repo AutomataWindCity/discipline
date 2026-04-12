@@ -1,21 +1,21 @@
 package com.example.app.procedures.timeallowancerule
 
 import com.example.app.*
+import com.example.app.database.*
 
 sealed class CreateReturn {
   class TooManyRules() : CreateReturn() {}
   class DuplicateRuleId() : CreateReturn() {}
   class Database(val error: Throwable) : CreateReturn() {}
-  class Success(val id: UuidV4, val rule: TimeAllowanceRule) : CreateReturn() {}
+  class Success(val id: TimeAllowanceRuleId, val rule: TimeAllowanceRule) : CreateReturn() {}
 }
 
 fun create(
   database: DatabaseConnection,
   adapter: TimeAllowanceRuleDbAdapter,
-  location: TimeRangeRuleLocation,
+  location: TimeAllowanceRuleLocation,
   rules: TimeAllowanceRules,
   stats: RulesStats,
-  optionalRuleId: UuidV4?,
   totalAllowance: Duration,
   enablerCreator: RuleEnabler.Creator,
 ): CreateReturn {
@@ -23,25 +23,20 @@ fun create(
     return CreateReturn.TooManyRules()
   }
 
-  val ruleId = optionalRuleId ?: UuidV4.generateOrThrow()
-  if (rules.has(id)) {
-    return CreateReturn.DuplicateRuleId()
-  }
-
   val rule = TimeAllowanceRule(
     enabler = enablerCreator.create(),
     allowance = totalAllowance,
   )
 
-  try {
-    adapter.createOrThrow(database, location, ruleId, rule)
+  val ruleId = try {
+    adapter.createOrThrow(database, location, rule)
   } catch (exception: Throwable) {
     return CreateReturn.Database(exception)
   }
 
-  rules.add(id, rule)
+  rules.add(ruleId, rule)
   stats.updateAfterTimeAllowanceRuleCreated()
-  return CreateReturn.Success(id, rule)
+  return CreateReturn.Success(ruleId, rule)
 }
 
 sealed class DeleteReturn {
@@ -54,10 +49,10 @@ sealed class DeleteReturn {
 fun delete(
   database: DatabaseConnection,
   adapter: TimeAllowanceRuleDbAdapter, 
-  location: Location,
+  location: TimeAllowanceRuleLocation,
   rules: TimeAllowanceRules,
   stats: RulesStats,
-  ruleId: UuidV4,
+  ruleId: TimeAllowanceRuleId,
   clock: MonotonicClock,
 ): DeleteReturn {
   val rule = rules.get(ruleId)
