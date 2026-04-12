@@ -1,8 +1,8 @@
 {
   "files.autoSave": "afterDelay",
   "editor.fontSize": 25,
-  "editor.fontFamily": "Yomogi",
-  // "editor.letterSpacing": 1.5,
+  "editor.fontFamily": "Comic Neue",
+  "editor.letterSpacing": 1.5,
   "rust-analyzer.linkedProjects": [
     "discipline_slint/Cargo.toml"
     // "dependencies/pam/Cargo.toml",
