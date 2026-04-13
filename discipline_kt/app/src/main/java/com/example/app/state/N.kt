@@ -384,3 +384,25 @@ fun State.deleteTimeAllowanceRuleOrNoop(ruleGroupLocation: TimeAllowanceRuleLoca
 }
 
 //////////////////
+
+sealed class GetCountdownConditionalError {
+  class NotFound() : GetCountdownConditionalError() {}
+}
+
+fun State.getCountdownConditional(
+  locator: CountdownConditionalLocation,
+): Tried<CountdownConditional, GetCountdownConditionalError> {
+  TODO()
+}
+
+////////////
+
+sealed class GetCountdownAfterPleaConditionalError {
+  class NotFound() : GetCountdownAfterPleaConditionalError() {}
+}
+
+fun State.getCountdownAfterPleaConditional(
+  locator: CountdownAfterPleaConditionalLocation,
+): Tried<CountdownAfterPleaConditional, GetCountdownAfterPleaConditionalError> {
+  TODO()
+}

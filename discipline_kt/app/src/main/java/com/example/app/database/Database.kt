@@ -12,21 +12,43 @@ class Database(
     return returnValue
   }
 
-  fun createApplicationRegulation(location: ApplicationRegulationLocation, applicationName: ApplicationName): ApplicationRegulationId {
+  fun createApplicationRegulation(
+    location: ApplicationRegulationLocation, 
+    applicationName: ApplicationName,
+  ): ApplicationRegulationId {
     return withTransaction {
-      ApplicationRegulationDbAdapter.createOrThrow(connection, location, applicationName)
+      ApplicationRegulationDbAdapter.createOrThrow(
+        connection, 
+        location, 
+        applicationName,
+      )
     }
   }
 
-  fun deleteApplicationRegulation(location: ApplicationRegulationLocation, regulationId: ApplicationRegulationId) {
+  fun deleteApplicationRegulation(
+    location: ApplicationRegulationLocation, 
+    applicationName: ApplicationName,
+  ) {
     withTransaction() {
-      ApplicationRegulationDbAdapter.deleteOrThrow(connection, location, regulationId)
+      ApplicationRegulationDbAdapter.deleteOrThrow(
+        connection, 
+        location, 
+        applicationName,
+      )
     }
   }
 
-  fun createAlwaysRule(ruleGroupLocator: AlwaysRuleLocation, ruleGroupId: AlwaysRuleGroupId, rule: AlwaysRule): AlwaysRuleId {
+  fun createAlwaysRule(
+    ruleGroupLocator: AlwaysRuleLocation, 
+    ruleGroupId: AlwaysRuleGroupId, 
+    rule: AlwaysRule,
+  ): AlwaysRuleId {
     return withTransaction {
-      AlwaysRuleDbAdapter.createOrThrow(connection, ruleGroupLocator, rule)
+      AlwaysRuleDbAdapter.createOrThrow(
+        connection, 
+        ruleGroupLocator, 
+        rule,
+      )
     }
   }
 
@@ -100,21 +122,40 @@ class Database(
     }
   }
 
-  fun reactivateCountdownConditional(location: CountdownConditionalLocation, reactivateState: CountdownConditional.ReactivateState) {
+  fun reactivateCountdownConditional(
+    location: CountdownConditionalLocation, 
+    reactivateState: CountdownConditional.ReactivateState,
+  ) {
     withTransaction {
-      CountdownConditionalDbAdapter.reactivateOrThrow(connection, location, reactivateState)
+      CountdownConditionalDbAdapter.reactivateOrThrow(
+        connection, 
+        location, 
+        reactivateState,
+      )
     }
   }
 
-  fun reactivateCountdownAfterPleaConditional(location: CountdownAfterPleaConditionalLocation) {
+  fun reactivateCountdownAfterPleaConditional(
+    location: CountdownAfterPleaConditionalLocation,
+  ) {
     withTransaction {
-      CountdownAfterPleaConditionalDbAdapter.reactivateOrThrow(connection, location)
+      CountdownAfterPleaConditionalDbAdapter.reactivateOrThrow(
+        connection, 
+        location,
+      )
     }
   }
 
-  fun reDeactivateCountdownAfterPleaConditional(location: CountdownAfterPleaConditionalLocation, reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState) {
+  fun reDeactivateCountdownAfterPleaConditional(
+    location: CountdownAfterPleaConditionalLocation, 
+    reDeactivateState: CountdownAfterPleaConditional.ReDeactivateState,
+  ) {
     withTransaction {
-      CountdownAfterPleaConditionalDbAdapter.reDeactivateOrThrow(connection, location, reDeactivateState)
+      CountdownAfterPleaConditionalDbAdapter.reDeactivateOrThrow(
+        connection, 
+        location, 
+        reDeactivateState,
+      )
     }
   }
 }

@@ -4,7 +4,6 @@ import com.example.app.database.*
 import com.example.app.*
 import android.database.Cursor
 
-
 enum class OptionVariant {
   None,
   Some;
@@ -127,6 +126,18 @@ fun Buffer.orderedAlwaysRule(value: AlwaysRule) {
 
 fun Buffer.alwaysRuleId(value: AlwaysRuleId) {
   long(value.asNumber())
+}
+
+fun Buffer.alwaysRuleGroupId(value: AlwaysRuleGroupId) {
+  long(value.value)
+}
+
+fun Buffer.timeRangeRuleGroupId(value: TimeRangeRuleGroupId) {
+  long(value.value)
+}
+
+fun Buffer.timeAllowanceRuleGroupId(value: TimeAllowanceRuleGroupId) {
+  long(value.value)
 }
 
 fun Buffer.orderedTimeRangeRule(value: TimeRangeRule) {

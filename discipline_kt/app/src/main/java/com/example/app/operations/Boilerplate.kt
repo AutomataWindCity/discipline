@@ -7,9 +7,9 @@ sealed class CountdownConditionalLocation {
   class MainUserProfileScreenRegulationTimeRangeRuleEnabler(val ruleId: TimeRangeRuleId) : CountdownConditionalLocation() {}
   class MainUserProfileScreenRegulationDailyTimeAllowanceRuleEnabler(val ruleId: TimeAllowanceRuleId) : CountdownConditionalLocation() {}
 
-  class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: AlwaysRuleId) : CountdownConditionalLocation() {}
-  class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: TimeRangeRuleId) : CountdownConditionalLocation() {}
-  class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: TimeAllowanceRuleId) : CountdownConditionalLocation() {}
+  class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: AlwaysRuleId, val applicationName: ApplicationName) : CountdownConditionalLocation() {}
+  class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: TimeRangeRuleId, val applicationName: ApplicationName) : CountdownConditionalLocation() {}
+  class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: TimeAllowanceRuleId, val applicationName: ApplicationName) : CountdownConditionalLocation() {}
 
   class MainUserProfileVaultProtector(val vaultId: UuidV4) : CountdownConditionalLocation() {}
 }
@@ -28,9 +28,9 @@ sealed class CountdownAfterPleaConditionalLocation {
   class MainUserProfileScreenRegulationTimeRangeRuleEnabler(val ruleId: TimeRangeRuleId) : CountdownAfterPleaConditionalLocation() {}
   class MainUserProfileScreenRegulationDailyTimeAllowanceRuleEnabler(val ruleId: TimeAllowanceRuleId) : CountdownAfterPleaConditionalLocation() {}
 
-  class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: AlwaysRuleId) : CountdownAfterPleaConditionalLocation() {}
-  class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: TimeRangeRuleId) : CountdownAfterPleaConditionalLocation() {}
-  class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: TimeAllowanceRuleId) : CountdownAfterPleaConditionalLocation() {}
+  class MainUserProfileApplicationRegulationAlwaysRuleEnabler(val ruleId: AlwaysRuleId, val applicationName: ApplicationName) : CountdownAfterPleaConditionalLocation() {}
+  class MainUserProfileApplicationRegulationTimeRangeRuleEnabler(val ruleId: TimeRangeRuleId, val applicationName: ApplicationName) : CountdownAfterPleaConditionalLocation() {}
+  class MainUserProfileApplicationRegulationDailyTimeAllowanceRuleEnabler(val ruleId: TimeAllowanceRuleId, val applicationName: ApplicationName) : CountdownAfterPleaConditionalLocation() {}
 
   class MainUserProfileVaultProtector(val vaultId: UuidV4) : CountdownAfterPleaConditionalLocation() {}
 }

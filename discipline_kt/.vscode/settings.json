@@ -1,7 +1,7 @@
 {
   "editor.fontSize": 24,
-  "editor.fontFamily": "Comic Neue",
-  "editor.letterSpacing": 1.5,
+  "editor.fontFamily": "Purisa",
+  // "editor.letterSpacing": 1.5,
   "java.import.gradle.enabled": true,
   "java.import.gradle.wrapper.enabled": true,
   "kotlin.languageServer.enabled": true

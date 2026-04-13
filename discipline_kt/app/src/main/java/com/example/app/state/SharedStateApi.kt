@@ -13,6 +13,7 @@ public class SharedStateApi(
 ) {
   suspend fun createApplicationRegulation(location: ApplicationRegulationLocation, applicationName: ApplicationName): ApplicationRegulationId {
   }
+  
   suspend fun deleteApplicationRegulation(location: ApplicationRegulationLocation, regulationId: ApplicationRegulationId) {
     
   }

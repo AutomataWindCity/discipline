@@ -2,16 +2,6 @@ package com.example.app
 
 import com.example.app.database.*
 
-sealed class GetCountdownAfterPleaConditionalError {
-  class NotFound() : GetCountdownAfterPleaConditionalError() {}
-}
-
-fun State.getCountdownAfterPleaConditional(
-  locator: CountdownAfterPleaConditionalLocation,
-): Tried<CountdownAfterPleaConditional, GetCountdownAfterPleaConditionalError> {
-  TODO()
-}
-
 object CountdownAfterPleaConditionalProcedures {
   sealed class ReactivateReturn {
     class NoSuchConditional(val value: GetCountdownAfterPleaConditionalError) : ReactivateReturn() {}
