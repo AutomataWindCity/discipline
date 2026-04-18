@@ -63,7 +63,7 @@ export const getTotalAllowance = (it: TimeAllowanceRule): Duration => {
 };
 
 export const getRemainingAllowance = (it: TimeAllowanceRule, dailyUptime: Duration): Duration => {
-  return Duration.minusOrZero(it.allowance, dailyUptime);
+  return Duration.saturatingSub(it.allowance, dailyUptime);
 };
 
 export const isAllowanceUp = (it: TimeAllowanceRule, dailyUptime: Duration): boolean => {

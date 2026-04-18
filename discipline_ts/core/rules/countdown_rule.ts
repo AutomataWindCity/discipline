@@ -1,32 +1,34 @@
-import { Countdown, Branded } from "../x.ts";
+import { Countdown, Branded, Unique } from "../../x.ts";
 
 const BRAND = Symbol();
 
-export type CountdownRule = Branded<typeof BRAND, {
-  readonly isEnabled: boolean,
-  readonly countdown: Countdown,
-}>;
-
-export const construct = (isEnabled: boolean, countdown: Countdown): CountdownRule => {
-  return Branded(BRAND, {
-    countdown,
-    isEnabled,
-  });
+type RawAlwaysRule = {
+  readonly enabled: boolean,
+  readonly condition: Countdown,
 };
 
-export const create = (countdown: Countdown): CountdownRule => {
+export type AlwaysRule = Unique<typeof BRAND, "AlwaysRule", RawAlwaysRule>;
+
+const construct = (enabled: boolean, condition: Countdown): AlwaysRule => {
+  return {
+    condition: condition,
+    enabled: enabled,
+  };
+};
+
+export const create = (countdown: Countdown): AlwaysRule => {
   return construct(false, countdown);
 };
 
-export const getIsEnabled = (it: CountdownRule): boolean => {
-  return it.isEnabled;
+export const getIsEnabled = (it: AlwaysRule): boolean => {
+  return it.enabled;
 };
 
-export const getCountdown = (it: CountdownRule): Countdown => {
-  return it.countdown;
+export const getCountdown = (it: AlwaysRule): Countdown => {
+  return it.condition;
 };
 
-export const CountdownRule = {
+export const AlwaysRule = {
   construct,
   create,
   getIsEnabled,
